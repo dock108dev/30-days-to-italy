@@ -5,24 +5,10 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   adminFastTrackCheckpoint,
   adminPreviewDate,
+  inferAdminFastTrackCheckpoint,
+  nextAdminFastTrackCheckpoint,
   type AdminFastTrackCheckpointId,
 } from "../admin/fast-track";
-import {
-  advanceWithCanonicalResult,
-  canOpenDemoTripMode,
-  canonicalPreEpisodeState,
-} from "../admin/canonical-demo";
-import {
-  checkpointAuditStatus,
-  saveDemoConductor,
-  updateDemoConductor,
-  type DemoConductor,
-} from "../admin/demo-conductor";
-import {
-  clearDemoPreviewReturn,
-  loadDemoPreviewReturn,
-  saveDemoPreviewReturn,
-} from "../admin/demo-preview";
 import {
   seedAdminTruthPreview,
   type AdminTruthPreviewId,
@@ -40,6 +26,7 @@ import {
   type TeachingMoment,
 } from "../game/model";
 import {
+  applyResponse,
   finishPendingOutcome,
   nextEpisodeState,
   possessionsFor,
@@ -48,10 +35,10 @@ import {
   recordSupport as recordSupportState,
   restartEpisodeState,
   seedEpisodeState,
-  submitEpisodeResponse,
 } from "../game/engine";
 import { loadGame, saveGame } from "../game/persistence";
 import {
+  applyInsertedGuidedRefresher,
   beginGuidedBeachSession,
   beginRebuiltGuidedRefresher,
   completeGuidedBeachSession,
@@ -68,7 +55,7 @@ import {
 } from "../guided/model";
 import { loadGuidedSession, saveGuidedSession } from "../guided/persistence";
 import { createGuidedBeachHandoff } from "../guided/pocket-deck-handoff";
-import { ModeNavigation } from "../lifecycle/LifecycleViews";
+import { ModeNavigation, PrepareFocus } from "../lifecycle/LifecycleViews";
 import {
   createDefaultLifecycleState,
   withLifecycleMode,
@@ -81,18 +68,6 @@ import {
 } from "../lifecycle/persistence";
 import { useOfflineReadiness } from "../offline/useOfflineReadiness";
 import { clearAllLocalState } from "../persistence/reset";
-import {
-  exitDemoSession,
-  isCurrentApplicationSession,
-  loadActiveDemoSession,
-  ownerSession,
-  resetDemoSession,
-  startDemoSession,
-  type ApplicationSession,
-  type ApplicationSessionMode,
-  type EnumerableSessionStorage,
-  type SessionStorage,
-} from "../persistence/session";
 import { PocketDeck } from "../pocket-deck/PocketDeckViews";
 import { CORE_POCKET_DECK_CARD_IDS } from "../pocket-deck/catalog";
 import {
@@ -107,8 +82,8 @@ import {
 } from "../pocket-deck/persistence";
 import { createDefaultTripProfile, type TripProfile } from "../trip/model";
 import { createSeasonEpisodeHandoff } from "../season/pocket-deck-handoff";
-import { EPISODE_BY_ID, EPISODE_IDS, IMPLEMENTED_EPISODES, type EpisodeId } from "../season/manifest";
-import { scheduleSeason } from "../season/schedule";
+import { EPISODE_BY_ID, IMPLEMENTED_EPISODES } from "../season/manifest";
+import { recommendedEpisode, scheduleSeason } from "../season/schedule";
 import {
   loadTripProfile,
   saveTripProfile,
@@ -116,50 +91,15 @@ import {
 import { TripSetup } from "../trip/TripProfileViews";
 import {
   AdminModal,
-  CompactSessionProgress,
-  DemoModeBanner,
+  DayRail,
   EncounterStage,
   OutcomeCard,
   PrototypeHeader,
   ResponseComposer,
   SceneIntroduction,
-  SeasonOverview,
   TeachingCard,
   WorldPanel,
-  type InteractionPhase,
 } from "./PrototypeViews";
-
-type InteractionState = {
-  turnKey: string;
-  phase: Exclude<InteractionPhase, "resolved">;
-  audioFailed: boolean;
-};
-
-type SessionIdentity = {
-  mode: ApplicationSessionMode;
-  id: string;
-  generation: number;
-};
-
-type ActiveSessionRuntime = SessionIdentity & {
-  storage: SessionStorage;
-};
-
-function interactionTurnKey(
-  game: Pick<GameState, "episodeId" | "turnId" | "status">,
-): string {
-  return `${game.episodeId}:${game.turnId}:${game.status}`;
-}
-
-function consumeHydrationSaveBlock(
-  blocks: { generation: number; domains: Set<string> },
-  generation: number,
-  domain: string,
-): boolean {
-  if (blocks.generation !== generation || !blocks.domains.has(domain)) return false;
-  blocks.domains.delete(domain);
-  return true;
-}
 
 export default function Home() {
   const [game, setGame] = useState<GameState>(() => initialState());
@@ -175,103 +115,60 @@ export default function Home() {
   );
   const [tripDeckCardId, setTripDeckCardId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [sessionIdentity, setSessionIdentity] = useState<SessionIdentity>({
-    mode: "owner",
-    id: "owner",
-    generation: 0,
-  });
-  const [conductor, setConductor] = useState<DemoConductor | null>(null);
   const [input, setInput] = useState("");
-  const [interaction, setInteraction] = useState<InteractionState>(() => {
-    const game = initialState();
-    return {
-      turnKey: interactionTurnKey(game),
-      phase: "awaiting_line",
-      audioFailed: false,
-    };
-  });
+  const [hasPlayed, setHasPlayed] = useState(false);
   const [transcriptVisible, setTranscriptVisible] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [adminCheckpointId, setAdminCheckpointId] =
+    useState<AdminFastTrackCheckpointId | null>(null);
   const [tripEditorOpen, setTripEditorOpen] = useState(false);
   const [showNatural, setShowNatural] = useState(false);
   const [teachingMoment, setTeachingMoment] = useState<TeachingMoment | null>(null);
-  const [seasonOverviewOpen, setSeasonOverviewOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const responseRef = useRef<HTMLTextAreaElement>(null);
-  const teachingCloseRef = useRef<HTMLButtonElement>(null);
-  const teachingTriggerRef = useRef<HTMLElement | null>(null);
-  const seasonOverviewCloseRef = useRef<HTMLButtonElement>(null);
-  const seasonOverviewTriggerRef = useRef<HTMLElement | null>(null);
-  const submissionInFlightRef = useRef(false);
   const pendingRebuiltEpisodeRef = useRef<GameState["episodeId"] | null>(null);
-  const activeSessionRef = useRef<ActiveSessionRuntime | null>(null);
-  const saveBlocksRef = useRef<{ generation: number; domains: Set<string> }>({
-    generation: 0,
-    domains: new Set(),
-  });
   const offlineReadiness = useOfflineReadiness();
 
   const scene = sceneForEpisode(game.episodeId)!;
   const turn = TURNS[game.turnId];
   const support = game.support[scene.id];
-  const currentTurnKey = interactionTurnKey(game);
-  const interactionPhase: InteractionPhase = game.status !== "active"
-    ? "resolved"
-    : interaction.turnKey === currentTurnKey
-      ? interaction.phase
-      : "awaiting_line";
-
-  function activateApplicationSession(session: ApplicationSession) {
-    const generation = (activeSessionRef.current?.generation ?? 0) + 1;
-    const runtime: ActiveSessionRuntime = {
-      mode: session.mode,
-      id: session.id,
-      generation,
-      storage: session.storage,
-    };
-    activeSessionRef.current = runtime;
-    saveBlocksRef.current = {
-      generation,
-      domains: new Set(["game", "guided", "deck", "conductor"]),
-    };
-    setHydrated(false);
-
-    let loadedGame = initialState();
-    let loadedGuidedSession = createDefaultGuidedBeachSession();
-    try {
-      loadedGame = finishPendingOutcome(loadGame(runtime.storage));
-    } catch {
-      // Broken state stays inside its current owner or demo namespace.
-    }
-    const loadedProfile = loadTripProfile(runtime.storage);
-    const loadedLifecycle = loadLifecycleState(runtime.storage);
-    loadedGuidedSession = loadGuidedSession(runtime.storage);
-    const loadedPocketDeck = loadPocketDeckState(runtime.storage);
-    loadedGuidedSession = reconcileGuidedBeachSession(loadedGuidedSession, loadedGame);
-
-    setSessionIdentity({ mode: runtime.mode, id: runtime.id, generation });
-    setConductor(session.mode === "demo" ? session.conductor : null);
-    setGame(loadedGame);
-    setTripProfile(loadedProfile);
-    setLifecycle(loadedLifecycle);
-    setGuidedSession(loadedGuidedSession);
-    setPocketDeck(loadedPocketDeck);
-    setHydrated(true);
-  }
-
-  function activeStorage(): SessionStorage | null {
-    const runtime = activeSessionRef.current;
-    return isCurrentApplicationSession(runtime, sessionIdentity) ? runtime!.storage : null;
-  }
 
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      const storage = window.localStorage as EnumerableSessionStorage;
-      const demo = loadActiveDemoSession(storage);
-      activateApplicationSession(demo ?? ownerSession(storage));
+      let loadedGame = initialState();
+      let loadedGuidedSession = createDefaultGuidedBeachSession();
+      try {
+        loadedGame = loadGame(window.localStorage);
+      } catch {
+        // Broken rehearsal state should not block trip setup.
+      }
+      try {
+        setTripProfile(loadTripProfile(window.localStorage));
+      } catch {
+        // Broken trip state should not block the rehearsal prototype.
+      }
+      try {
+        setLifecycle(loadLifecycleState(window.localStorage));
+      } catch {
+        // Broken lifecycle state always falls back to Prepare mode.
+      }
+      try {
+        loadedGuidedSession = loadGuidedSession(window.localStorage);
+      } catch {
+        // Broken guidance evidence should not block the underlying rehearsal.
+      }
+      try {
+        setPocketDeck(loadPocketDeckState(window.localStorage));
+      } catch {
+        // Broken deck preferences should not block either product mode.
+      }
+      loadedGuidedSession = reconcileGuidedBeachSession(loadedGuidedSession, loadedGame);
+      setGame(loadedGame);
+      setGuidedSession(loadedGuidedSession);
+      setHydrated(true);
     });
     return () => {
       active = false;
@@ -280,58 +177,18 @@ export default function Home() {
 
   useEffect(() => {
     if (!hydrated) return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity)) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "game")) return;
-    saveGame(runtime!.storage, game);
-  }, [game, hydrated, sessionIdentity]);
+    saveGame(window.localStorage, game);
+  }, [game, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity)) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "guided")) return;
-    saveGuidedSession(runtime!.storage, guidedSession);
-  }, [guidedSession, hydrated, sessionIdentity]);
+    saveGuidedSession(window.localStorage, guidedSession);
+  }, [guidedSession, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity)) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "deck")) return;
-    savePocketDeckState(runtime!.storage, pocketDeck);
-  }, [pocketDeck, hydrated, sessionIdentity]);
-
-  useEffect(() => {
-    if (!hydrated || !conductor || sessionIdentity.mode !== "demo") return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity) || runtime!.id !== conductor.sessionId) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "conductor")) return;
-    saveDemoConductor(runtime!.storage, conductor);
-  }, [conductor, hydrated, sessionIdentity]);
-
-  useEffect(() => {
-    if (
-      !hydrated ||
-      sessionIdentity.mode !== "demo" ||
-      !conductor ||
-      conductor.previewId ||
-      conductor.activeCheckpointId === "trip" ||
-      conductor.activeCheckpointId !== game.episodeId ||
-      conductor.checkpointStatus !== "active" ||
-      game.status === "active"
-    ) return;
-    queueMicrotask(() => {
-      setConductor((current) => current && current.sessionId === conductor.sessionId
-        ? updateDemoConductor(current, {
-            checkpointStatus: "resolved",
-            playedNormally: current.playedNormally.includes(game.episodeId)
-              ? current.playedNormally
-              : [...current.playedNormally, game.episodeId],
-          })
-        : current);
-    });
-  }, [conductor, game.episodeId, game.status, hydrated, sessionIdentity.mode]);
+    savePocketDeckState(window.localStorage, pocketDeck);
+  }, [pocketDeck, hydrated]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -341,11 +198,7 @@ export default function Home() {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      setInteraction({
-        turnKey: currentTurnKey,
-        phase: "awaiting_line",
-        audioFailed: false,
-      });
+      setHasPlayed(false);
       setTranscriptVisible(false);
       setIsPlaying(false);
       setShowNatural(false);
@@ -355,52 +208,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [currentTurnKey]);
-
-  useEffect(() => {
-    if (interactionPhase !== "ready_to_respond") return;
-    let active = true;
-    queueMicrotask(() => {
-      if (!active || !responseRef.current) return;
-      responseRef.current.focus({ preventScroll: true });
-      const form = responseRef.current.closest("form");
-      requestAnimationFrame(() => {
-        if (!form) return;
-        const rect = form.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight) {
-          window.scrollBy({ top: rect.bottom - window.innerHeight + 12 });
-        }
-      });
-    });
-    return () => {
-      active = false;
-    };
-  }, [interactionPhase]);
-
-  useEffect(() => {
-    if (teachingMoment) teachingCloseRef.current?.focus();
-  }, [teachingMoment]);
-
-  useEffect(() => {
-    if (seasonOverviewOpen) seasonOverviewCloseRef.current?.focus();
-  }, [seasonOverviewOpen]);
-
-  useEffect(() => {
-    if (!teachingMoment && !seasonOverviewOpen) return;
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      if (seasonOverviewOpen) {
-        setSeasonOverviewOpen(false);
-        queueMicrotask(() => seasonOverviewTriggerRef.current?.focus());
-        return;
-      }
-      setTeachingMoment(null);
-      queueMicrotask(() => teachingTriggerRef.current?.focus());
-    }
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [seasonOverviewOpen, teachingMoment]);
+  }, [game.turnId, game.episodeId]);
 
   const possessions = useMemo(() => possessionsFor(game), [game]);
   const guidedHandoff = useMemo(
@@ -430,37 +238,20 @@ export default function Home() {
 
   async function playAudio(speed: "normal" | "careful" = "normal") {
     const audio = audioRef.current;
-    if (game.status !== "active") return;
-    const wasReady = interactionPhase === "ready_to_respond";
-    if (!audio) {
-      setTranscriptVisible(true);
-      setInteraction({
-        turnKey: currentTurnKey,
-        phase: "ready_to_respond",
-        audioFailed: true,
-      });
-      return;
-    }
+    if (!audio) return;
+    const wasPlayed = hasPlayed;
     audio.src = speed === "careful" ? turn.careful : turn.normal;
     audio.currentTime = 0;
     try {
       setIsPlaying(true);
       await audio.play();
       if (speed === "careful") recordSupport("careful");
-      else if (wasReady) recordSupport("replay");
-      setInteraction({
-        turnKey: currentTurnKey,
-        phase: "ready_to_respond",
-        audioFailed: false,
-      });
+      else if (wasPlayed) recordSupport("replay");
+      setHasPlayed(true);
     } catch {
       setIsPlaying(false);
+      setHasPlayed(true);
       setTranscriptVisible(true);
-      setInteraction({
-        turnKey: currentTurnKey,
-        phase: "ready_to_respond",
-        audioFailed: true,
-      });
     }
   }
 
@@ -472,22 +263,10 @@ export default function Home() {
   function submitResponse(event?: FormEvent) {
     event?.preventDefault();
     const raw = input.trim();
-    if (
-      !raw ||
-      interactionPhase !== "ready_to_respond" ||
-      game.status !== "active" ||
-      submissionInFlightRef.current
-    ) return;
+    if (!raw || !hasPlayed || game.status !== "active") return;
 
-    submissionInFlightRef.current = true;
-    setInteraction((current) => ({ ...current, phase: "submitting" }));
-
-    const responseState = pendingRebuiltEpisodeRef.current === game.episodeId && game.episodeId !== "day-04"
-      ? recordEpisodeRefresher(game, "rebuilt")
-      : game;
-    const result = submitEpisodeResponse(responseState, raw);
+    const result = applyResponse(game, raw);
     if (result.kind === "teaching") {
-      teachingTriggerRef.current = responseRef.current;
       setTeachingMoment({ phraseId: result.phraseId, original: raw, source: "english" });
       if (game.episodeId !== "day-04") setGame((current) => recordEpisodeRefresher(current, "opened"));
       if (game.episodeId === "day-04") {
@@ -495,120 +274,49 @@ export default function Home() {
           recordGuidedRefresherOpened(current, result.phraseId),
         );
       }
-      setInteraction((current) => ({ ...current, phase: "ready_to_respond" }));
-      queueMicrotask(() => {
-        submissionInFlightRef.current = false;
-      });
       return;
     }
 
     setInput("");
-    setGuidedSession((current) => {
-      const observed = observeGuidedBeachResponse(current, game, raw, result.state);
-      return observed.status === "in_progress" &&
-        result.state.episodeId === "day-04" &&
-        result.state.status === "resolved" &&
-        isBeachOutcomeId(result.state.outcome?.id)
-        ? completeGuidedBeachSession(observed, result.state.outcome.id)
-        : observed;
-    });
+    setGuidedSession((current) =>
+      observeGuidedBeachResponse(current, game, raw, result.state),
+    );
+    const nextGame = pendingRebuiltEpisodeRef.current === game.episodeId && game.episodeId !== "day-04"
+      ? recordEpisodeRefresher(result.state, "rebuilt")
+      : result.state;
     pendingRebuiltEpisodeRef.current = null;
-    setGame(result.state);
-    queueMicrotask(() => {
-      submissionInFlightRef.current = false;
-      if (
-        result.state.status === "active" &&
-        interactionTurnKey(result.state) === currentTurnKey
-      ) {
-        setInteraction((current) => ({ ...current, phase: "ready_to_respond" }));
-      }
-    });
+    setGame(nextGame);
   }
 
   function seedEpisode(episodeId: GameState["episodeId"]) {
-    if (sessionIdentity.mode === "demo") {
-      selectAdminCheckpoint(episodeId);
-      return;
-    }
     setGame((current) => seedEpisodeState(current, episodeId));
+    setAdminCheckpointId(null);
     setAdminOpen(false);
-    setSeasonOverviewOpen(false);
     setTeachingMoment(null);
   }
 
   function restartScene() {
-    if (sessionIdentity.mode === "demo" && conductor?.activeCheckpointId !== "trip") {
-      playDemoCheckpoint();
-      return;
-    }
     setGame((current) => restartEpisodeState(current));
     setAdminOpen(false);
     setTeachingMoment(null);
   }
 
-  function stopTransientUi() {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setIsPlaying(false);
-    setInput("");
+  function resetAll() {
+    clearAllLocalState(window.localStorage);
+    setGame(initialState());
+    setTripProfile(null);
+    setLifecycle(createDefaultLifecycleState());
+    setGuidedSession(createDefaultGuidedBeachSession());
+    setPocketDeck(createDefaultPocketDeckState());
     setTripDeckCardId(null);
+    setAdminCheckpointId(null);
+    setAdminOpen(false);
     setTripEditorOpen(false);
-    setSeasonOverviewOpen(false);
     setTeachingMoment(null);
   }
 
-  function resetOwnerJourney() {
-    if (sessionIdentity.mode !== "owner") return;
-    const storage = window.localStorage as EnumerableSessionStorage;
-    stopTransientUi();
-    clearAllLocalState(storage);
-    setAdminOpen(false);
-    activateApplicationSession(ownerSession(storage));
-  }
-
-  function startDemoWalkthrough() {
-    const storage = window.localStorage as EnumerableSessionStorage;
-    stopTransientUi();
-    setAdminOpen(false);
-    activateApplicationSession(startDemoSession(storage));
-    queueMicrotask(() => {
-      document.getElementById("rehearsal-surface")?.focus({ preventScroll: true });
-    });
-  }
-
-  function resetActiveDemo() {
-    if (sessionIdentity.mode !== "demo") return;
-    const storage = window.localStorage as EnumerableSessionStorage;
-    const reset = resetDemoSession(storage, sessionIdentity.id);
-    if (!reset) return;
-    stopTransientUi();
-    setAdminOpen(false);
-    activateApplicationSession(reset);
-  }
-
-  function exitActiveDemo() {
-    if (sessionIdentity.mode !== "demo") return;
-    const storage = window.localStorage as EnumerableSessionStorage;
-    stopTransientUi();
-    setAdminOpen(false);
-    activeSessionRef.current = {
-      mode: "owner",
-      id: "owner",
-      generation: sessionIdentity.generation + 1,
-      storage,
-    };
-    exitDemoSession(storage, sessionIdentity.id);
-    activateApplicationSession(ownerSession(storage));
-    queueMicrotask(() => {
-      document.querySelector<HTMLElement>(".topbar .quiet-button")?.focus({ preventScroll: true });
-    });
-  }
-
   function saveTripDetails(profile: TripProfile): boolean {
-    const storage = activeStorage();
-    if (!storage || !saveTripProfile(storage, profile)) return false;
+    if (!saveTripProfile(window.localStorage, profile)) return false;
     setTripProfile(profile);
     setTripEditorOpen(false);
     return true;
@@ -620,16 +328,10 @@ export default function Home() {
       audioRef.current.currentTime = 0;
     }
     setIsPlaying(false);
-    setSeasonOverviewOpen(false);
     setTripEditorOpen(true);
   }
 
   function changeMode(mode: AppMode) {
-    if (sessionIdentity.mode === "demo") {
-      if (mode === "trip") openDemoTripMode();
-      else if (conductor?.activeCheckpointId === "trip") selectAdminCheckpoint("day-30");
-      return;
-    }
     const next = withLifecycleMode(lifecycle, mode);
     if (next === lifecycle) return;
     if (audioRef.current) {
@@ -638,21 +340,15 @@ export default function Home() {
     }
     setIsPlaying(false);
     setTeachingMoment(null);
-    setSeasonOverviewOpen(false);
     setAdminOpen(false);
+    setAdminCheckpointId(null);
     setTripDeckCardId(null);
-    const storage = activeStorage();
-    if (storage) saveLifecycleState(storage, next);
+    saveLifecycleState(window.localStorage, next);
     setLifecycle(next);
   }
 
   function selectAdminCheckpoint(id: AdminFastTrackCheckpointId) {
-    if (sessionIdentity.mode !== "demo" || !conductor) return;
     const checkpoint = adminFastTrackCheckpoint(id);
-    if (id === "trip") {
-      openDemoTripMode();
-      return;
-    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -661,26 +357,20 @@ export default function Home() {
     setInput("");
     setTeachingMoment(null);
     setTripDeckCardId(null);
+    setAdminCheckpointId(id);
     setAdminOpen(false);
 
-    const nextLifecycle = withLifecycleMode(lifecycle, "prepare");
-    const storage = activeStorage();
-    if (storage) {
-      saveLifecycleState(storage, nextLifecycle);
-      clearDemoPreviewReturn(storage);
-    }
+    const nextLifecycle = withLifecycleMode(lifecycle, checkpoint.mode);
+    saveLifecycleState(window.localStorage, nextLifecycle);
     setLifecycle(nextLifecycle);
-    const episodeId = checkpoint.episodeId as EpisodeId;
-    setGame((current) => canonicalPreEpisodeState(current, episodeId));
-    setConductor((current) => current ? updateDemoConductor(current, {
-      activeCheckpointId: episodeId,
-      mode: "prepare",
-      checkpointStatus: checkpointAuditStatus(current, episodeId),
-      previewId: null,
-      visitedCheckpointIds: current.visitedCheckpointIds.includes(episodeId)
-        ? current.visitedCheckpointIds
-        : [...current.visitedCheckpointIds, episodeId],
-    }) : current);
+
+    if (checkpoint.episodeId !== null) {
+      const episodeId = checkpoint.episodeId;
+      setGame((current) => seedEpisodeState(current, episodeId));
+      if (checkpoint.id === "day-04") {
+        setGuidedSession((current) => beginGuidedBeachSession(current));
+      }
+    }
 
     queueMicrotask(() => {
       document.getElementById(
@@ -689,74 +379,7 @@ export default function Home() {
     });
   }
 
-  function playDemoCheckpoint() {
-    if (!conductor || conductor.activeCheckpointId === "trip") return;
-    const episodeId = conductor.activeCheckpointId;
-    stopTransientUi();
-    setGame((current) => canonicalPreEpisodeState(current, episodeId));
-    if (episodeId === "day-04") {
-      setGuidedSession((current) => beginGuidedBeachSession(current));
-    }
-    setConductor((current) => current ? updateDemoConductor(current, {
-      checkpointStatus: "active",
-      previewId: null,
-    }) : current);
-    setAdminOpen(false);
-  }
-
-  function advanceDemoCheckpoint() {
-    if (!conductor || conductor.activeCheckpointId === "trip") return;
-    const episodeId = conductor.activeCheckpointId;
-    const result = advanceWithCanonicalResult(game, episodeId);
-    setGame(result.state);
-    setConductor((current) => current ? updateDemoConductor(current, {
-      checkpointStatus: "simulated",
-      previewId: null,
-      advancedCanonically: current.advancedCanonically.includes(episodeId)
-        ? current.advancedCanonically
-        : [...current.advancedCanonically, episodeId],
-    }) : current);
-    setAdminOpen(false);
-  }
-
-  function previousDemoCheckpoint() {
-    if (!conductor) return;
-    const currentIndex = conductor.activeCheckpointId === "trip"
-      ? EPISODE_IDS.length
-      : EPISODE_IDS.indexOf(conductor.activeCheckpointId);
-    const previous = EPISODE_IDS[Math.max(0, currentIndex - 1)];
-    if (previous) selectAdminCheckpoint(previous);
-  }
-
-  function nextDemoCheckpoint() {
-    if (!conductor || conductor.activeCheckpointId === "trip") return;
-    if (conductor.checkpointStatus !== "resolved" && conductor.checkpointStatus !== "simulated") return;
-    const index = EPISODE_IDS.indexOf(conductor.activeCheckpointId);
-    const next = EPISODE_IDS[index + 1];
-    if (next) selectAdminCheckpoint(next);
-  }
-
-  function openDemoTripMode() {
-    if (!conductor || !canOpenDemoTripMode(game)) return;
-    const storage = activeStorage();
-    const nextLifecycle = withLifecycleMode(lifecycle, "trip");
-    if (storage) saveLifecycleState(storage, nextLifecycle);
-    stopTransientUi();
-    setLifecycle(nextLifecycle);
-    setConductor((current) => current ? updateDemoConductor(current, {
-      activeCheckpointId: "trip",
-      mode: "trip",
-      checkpointStatus: "resolved",
-      previewId: null,
-      visitedCheckpointIds: current.visitedCheckpointIds.includes("trip")
-        ? current.visitedCheckpointIds
-        : [...current.visitedCheckpointIds, "trip"],
-    }) : current);
-    setAdminOpen(false);
-  }
-
   function selectAdminTruthPreview(id: AdminTruthPreviewId) {
-    if (sessionIdentity.mode !== "demo" || !conductor) return;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -767,13 +390,12 @@ export default function Home() {
     setTripDeckCardId(null);
     setAdminOpen(false);
 
-    const storage = activeStorage();
-    if (!storage || !saveDemoPreviewReturn(storage, game, lifecycle)) return;
+    const episodeId = id.startsWith("day-19") ? "day-19" : "day-21";
+    setAdminCheckpointId(episodeId);
     const nextLifecycle = withLifecycleMode(lifecycle, "prepare");
-    saveLifecycleState(storage, nextLifecycle);
+    saveLifecycleState(window.localStorage, nextLifecycle);
     setLifecycle(nextLifecycle);
     setGame((current) => seedAdminTruthPreview(current, id));
-    setConductor((current) => current ? updateDemoConductor(current, { previewId: id }) : current);
 
     queueMicrotask(() => {
       document.getElementById("rehearsal-surface")?.scrollIntoView({
@@ -781,21 +403,6 @@ export default function Home() {
         block: "start",
       });
     });
-  }
-
-  function returnFromTruthPreview() {
-    if (!conductor?.previewId) return;
-    const storage = activeStorage();
-    const saved = storage ? loadDemoPreviewReturn(storage) : null;
-    if (saved) {
-      setGame(saved.game);
-      setLifecycle(saved.lifecycle);
-    } else if (conductor.activeCheckpointId !== "trip") {
-      setGame((current) => canonicalPreEpisodeState(current, conductor.activeCheckpointId as EpisodeId));
-      setLifecycle(createDefaultLifecycleState());
-    }
-    if (storage) clearDemoPreviewReturn(storage);
-    setConductor((current) => current ? updateDemoConductor(current, { previewId: null }) : current);
   }
 
   function startBeachFocus() {
@@ -817,25 +424,7 @@ export default function Home() {
     });
   }
 
-  function selectSeasonEpisode(episodeId: GameState["episodeId"]) {
-    if (sessionIdentity.mode === "demo") {
-      setSeasonOverviewOpen(false);
-      selectAdminCheckpoint(episodeId);
-      return;
-    }
-    if (episodeId === "day-04") {
-      setSeasonOverviewOpen(false);
-      startBeachFocus();
-      return;
-    }
-    seedEpisode(episodeId);
-  }
-
   function practiceBeachAgain() {
-    if (sessionIdentity.mode === "demo") {
-      playDemoCheckpoint();
-      return;
-    }
     setGuidedSession((current) => beginGuidedBeachSession(current));
     setGame((current) => seedEpisodeState(current, "day-04"));
     setInput("");
@@ -875,14 +464,8 @@ export default function Home() {
         CORE_POCKET_DECK_CARD_IDS,
       ),
     );
-    if (sessionIdentity.mode === "demo") {
-      setTripDeckCardId(guidedHandoff.cardId);
-      openDemoTripMode();
-      return;
-    }
     const nextLifecycle = withLifecycleMode(lifecycle, "trip");
-    const storage = activeStorage();
-    if (storage) saveLifecycleState(storage, nextLifecycle);
+    saveLifecycleState(window.localStorage, nextLifecycle);
     setLifecycle(nextLifecycle);
     setTripDeckCardId(guidedHandoff.cardId);
   }
@@ -895,14 +478,8 @@ export default function Home() {
   function openEpisodeHandoffInTripMode() {
     if (!episodeHandoff) return;
     carryEpisodeHandoffToDeck();
-    if (sessionIdentity.mode === "demo") {
-      setTripDeckCardId(episodeHandoff.cardId);
-      openDemoTripMode();
-      return;
-    }
     const nextLifecycle = withLifecycleMode(lifecycle, "trip");
-    const storage = activeStorage();
-    if (storage) saveLifecycleState(storage, nextLifecycle);
+    saveLifecycleState(window.localStorage, nextLifecycle);
     setLifecycle(nextLifecycle);
     setTripDeckCardId(episodeHandoff.cardId);
   }
@@ -912,9 +489,6 @@ export default function Home() {
     source: TeachingMoment["source"] = "toolkit",
     original: string | null = null,
   ) {
-    teachingTriggerRef.current = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : responseRef.current;
     setTeachingMoment({ phraseId, source, original });
     if (scene.id === "beach") {
       setGuidedSession((current) => recordGuidedRefresherOpened(current, phraseId));
@@ -923,25 +497,24 @@ export default function Home() {
     }
   }
 
-  function closeTeachingMoment() {
-    setTeachingMoment(null);
-    queueMicrotask(() => teachingTriggerRef.current?.focus());
-  }
-
-  function openSeasonOverview() {
-    seasonOverviewTriggerRef.current = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
-    setSeasonOverviewOpen(true);
-  }
-
-  function closeSeasonOverview() {
-    setSeasonOverviewOpen(false);
-    queueMicrotask(() => seasonOverviewTriggerRef.current?.focus());
-  }
-
   function recordPhrasePractice(phraseId: PhraseId) {
     setGame((current) => recordPhrasePracticeState(current, phraseId));
+  }
+
+  function useLessonExample() {
+    if (!teachingMoment) return;
+    const example = phraseExampleFor(teachingMoment.phraseId, scene.id, game.episodeId);
+    recordPhrasePractice(teachingMoment.phraseId);
+    if (scene.id === "beach") {
+      setGuidedSession((current) =>
+        applyInsertedGuidedRefresher(current, teachingMoment.phraseId),
+      );
+    } else {
+      setGame((current) => recordEpisodeRefresher(current, "inserted"));
+    }
+    setInput(example.italian);
+    setTeachingMoment(null);
+    queueMicrotask(() => responseRef.current?.focus());
   }
 
   function practiceLessonFromScratch() {
@@ -959,6 +532,8 @@ export default function Home() {
     queueMicrotask(() => responseRef.current?.focus());
   }
 
+  const suggestions = useMemo(() => [...scene.suggestions], [scene]);
+
   const displayedSupport =
     guidedSession.status === "in_progress" && scene.id === "beach"
       ? {
@@ -974,11 +549,6 @@ export default function Home() {
     0,
   );
   const defaultHelpPhrase = fallbackPhraseForContext(scene.id, game.turnId, game.episodeId);
-  const relevantPhraseIds = [...new Set<PhraseId>([
-    defaultHelpPhrase,
-    "understand",
-    "decline",
-  ])];
   const activeLesson = teachingMoment ? PHRASE_BY_ID[teachingMoment.phraseId] : null;
   const activeExample = teachingMoment
     ? phraseExampleFor(teachingMoment.phraseId, scene.id, game.episodeId)
@@ -1003,29 +573,52 @@ export default function Home() {
   }
 
   const isPrepareMode = lifecycle.mode === "prepare";
-  const activeDemoCheckpoint = conductor
-    ? adminFastTrackCheckpoint(conductor.activeCheckpointId)
+  const inferredAdminCheckpoint = inferAdminFastTrackCheckpoint(
+    lifecycle.mode,
+    game.episodeId,
+  );
+  const activeAdminCheckpoint = adminCheckpointId
+    ? adminFastTrackCheckpoint(adminCheckpointId)
     : null;
-  const adminPreviewToday = activeDemoCheckpoint
+  const nextAdminCheckpoint = nextAdminFastTrackCheckpoint(
+    adminCheckpointId ?? inferredAdminCheckpoint.id,
+  );
+  const adminPreviewToday = activeAdminCheckpoint
     ? adminPreviewDate(
         tripProfile.departureDate,
-        activeDemoCheckpoint.daysUntilDeparture,
+        activeAdminCheckpoint.daysUntilDeparture,
       ) ?? undefined
     : undefined;
   const showGuidedReview =
     guidedSession.status === "complete" && game.episodeId === "day-04";
   const showGuidedProgress =
     guidedSession.status === "in_progress" && game.episodeId === "day-04";
+  const recommended = recommendedEpisode(tripProfile, game.completed, adminPreviewToday);
   const currentDay = EPISODE_BY_ID.get(game.episodeId)?.day ?? 0;
   const nextAvailableEpisode = scheduleSeason(
     tripProfile,
     game.completed,
     adminPreviewToday,
-    sessionIdentity.mode === "demo",
+    Boolean(activeAdminCheckpoint),
   ).find((episode) => episode.playable && !episode.completed && episode.day > currentDay);
   const nextAvailableScene = nextAvailableEpisode
     ? sceneForEpisode(nextAvailableEpisode.id)
     : null;
+  const focusedEpisode =
+    (activeAdminCheckpoint && activeAdminCheckpoint.id !== "trip"
+      ? EPISODE_BY_ID.get(activeAdminCheckpoint.id)
+      : null)
+    ?? recommended
+    ?? EPISODE_BY_ID.get(game.episodeId)!;
+
+  function startFocusedEpisode() {
+    if (focusedEpisode.id === "day-04") {
+      startBeachFocus();
+      return;
+    }
+    seedEpisode(focusedEpisode.id);
+    queueMicrotask(() => document.getElementById("rehearsal-surface")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
 
   return (
     <main className={`app-shell ${isPrepareMode ? "prepare-app-shell" : "trip-app-shell"}`}>
@@ -1035,6 +628,19 @@ export default function Home() {
         onPause={() => setIsPlaying(false)}
         onEnded={() => {
           setIsPlaying(false);
+          const resolved = finishPendingOutcome(game);
+          setGame(resolved);
+          if (
+            guidedSession.status === "in_progress" &&
+            resolved.episodeId === "day-04" &&
+            resolved.status === "resolved" &&
+            isBeachOutcomeId(resolved.outcome?.id)
+          ) {
+            const beachOutcome = resolved.outcome?.id;
+            if (isBeachOutcomeId(beachOutcome)) {
+              setGuidedSession((current) => completeGuidedBeachSession(current, beachOutcome));
+            }
+          }
         }}
       />
 
@@ -1044,33 +650,44 @@ export default function Home() {
       />
       <ModeNavigation mode={lifecycle.mode} onChange={changeMode} />
 
-      {conductor && activeDemoCheckpoint && (
-        <DemoModeBanner
-          conductor={conductor}
-          checkpoint={activeDemoCheckpoint}
-          onOpenConductor={() => setAdminOpen(true)}
-          onExit={exitActiveDemo}
-          onReturnFromPreview={returnFromTruthPreview}
-        />
+      {activeAdminCheckpoint && (
+        <section className="admin-preview-banner" aria-label="Admin fast-track checkpoint">
+          <div>
+            <span>Admin fast-track · {activeAdminCheckpoint.eyebrow}</span>
+            <strong>{activeAdminCheckpoint.title}</strong>
+            <p>Calendar preview only. Your saved departure date has not changed.</p>
+          </div>
+          <div>
+            {nextAdminCheckpoint && (
+              <button type="button" onClick={() => selectAdminCheckpoint(nextAdminCheckpoint.id)}>
+                Next: {nextAdminCheckpoint.title} <span aria-hidden="true">→</span>
+              </button>
+            )}
+            <button type="button" onClick={() => setAdminOpen(true)}>All checkpoints</button>
+            <button type="button" onClick={() => setAdminCheckpointId(null)}>Use live date</button>
+          </div>
+        </section>
       )}
 
       {isPrepareMode ? (
         <>
-          {showGuidedReview && (
+          <PrepareFocus
+            profile={tripProfile}
+            episode={focusedEpisode}
+            isCurrent={game.episodeId === focusedEpisode.id}
+            sessionStatus={guidedSession.status}
+            onStart={startFocusedEpisode}
+            onEditTrip={openTripEditor}
+            today={adminPreviewToday}
+          />
+
+          {guidedSession.status === "complete" && (
             <GuidedSessionReview
               session={guidedSession}
-              game={game}
-              scene={scene}
-              nextScene={nextAvailableScene}
               handoff={guidedHandoff}
               handoffApplied={guidedHandoffApplied}
               onCarryToDeck={carryGuidedHandoffToDeck}
               onOpenInTripMode={openGuidedHandoffInTripMode}
-              tripModeAvailable={sessionIdentity.mode === "owner" || canOpenDemoTripMode(game)}
-              onNext={() => sessionIdentity.mode === "demo"
-                ? nextDemoCheckpoint()
-                : setGame((current) => nextEpisodeState(current))}
-              onReview={openSeasonOverview}
               onPracticeAgain={practiceBeachAgain}
             />
           )}
@@ -1080,16 +697,16 @@ export default function Home() {
               {showGuidedProgress ? (
                 <GuidedSessionProgress status={guidedSession.status} />
               ) : (
-                <CompactSessionProgress
+                <DayRail
                   game={game}
                   profile={tripProfile}
                   today={adminPreviewToday}
-                  adminBypass={sessionIdentity.mode === "demo"}
-                  onBrowse={openSeasonOverview}
+                  adminBypass={Boolean(activeAdminCheckpoint)}
+                  onSelect={seedEpisode}
                 />
               )}
 
-              <div className={`content-grid ${game.status !== "active" ? "resolved" : ""}`}>
+              <div className="content-grid">
                 <section className="story-panel">
                   <SceneIntroduction scene={scene} status={game.status} />
 
@@ -1100,24 +717,11 @@ export default function Home() {
                       scene={scene}
                       game={game}
                       isPlaying={isPlaying}
-                      interactionPhase={interactionPhase}
-                      audioFailed={interaction.audioFailed && interaction.turnKey === currentTurnKey}
+                      hasPlayed={hasPlayed}
                       transcriptVisible={transcriptVisible}
                       onPlay={playAudio}
                       onRevealTranscript={revealTranscript}
                     />
-
-                    {(interactionPhase === "ready_to_respond" || interactionPhase === "submitting") && (
-                      <ResponseComposer
-                        responseRef={responseRef}
-                        input={input}
-                        interactionPhase={interactionPhase}
-                        teachingOpen={Boolean(teachingMoment)}
-                        onInput={setInput}
-                        onSubmit={submitResponse}
-                        onTeach={() => openTeachingMoment(defaultHelpPhrase, "help")}
-                      />
-                    )}
 
                     {teachingMoment && activeLesson && activeExample && (
                       <TeachingCard
@@ -1125,11 +729,23 @@ export default function Home() {
                         lesson={activeLesson}
                         example={activeExample}
                         npc={scene.npc}
-                        closeRef={teachingCloseRef}
-                        onClose={closeTeachingMoment}
+                        hasPlayed={hasPlayed}
+                        onClose={() => setTeachingMoment(null)}
+                        onUse={useLessonExample}
                         onBuild={practiceLessonFromScratch}
                       />
                     )}
+
+                    <ResponseComposer
+                      responseRef={responseRef}
+                      input={input}
+                      hasPlayed={hasPlayed}
+                      teachingOpen={Boolean(teachingMoment)}
+                      suggestions={suggestions}
+                      onInput={setInput}
+                      onSubmit={submitResponse}
+                      onTeach={() => openTeachingMoment(defaultHelpPhrase, "help")}
+                    />
                   </>
                 ) : (
                   <OutcomeCard
@@ -1137,36 +753,28 @@ export default function Home() {
                     nextScene={nextAvailableScene}
                     showNatural={showNatural}
                     onToggleNatural={() => setShowNatural((value) => !value)}
-                    onNext={() => sessionIdentity.mode === "demo"
-                      ? nextDemoCheckpoint()
-                      : setGame((current) => nextEpisodeState(current))}
-                    onReview={openSeasonOverview}
+                    onNext={() => setGame((current) => nextEpisodeState(current))}
+                    onReview={() => setAdminOpen(true)}
                     onRestart={restartScene}
                     handoff={episodeHandoff}
                     handoffApplied={episodeHandoffApplied}
                     onCarryToDeck={carryEpisodeHandoffToDeck}
-                    onOpenInTripMode={sessionIdentity.mode === "owner" || canOpenDemoTripMode(game)
-                      ? openEpisodeHandoffInTripMode
-                      : undefined}
+                    onOpenInTripMode={openEpisodeHandoffInTripMode}
                     onOpenTripMode={() => changeMode("trip")}
                   />
                 )}
                 </section>
 
-                {game.status === "active" && (
-                  <WorldPanel
-                    key={currentTurnKey}
-                    game={game}
-                    scene={scene}
-                    possessions={possessions}
-                    support={displayedSupport}
-                    totalSupport={totalSupport}
-                    totalPhraseRefreshers={totalPhraseRefreshers}
-                    activePhraseId={teachingMoment?.phraseId ?? null}
-                    relevantPhraseIds={relevantPhraseIds}
-                    onOpenPhrase={(phraseId) => openTeachingMoment(phraseId)}
-                  />
-                )}
+                <WorldPanel
+                  game={game}
+                  scene={scene}
+                  possessions={possessions}
+                  support={displayedSupport}
+                  totalSupport={totalSupport}
+                  totalPhraseRefreshers={totalPhraseRefreshers}
+                  activePhraseId={teachingMoment?.phraseId ?? null}
+                  onOpenPhrase={(phraseId) => openTeachingMoment(phraseId)}
+                />
               </div>
             </section>
           )}
@@ -1181,7 +789,6 @@ export default function Home() {
           <PocketDeck
             profile={tripProfile}
             state={pocketDeck}
-            demoMode={sessionIdentity.mode === "demo"}
             offlineReadiness={offlineReadiness}
             onStateChange={setPocketDeck}
             onEditTrip={openTripEditor}
@@ -1195,38 +802,18 @@ export default function Home() {
         </>
       )}
 
-      {seasonOverviewOpen && isPrepareMode && (
-        <SeasonOverview
-          game={game}
-          profile={tripProfile}
-          today={adminPreviewToday}
-          adminBypass={sessionIdentity.mode === "demo"}
-          closeRef={seasonOverviewCloseRef}
-          onClose={closeSeasonOverview}
-          onEditTrip={openTripEditor}
-          onSelect={selectSeasonEpisode}
-        />
-      )}
-
       {adminOpen && (
         <AdminModal
           game={game}
           profile={tripProfile}
-          sessionMode={sessionIdentity.mode}
-          conductor={conductor}
-          canOpenTripMode={canOpenDemoTripMode(game)}
+          activeCheckpointId={adminCheckpointId}
+          nextCheckpointId={nextAdminCheckpoint?.id ?? null}
           onClose={() => setAdminOpen(false)}
-          onStartDemo={startDemoWalkthrough}
           onSelectCheckpoint={selectAdminCheckpoint}
           onSelectTruthPreview={selectAdminTruthPreview}
-          onPreviousCheckpoint={previousDemoCheckpoint}
-          onPlayCheckpoint={playDemoCheckpoint}
-          onAdvanceCanonical={advanceDemoCheckpoint}
-          onNextCheckpoint={nextDemoCheckpoint}
-          onOpenTripMode={openDemoTripMode}
-          onExitDemo={exitActiveDemo}
-          onResetDemo={resetActiveDemo}
-          onResetOwner={resetOwnerJourney}
+          onRestart={restartScene}
+          onUseLiveDate={() => setAdminCheckpointId(null)}
+          onReset={resetAll}
         />
       )}
 

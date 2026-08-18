@@ -27,7 +27,6 @@ export const day06Episode: EpisodeDefinition = {
     }
     if (state.turnId === "d06_02_stop") {
       if (exit || any(normalized, ["non compro", "not buy", "piu tardi"])) return runtime.resolveOutcome(state, "D06-O2", { routeFact, knownFacts: [...new Set([...state.knownFacts, routeFact])] }, null, createId);
-      if (any(normalized, ["solo andata", "one way"])) return runtime.moveToTurn(state, state.turnId, {}, "One-way is confirmed. Ask where the stop is, or pay to finish.", createId);
       if (any(normalized, ["fermata", "stop", "piazza", "square", "dove", "di fronte"]) || any(normalized, PAY) || anyWholePhrase(normalized, YES)) return runtime.queueTerminal(state, "d06_03_close", "D06-O1", {
         money: state.money - 240, busTicket: true, routeFact,
         inventory: [...new Set([...state.inventory, "One-way Amalfi bus ticket"])], knownFacts: [...new Set([...state.knownFacts, routeFact])],

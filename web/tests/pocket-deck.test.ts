@@ -59,7 +59,6 @@ function practiceEvidence(attempt = 3): PocketDeckPracticeEvidence {
     refresherMethod: "inserted",
     quantityClarified: true,
     priceConfirmed: true,
-    preferenceSelected: null,
     normalReplayCount: 1,
     carefulReplayCount: 2,
     transcriptRevealCount: 1,
@@ -171,7 +170,7 @@ test("pins are idempotent and recent cards are ordered, deduplicated, and capped
   assert.equal(new Set(state.recentCardIds).size, state.recentCardIds.length);
 });
 
-test("v1 through v3 deck state migrate into the v4 practice domain", () => {
+test("v1 and v2 deck state migrate into the v3 practice domain", () => {
   const repaired = normalizePocketDeckState({
     schemaVersion: 1,
     pinnedCardIds: ["pay-by-card", "unknown", "pay-by-card", 4],
@@ -183,22 +182,12 @@ test("v1 through v3 deck state migrate into the v4 practice domain", () => {
 
   assert.deepEqual(repaired.pinnedCardIds, ["pay-by-card"]);
   assert.equal(repaired.recentCardIds.length, POCKET_DECK_RECENT_LIMIT);
-  assert.equal(repaired.schemaVersion, 4);
+  assert.equal(repaired.schemaVersion, 3);
   assert.deepEqual(repaired.practiceEvidenceByCardId, {});
   assert.deepEqual(
     normalizePocketDeckState({ schemaVersion: 2 }, CORE_POCKET_DECK_CARD_IDS),
     createDefaultPocketDeckState(),
   );
-  const legacyEvidence = practiceEvidence();
-  const migratedV3 = normalizePocketDeckState({
-    schemaVersion: 3,
-    practiceEvidenceByCardId: {
-      [legacyEvidence.cardId]: [{ ...legacyEvidence, preferenceSelected: undefined }],
-    },
-  }, CORE_POCKET_DECK_CARD_IDS);
-  assert.equal(migratedV3.schemaVersion, 4);
-  assert.equal(migratedV3.practiceEvidenceByCardId[legacyEvidence.cardId][0].preferenceSelected, null);
-  assert.equal(migratedV3.practiceEvidenceByCardId[legacyEvidence.cardId][0].outcomeId, legacyEvidence.outcomeId);
   assert.deepEqual(
     normalizePocketDeckState([], CORE_POCKET_DECK_CARD_IDS),
     createDefaultPocketDeckState(),

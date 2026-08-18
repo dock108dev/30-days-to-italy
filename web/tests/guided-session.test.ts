@@ -29,7 +29,6 @@ import {
 } from "../app/guided/persistence";
 import { createGuidedBeachHandoff } from "../app/guided/pocket-deck-handoff";
 import { PrototypeHeader } from "../app/prototype/PrototypeViews";
-import { sceneForEpisode } from "../app/season/registry";
 
 
 function memoryStorage() {
@@ -46,20 +45,6 @@ function advance(state: GameState, response: string): GameState {
   const result = applyResponse(state, response, () => `guided-${state.history.length + 1}`);
   assert.equal(result.kind, "advanced");
   return result.state;
-}
-
-function guidedReviewContext(game: GameState) {
-  const scene = sceneForEpisode("day-04");
-  const nextScene = sceneForEpisode("day-05");
-  assert.ok(scene);
-  assert.ok(nextScene);
-  return {
-    game,
-    scene,
-    nextScene,
-    onNext: () => undefined,
-    onReview: () => undefined,
-  };
 }
 
 test("guided sessions start fresh while retaining an attempt count", () => {
@@ -219,7 +204,6 @@ test("review offers a truthful Pocket Deck handoff after the request was practic
   assert.ok(handoff);
   const html = renderToStaticMarkup(
     createElement(GuidedSessionReview, {
-      ...guidedReviewContext(after),
       session,
       handoff,
       handoffApplied: false,
@@ -230,7 +214,7 @@ test("review offers a truthful Pocket Deck handoff after the request was practic
   );
 
   assert.match(html, /You handled the beach/);
-  assert.match(html, /One chair and one umbrella are yours for the day/);
+  assert.match(html, /Exactly what you wanted/);
   assert.match(html, /−€22.00/);
   assert.match(html, /Mi servono un lettino e un ombrellone/);
   assert.match(html, /using the suggested reply/);
@@ -256,7 +240,6 @@ test("an applied handoff changes the review action without adding a second claim
 
   const html = renderToStaticMarkup(
     createElement(GuidedSessionReview, {
-      ...guidedReviewContext(after),
       session,
       handoff,
       handoffApplied: true,
@@ -279,7 +262,6 @@ test("an early-exit review does not invent request or deck evidence", () => {
   assert.equal(handoff, null);
   const html = renderToStaticMarkup(
     createElement(GuidedSessionReview, {
-      ...guidedReviewContext(seedEpisodeState(initialState(), "day-04")),
       session,
       handoff,
       handoffApplied: false,
@@ -289,7 +271,7 @@ test("an early-exit review does not invent request or deck evidence", () => {
     }),
   );
 
-  assert.match(html, /You declined the available options and kept your money/);
+  assert.match(html, /No rental/);
   assert.match(html, /did not practice the Mi servono request/);
   assert.match(html, /Practice the beach request before anything is carried/);
   assert.doesNotMatch(html, /You formed the request|This language is ready for your Pocket Deck/);

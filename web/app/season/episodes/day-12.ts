@@ -32,17 +32,17 @@ export const day12Episode: EpisodeDefinition = {
     const exit = any(normalized, EXIT) || any(normalized, ["niente", "nothing"]);
     if (exit) return runtime.queueTerminal(state, "d12_05_exit", "D12-O3", { rental: null }, createId);
     if (state.turnId === "d12_01_unavailable") {
-      if (any(normalized, ["alternativa", "alternative", "altra", "altro", "opzione", "else", "ombra", "shade"])) return runtime.moveToTurn(state, "d12_02_options", {}, undefined, createId);
+      if (any(normalized, ["alternativa", "alternative", "altro", "else", "ombra", "shade"])) return runtime.moveToTurn(state, "d12_02_options", {}, undefined, createId);
       return runtime.moveToTurn(state, "d12_01_unavailable", {}, "There are no umbrellas. Ask for a real alternative or leave.", createId);
     }
     if (state.turnId === "d12_02_options") {
-      if (any(normalized, ["cabina", "cabana", "diciotto", "eighteen"])) {
-        if (state.money < 1800) return runtime.queueTerminal(state, "d12_06_funds", "D12-O4", { rental: null }, createId);
-        return runtime.queueTerminal(state, "d12_04_cabana", "D12-O2", { money: state.money - 1800, rental: "standard", currentLocation: metadata.location, currentTime: "10:20" }, createId);
-      }
       if (any(normalized, ["pergolato", "shade", "ombra", "otto", "eight"])) {
         if (state.money < 800) return runtime.queueTerminal(state, "d12_06_funds", "D12-O4", { rental: null }, createId);
         return runtime.queueTerminal(state, "d12_03_shade", "D12-O1", { money: state.money - 800, rental: "chair", currentLocation: metadata.location, currentTime: "10:20", knownFacts: addFact(state.knownFacts, "Lido alternative: shaded chair under pergola, no umbrella, €8") }, createId);
+      }
+      if (any(normalized, ["cabina", "cabana", "diciotto", "eighteen"])) {
+        if (state.money < 1800) return runtime.queueTerminal(state, "d12_06_funds", "D12-O4", { rental: null }, createId);
+        return runtime.queueTerminal(state, "d12_04_cabana", "D12-O2", { money: state.money - 1800, rental: "standard", currentLocation: metadata.location, currentTime: "10:20" }, createId);
       }
       return runtime.moveToTurn(state, "d12_02_options", {}, "Choose the €8 shade, the €18 cabana, or leave. No umbrella is available.", createId);
     }

@@ -84,25 +84,6 @@ test("Days 8 through 21 form one canonical world-state run ending at €9.20", (
   assert.equal(game.completed.length, 22);
 });
 
-test("asking the Day 9 ferry price does not purchase a ticket", () => {
-  const createId = ids();
-  let game = seedEpisodeState(initialState(), "day-09");
-  const startingMoney = game.money;
-  game = respond(game, "Quanto tempo ci vuole?", createId);
-  assert.equal(game.turnId, "d09_02_options");
-
-  game = respond(game, "Quanto costa il traghetto?", createId);
-  assert.equal(game.status, "active");
-  assert.equal(game.turnId, "d09_02_options");
-  assert.equal(game.money, startingMoney);
-  assert.equal(game.transportStatus, "none");
-  assert.match(game.guidance ?? "", /Nothing has been booked/);
-
-  game = finish(respond(game, "Prendo il traghetto delle nove e trenta.", createId), createId);
-  assert.equal(game.outcome?.id, "D09-O1");
-  assert.equal(game.money, startingMoney - 1000);
-});
-
 test("a cancellation cannot refund a ferry ticket the world does not own", () => {
   const createId = ids();
   let game = seedEpisodeState(initialState(), "day-19");
@@ -153,14 +134,14 @@ test("English requests open authored refreshers without mutating the conversatio
   }
 });
 
-test("v3 saves gain bounded v6 world defaults and malformed legacy fields fail closed", () => {
+test("v3 saves gain bounded v5 world defaults and malformed legacy fields fail closed", () => {
   const migrated = hydrateGameState({ schemaVersion: 3, episodeId: "day-08", turnId: "d08_01_help", status: "active" });
-  assert.equal(migrated.schemaVersion, 6);
+  assert.equal(migrated.schemaVersion, 5);
   assert.equal(migrated.transportStatus, "none");
   assert.equal(migrated.hotWaterStatus, "unknown");
   const repaired = hydrateGameState({
     ...migrated,
-    schemaVersion: 6,
+    schemaVersion: 5,
     money: -500,
     transportStatus: "free-refund",
     transportTicketPrice: -1000,

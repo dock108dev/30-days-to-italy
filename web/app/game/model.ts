@@ -140,7 +140,7 @@ export type EpisodeRefresherEvidence = {
   method: "inserted" | "rebuilt" | null;
 };
 export type GameState = {
-  schemaVersion: 6;
+  schemaVersion: 5;
   episodeId: EpisodeId;
   turnId: string;
   status: "active" | "resolved" | "complete";
@@ -192,7 +192,6 @@ export type GameState = {
   completed: EpisodeId[];
   outcome: Outcome | null;
   feedback: Feedback;
-  guidance: string | null;
   history: HistoryItem[];
   support: Record<string, SupportRecord>;
   phrasePractice: Record<PhraseId, number>;
@@ -605,7 +604,7 @@ export function detectTeachingPhrase(response: string, sceneId: SceneId, turnId:
   if (any(value, ["i would like", "i d like", "id like", "i want", "quiero"])) return "would_like";
   if (any(value, ["i need", "need a", "need one", "necesito"])) return "need";
   if (/\b(i am|i m|im|soy|estoy)\b/.test(value)) return "am";
-  if (/\b(i have|i ve|ive)\b/.test(value)) return "have";
+  if (/\b(i have|i ve|ive|tengo)\b/.test(value)) return "have";
   if (any(value, ["can i", "could i", "can you", "could you", "puedo"])) return "can";
   if (any(value, ["where is", "where s", "wheres", "donde"])) return "where";
   if (any(value, ["how much", "what does it cost", "cuanto cuesta"])) return "cost";
@@ -691,7 +690,7 @@ export function initialSupport(): Record<string, SupportRecord> {
 
 export function initialState(): GameState {
   return {
-    schemaVersion: 6,
+    schemaVersion: 5,
     episodeId: SCENES[0].episodeId,
     turnId: SCENES[0].firstTurn,
     status: "active",
@@ -743,7 +742,6 @@ export function initialState(): GameState {
     completed: [],
     outcome: null,
     feedback: null,
-    guidance: null,
     history: [],
     support: initialSupport(),
     phrasePractice: initialPhrasePractice(),

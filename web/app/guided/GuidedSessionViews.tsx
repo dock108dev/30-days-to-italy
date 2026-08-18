@@ -1,4 +1,4 @@
-import { OUTCOMES, type GameState, type Scene } from "../game/model";
+import { OUTCOMES } from "../game/model";
 import type { PocketDeckPracticeEvidence } from "../pocket-deck/model";
 import type { GuidedBeachSession } from "./model";
 
@@ -28,7 +28,6 @@ const LANGUAGE = {
     english: "I don’t understand. One or two chairs?",
   },
   confirm: { italian: "Sì, va bene. Con la carta.", english: "Yes, that’s fine. By card." },
-  decline: { italian: "No, grazie. Non mi serve.", english: "No, thank you. I don’t need it." },
 } as const;
 
 function recoverySummary(session: GuidedBeachSession): string {
@@ -43,37 +42,23 @@ function recoverySummary(session: GuidedBeachSession): string {
 
 export function GuidedSessionReview({
   session,
-  game,
-  scene,
-  nextScene,
   handoff,
   handoffApplied,
   onCarryToDeck,
   onOpenInTripMode,
-  tripModeAvailable = true,
-  onNext,
-  onReview,
   onPracticeAgain,
 }: {
   session: GuidedBeachSession;
-  game: GameState;
-  scene: Scene;
-  nextScene: Scene | null;
   handoff: PocketDeckPracticeEvidence | null;
   handoffApplied: boolean;
   onCarryToDeck: () => void;
   onOpenInTripMode: () => void;
-  tripModeAvailable?: boolean;
-  onNext: () => void;
-  onReview: () => void;
   onPracticeAgain: () => void;
 }) {
   const outcome = session.outcomeId ? OUTCOMES[session.outcomeId] : null;
   const practiced = session.practicedMoves.map((move) => LANGUAGE[move]);
-  const usefulPhrase = practiced[0] ?? LANGUAGE.decline;
   const supportUsed =
     session.normalReplayCount + session.carefulReplayCount + session.transcriptRevealCount;
-  const deckState = handoff ? handoffApplied ? "strengthened" : "available" : "none";
 
   return (
     <section id="guided-session-review" className="guided-review" aria-labelledby="guided-review-title">
@@ -86,27 +71,29 @@ export function GuidedSessionReview({
         <span>Saved locally</span>
       </div>
 
-      <section className="review-section objective-result guided-outcome" data-review-section="objective-result">
-        <span className="review-number">1</span>
-        <div>
-          <p>Objective and practical result</p>
-          <strong>{scene.objective}</strong>
-          <span>{outcome?.detail ?? "The beach situation reached a bounded result."}</span>
-        </div>
-      </section>
+      <div className="guided-review-grid">
+        <article className="guided-outcome">
+          <span>Practical outcome</span>
+          <h3>{outcome?.title ?? "Beach rehearsal complete"}</h3>
+          <p>{outcome?.detail ?? "The beach situation reached a bounded result."}</p>
+          <strong>{outcome?.consequence}</strong>
+        </article>
 
-      <section className="review-section useful-phrasing guided-language" data-review-section="useful-phrasing">
-        <span className="review-number">2</span>
-        <div>
+        <p className="guided-recovery">{recoverySummary(session)}</p>
+      </div>
+
+      <div className="guided-language">
         <div className="guided-section-heading">
-          <div><p>One useful phrasing</p><h3 lang="it">{usefulPhrase.italian}</h3></div>
+          <div><span>Worth keeping</span><h3>Your useful Italian</h3></div>
         </div>
         <div className="guided-language-list">
-          {practiced.slice(1, 3).map((phrase) => (
+          {practiced.length > 0 ? practiced.slice(0, 3).map((phrase) => (
             <div key={phrase.italian}>
               <strong lang="it">{phrase.italian}</strong><p>{phrase.english}</p>
             </div>
-          ))}
+          )) : (
+            <div><strong lang="it">{LANGUAGE.request.italian}</strong><p>{LANGUAGE.request.english}</p></div>
+          )}
         </div>
         {(practiced.length > 3 || !session.practicedMoves.includes("price") || !session.practicedMoves.includes("recovery")) && (
           <details className="guided-more-language">
@@ -124,11 +111,9 @@ export function GuidedSessionReview({
             </div>
           </details>
         )}
-        </div>
-      </section>
+      </div>
 
-      <section className="review-section pocket-deck-effect guided-deck-ready" data-review-section="pocket-deck-effect" data-pocket-deck-state={deckState}>
-        <span className="review-number">3</span>
+      <div className="guided-deck-ready">
         {handoff && handoffApplied ? (
           <>
             <div>
@@ -137,13 +122,9 @@ export function GuidedSessionReview({
             </div>
             <div className="guided-deck-action-copy">
               <p>This attempt now strengthens the existing beach card on this device.</p>
-              {tripModeAvailable ? (
-                <button type="button" onClick={onOpenInTripMode}>
-                  Open in Trip Mode <span aria-hidden="true">→</span>
-                </button>
-              ) : (
-                <small>Demo Trip Mode unlocks only after valid Day 30 completion.</small>
-              )}
+              <button type="button" onClick={onOpenInTripMode}>
+                Open in Trip Mode <span aria-hidden="true">→</span>
+              </button>
             </div>
           </>
         ) : handoff ? (
@@ -167,51 +148,7 @@ export function GuidedSessionReview({
             </div>
           </>
         )}
-      </section>
-
-      <details className="review-details">
-        <summary>Review your response and the recorded result</summary>
-        <section className="review-section understood-intent guided-recovery" data-review-section="understood-intent">
-          <div>
-            <p>Your response</p>
-            {game.lastResponse && <span className="recorded-response">You wrote “{game.lastResponse}”</span>}
-            <strong>{recoverySummary(session)}</strong>
-          </div>
-        </section>
-
-        <section className="review-section world-consequence" data-review-section="world-consequence">
-          <div>
-            <p>Recorded result</p>
-            <strong>{outcome?.consequence ?? "No consequence was recorded."}</strong>
-            <span>This is the exact result recorded by the beach episode.</span>
-          </div>
-        </section>
-      </details>
-
-      <section className="review-section next-action" data-review-section="next-action">
-        <span className="review-number">4</span>
-        <div>
-          <p>Next action</p>
-          {nextScene ? (
-            <>
-              <strong>{nextScene.title} is next.</strong>
-              <button type="button" className="primary-action" data-primary-action="true" onClick={onNext}>
-                Continue to {nextScene.day} <span aria-hidden="true">→</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <strong>The next rehearsal is scheduled closer to departure.</strong>
-              <button type="button" className="primary-action" data-primary-action="true" onClick={onReview}>
-                Return to season overview <span aria-hidden="true">→</span>
-              </button>
-            </>
-          )}
-          <button type="button" className="guided-practice-again" onClick={onPracticeAgain}>
-            Practice this situation again <span aria-hidden="true">→</span>
-          </button>
-        </div>
-      </section>
+      </div>
 
       <details className="guided-evidence">
         <summary>How you handled it</summary>
@@ -238,6 +175,9 @@ export function GuidedSessionReview({
         </div>
       </details>
 
+      <button type="button" className="guided-practice-again" onClick={onPracticeAgain}>
+        Practice this situation again <span aria-hidden="true">→</span>
+      </button>
     </section>
   );
 }

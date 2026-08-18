@@ -31,7 +31,7 @@ export const day18Episode: EpisodeDefinition = {
   evaluateResponse({ state, normalized, createId, runtime }) {
     if (any(normalized, EXIT) || any(normalized, ["aspetto", "wait", "niente"])) return runtime.queueTerminal(state, "d18_05_exit", "D18-O3", {}, createId);
     if (state.turnId === "d18_01_unavailable") {
-      if (any(normalized, ["alternativa", "alternative", "altra", "altro", "opzione", "else", "differenza", "difference"])) return runtime.moveToTurn(state, "d18_02_options", {}, undefined, createId);
+      if (any(normalized, ["alternativa", "alternative", "altro", "else", "differenza", "difference"])) return runtime.moveToTurn(state, "d18_02_options", {}, undefined, createId);
       return runtime.moveToTurn(state, "d18_01_unavailable", {}, "The original cream is unavailable. Ask for an alternative or leave.", createId);
     }
     if (state.turnId === "d18_02_options") {

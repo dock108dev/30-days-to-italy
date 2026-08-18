@@ -39,7 +39,6 @@ export const day20Episode: EpisodeDefinition = {
     }
     if (state.turnId === "d20_02_window") {
       if (any(normalized, EXIT)) return runtime.queueTerminal(state, "d20_05_open", "D20-O3", { hotWaterStatus: "temporary", repairCommitment: { window: permanentWindow, status: "deferred" } }, createId);
-      if (any(normalized, ["quando", "when", "pezzo", "part"])) return runtime.moveToTurn(state, state.turnId, {}, "The permanent part is offered for Friday at 10:00. Confirm or defer.", createId);
       if (any(normalized, ["venerdi", "friday", "dieci", "ten", "va bene", "okay", "si"])) {
         const hadHistory = state.hotWaterStatus !== "unknown" || state.repairCommitment !== null;
         return runtime.queueTerminal(state, "d20_03_close", hadHistory ? "D20-O1" : "D20-O4", { hotWaterStatus: "temporary", repairCommitment: { window: permanentWindow, status: "active" }, commitments: addFact(state.commitments.filter((item) => !item.startsWith("Hot-water repair:")), `Hot-water repair: ${permanentWindow}`), relationships: { ...state.relationships, Raffaele: hadHistory ? "efficient" : "neutral" }, knownFacts: addFact(state.knownFacts, "Hot water works temporarily; permanent part due Friday at 10:00"), currentLocation: metadata.location, currentTime: "18:20" }, createId);

@@ -30,10 +30,9 @@ import { day28Episode } from "./episodes/day-28";
 import { day29Episode } from "./episodes/day-29";
 import { day30Episode } from "./episodes/day-30";
 import { SEASON_01, type EpisodeId } from "./manifest";
-import { CANONICAL_DEMO_PATHS } from "./canonical-demo-fixtures";
-import type { DemoEpisodeDefinition, EpisodeDefinition } from "./types";
+import type { EpisodeDefinition } from "./types";
 
-const AUTHORED_EPISODE_DEFINITIONS: readonly EpisodeDefinition[] = [
+export const IMPLEMENTED_EPISODE_DEFINITIONS: readonly EpisodeDefinition[] = [
   day00Episode,
   day01Episode,
   day02Episode,
@@ -67,13 +66,7 @@ const AUTHORED_EPISODE_DEFINITIONS: readonly EpisodeDefinition[] = [
   day30Episode,
 ];
 
-export const IMPLEMENTED_EPISODE_DEFINITIONS: readonly DemoEpisodeDefinition[] =
-  AUTHORED_EPISODE_DEFINITIONS.map((definition) => ({
-    ...definition,
-    canonicalDemo: CANONICAL_DEMO_PATHS[definition.id],
-  }));
-
-export const EPISODE_DEFINITION_BY_ID = new Map<EpisodeId, DemoEpisodeDefinition>(
+export const EPISODE_DEFINITION_BY_ID = new Map<EpisodeId, EpisodeDefinition>(
   IMPLEMENTED_EPISODE_DEFINITIONS.map((definition) => [definition.id, definition]),
 );
 
@@ -149,9 +142,6 @@ export function assertSeasonRegistry(): void {
     }
     if (!definition.contentVersion || definition.authoringStatus !== "reviewed") {
       throw new Error(`Incomplete review metadata for ${definition.id}.`);
-    }
-    if (!definition.canonicalDemo.responses.length || !definition.outcomes[definition.canonicalDemo.expectedOutcomeId]) {
-      throw new Error(`Invalid canonical demo path for ${definition.id}.`);
     }
     for (const turnId of Object.keys(definition.turns)) {
       if (TURN_EPISODE.get(turnId) !== definition.id) throw new Error(`Duplicate turn ${turnId}.`);

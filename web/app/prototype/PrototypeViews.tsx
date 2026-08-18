@@ -1,4 +1,4 @@
-import { Fragment, useState, type FormEvent, type RefObject } from "react";
+import { Fragment, type FormEvent, type RefObject } from "react";
 import {
   ADMIN_FAST_TRACK_CHECKPOINTS,
   type AdminFastTrackCheckpointId,
@@ -7,25 +7,16 @@ import {
   ADMIN_TRUTH_PREVIEWS,
   type AdminTruthPreviewId,
 } from "../admin/truth-previews";
-import {
-  checkpointAuditStatus,
-  type DemoConductor,
-} from "../admin/demo-conductor";
-import type { ApplicationSessionMode } from "../persistence/session";
 import type { AppMode } from "../lifecycle/model";
 import type { TripProfile } from "../trip/model";
 import { scheduleSeason } from "../season/schedule";
-import { EPISODE_BY_ID, IMPLEMENTED_EPISODES, type EpisodeId } from "../season/manifest";
+import { IMPLEMENTED_EPISODES, type EpisodeId } from "../season/manifest";
 import { nextImplementedEpisode, sceneForEpisode } from "../season/registry";
-import { episodeResultFor, type ObservedMove } from "../season/types";
 import type { PocketDeckPracticeEvidence } from "../pocket-deck/model";
-import { CORE_POCKET_DECK_CARD_BY_ID } from "../pocket-deck/catalog";
 
 import {
   PHRASE_LESSONS,
-  fallbackPhraseForContext,
   money,
-  phraseExampleFor,
   sceneTime,
   type GameState,
   type PhraseExample,
@@ -35,12 +26,6 @@ import {
   type TeachingMoment,
   type Turn,
 } from "../game/model";
-
-export type InteractionPhase =
-  | "awaiting_line"
-  | "ready_to_respond"
-  | "submitting"
-  | "resolved";
 
 export function PrototypeHeader({
   mode,
@@ -70,120 +55,61 @@ export function PrototypeHeader({
   );
 }
 
-export function CompactSessionProgress({
+export function DayRail({
   game,
   profile,
   today,
   adminBypass = false,
-  onBrowse,
-}: {
-  game: GameState;
-  profile: TripProfile;
-  today?: string;
-  adminBypass?: boolean;
-  onBrowse: () => void;
-}) {
-  const schedule = scheduleSeason(profile, game.completed, today, adminBypass).filter(
-    (episode) => episode.status === "implemented",
-  );
-  const current = sceneForEpisode(game.episodeId)!;
-
-  return (
-    <section className="compact-session-progress" aria-label="Current rehearsal progress">
-      <div className="compact-progress-current">
-        <span>{current.day}</span>
-        <strong>{current.title}</strong>
-      </div>
-      <div className="compact-progress-count">
-        <strong>{game.completed.length} of {schedule.length}</strong>
-        <span>sessions complete</span>
-      </div>
-      <button type="button" onClick={onBrowse}>Browse all {schedule.length} sessions</button>
-    </section>
-  );
-}
-
-export function SeasonOverview({
-  game,
-  profile,
-  today,
-  adminBypass = false,
-  closeRef,
-  onClose,
-  onEditTrip,
   onSelect,
 }: {
   game: GameState;
   profile: TripProfile;
   today?: string;
   adminBypass?: boolean;
-  closeRef: RefObject<HTMLButtonElement | null>;
-  onClose: () => void;
-  onEditTrip: () => void;
   onSelect: (episodeId: EpisodeId) => void;
 }) {
   const schedule = scheduleSeason(profile, game.completed, today, adminBypass).filter(
     (episode) => episode.status === "implemented",
   );
-  return (
-    <div className="season-overview-backdrop" role="presentation" onMouseDown={onClose}>
-      <section
-        className="season-overview"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="season-overview-title"
-        onMouseDown={(event) => event.stopPropagation()}
-        onKeyDown={(event) => {
-          if (event.key !== "Tab") return;
-          const focusable = [...event.currentTarget.querySelectorAll<HTMLElement>(
-            "button:not(:disabled), summary, [href], input:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])",
-          )].filter((element) => element.getClientRects().length > 0);
-          const first = focusable[0];
-          const last = focusable.at(-1);
-          if (!first || !last) return;
-          if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last.focus();
-          } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-          }
-        }}
+  const currentIndex = Math.max(0, schedule.findIndex((episode) => episode.id === game.episodeId));
+  const start = Math.max(0, Math.min(currentIndex - 2, schedule.length - 5));
+  const visibleSchedule = schedule.slice(start, start + 5);
+
+  function dayNode(episode: (typeof schedule)[number], compact = false) {
+    const item = sceneForEpisode(episode.id)!;
+    const isCurrent = episode.id === game.episodeId;
+    const isDone = episode.completed;
+    const isAvailable = episode.playable || isDone;
+    return (
+      <button
+        type="button"
+        key={`${compact ? "all" : "focus"}-${item.id}`}
+        className={`day-node ${compact ? "compact" : ""} ${isCurrent ? "current" : ""} ${isDone ? "done" : ""}`}
+        disabled={!isAvailable}
+        onClick={() => isAvailable && onSelect(episode.id)}
+        aria-label={`${item.day}, ${item.title}${isDone ? ", completed" : ""}`}
       >
-        <div className="season-overview-header">
-          <div>
-            <p>Your rehearsal season</p>
-            <h2 id="season-overview-title">All 31 practical sessions</h2>
-            <span>{game.completed.length} complete · progress is stored on this device</span>
-          </div>
-          <div className="season-overview-header-actions">
-            <button type="button" className="season-edit-trip" onClick={onEditTrip}>Edit trip details</button>
-            <button ref={closeRef} type="button" onClick={onClose} aria-label="Close season overview">×</button>
-          </div>
-        </div>
-        <div className="season-overview-grid">
-          {schedule.map((episode) => {
-            const isCurrent = episode.id === game.episodeId;
-            const isAvailable = episode.playable || episode.completed;
-            return (
-              <button
-                type="button"
-                key={episode.id}
-                className={`${isCurrent ? "current" : ""} ${episode.completed ? "done" : ""}`}
-                disabled={!isAvailable}
-                onClick={() => isAvailable && onSelect(episode.id)}
-                aria-current={isCurrent ? "step" : undefined}
-              >
-                <span>{episode.completed ? "✓" : `Day ${episode.day}`}</span>
-                <strong>{episode.title}</strong>
-                <small>{episode.completed ? "Completed" : episode.playable ? "Available" : "Scheduled"}</small>
-              </button>
-            );
-          })}
-        </div>
-        <p className="season-overview-note">Choose an available session, or close this overview to keep the current moment unchanged.</p>
-      </section>
-    </div>
+        <span className="day-dot">{isDone ? "✓" : episode.day}</span>
+        <span className="day-copy"><strong>{item.day}</strong><small>{compact ? item.title : item.dateLabel}</small></span>
+      </button>
+    );
+  }
+
+  return (
+    <section className="day-rail-wrap" aria-label="Prototype episode progress">
+      <div className="day-rail-summary">
+        <span>{game.completed.length} of {schedule.length} complete</span>
+        <small>Showing the sessions around today</small>
+      </div>
+      <div className="day-rail">
+        {visibleSchedule.map((episode) => dayNode(episode))}
+        <div className="rail-line" aria-hidden="true" />
+      </div>
+      <details className="day-rail-all">
+        <summary>All {schedule.length} playable sessions</summary>
+        <div>{schedule.map((episode) => dayNode(episode, true))}</div>
+      </details>
+    </section>
   );
 }
 
@@ -192,6 +118,7 @@ export function SceneIntroduction({ scene, status }: { scene: Scene; status: Gam
     <>
       <div className="scene-heading">
         <div>
+          <p className="scene-kicker">{scene.kicker}</p>
           <h2>{scene.title}</h2>
           <div className="location-line">
             <span>{scene.location}</span><i /> <span>{scene.time}</span>
@@ -222,8 +149,7 @@ export function EncounterStage({
   scene,
   game,
   isPlaying,
-  interactionPhase,
-  audioFailed,
+  hasPlayed,
   transcriptVisible,
   onPlay,
   onRevealTranscript,
@@ -232,23 +158,14 @@ export function EncounterStage({
   scene: Scene;
   game: GameState;
   isPlaying: boolean;
-  interactionPhase: InteractionPhase;
-  audioFailed: boolean;
+  hasPlayed: boolean;
   transcriptVisible: boolean;
   onPlay: (speed: "normal" | "careful") => void;
   onRevealTranscript: () => void;
 }) {
-  const lineStarted = interactionPhase !== "awaiting_line";
-  const latestConsequence = [...game.history].reverse().find((item) => item.kind === "system");
-  const earlierConsequences = game.history
-    .filter((item) => item.kind === "system" && item.id !== latestConsequence?.id)
-    .slice(-3);
   return (
     <>
-      <div
-        className={`audio-stage ${isPlaying ? "playing" : ""}`}
-        data-interaction-phase={interactionPhase}
-      >
+      <div className={`audio-stage ${isPlaying ? "playing" : ""}`}>
         <div className="speaker-row">
           <div className="avatar">{turn.npc.slice(0, 1)}</div>
           <div><strong>{turn.npc}</strong><span>{scene.role}</span></div>
@@ -257,11 +174,9 @@ export function EncounterStage({
 
         <button
           type="button"
-          className={`play-button ${lineStarted ? "replay-button" : ""}`}
+          className="play-button"
           onClick={() => onPlay("normal")}
-          aria-label={lineStarted ? `Replay ${turn.npc}` : `Play ${turn.npc}`}
-          disabled={interactionPhase === "submitting"}
-          data-primary-action={!lineStarted ? "true" : undefined}
+          aria-label={hasPlayed ? `Replay ${turn.npc}` : `Play ${turn.npc}`}
         >
           <span className="play-icon" aria-hidden="true">{isPlaying ? "Ⅱ" : "▶"}</span>
           <span className="wave" aria-hidden="true">
@@ -269,11 +184,11 @@ export function EncounterStage({
               <i key={index} style={{ height: `${height * 3}px` }} />
             ))}
           </span>
-          <span>{lineStarted ? "Replay line" : "Play the line"}</span>
+          <span>{hasPlayed ? "Replay line" : "Play the line"}</span>
         </button>
 
-        <div className={`support-row ${lineStarted ? "available" : ""}`}>
-          {lineStarted && (
+        <div className={`support-row ${hasPlayed ? "available" : ""}`}>
+          {hasPlayed && (
             <>
               <button type="button" onClick={() => onPlay("careful")}>
                 <span aria-hidden="true">◌</span> Slower
@@ -283,7 +198,7 @@ export function EncounterStage({
               </button>
             </>
           )}
-          {lineStarted && <p>{turn.cue}</p>}
+          <p>{turn.cue}</p>
         </div>
 
         {transcriptVisible && (
@@ -292,34 +207,22 @@ export function EncounterStage({
             <p>{turn.text}</p>
           </div>
         )}
-
-        {audioFailed && (
-          <div className="audio-fallback" role="alert">
-            <strong>Audio could not play.</strong>
-            <span>The transcript is available, and you can still respond.</span>
-          </div>
-        )}
       </div>
 
-      {game.guidance && (
-        <div className="response-guidance" role="status" aria-label="Response guidance">
-          <span>Try this</span>
-          <p>{game.guidance}</p>
-        </div>
-      )}
-
-      {latestConsequence && (
-        <div className="history-strip" aria-label="Recent encounter consequence">
-          <div key={latestConsequence.id} className={latestConsequence.kind}>
-            <span>Just changed</span>
-            <p>{latestConsequence.text}</p>
-          </div>
-          {earlierConsequences.length > 0 && (
+      {game.history.length > 0 && (
+        <div className="history-strip" aria-label="Recent encounter actions">
+          {game.history.slice(-1).map((item) => (
+            <div key={item.id} className={item.kind}>
+              <span>{item.kind === "player" ? "You" : "World"}</span>
+              <p>{item.text}</p>
+            </div>
+          ))}
+          {game.history.length > 1 && (
             <details>
-              <summary>Earlier encounter history ({earlierConsequences.length})</summary>
-              {earlierConsequences.map((item) => (
+              <summary>Earlier actions ({game.history.length - 1})</summary>
+              {game.history.slice(-4, -1).map((item) => (
                 <div key={item.id} className={item.kind}>
-                  <span>Earlier</span>
+                  <span>{item.kind === "player" ? "You" : "World"}</span>
                   <p>{item.text}</p>
                 </div>
               ))}
@@ -336,16 +239,18 @@ export function TeachingCard({
   lesson,
   example,
   npc,
-  closeRef,
+  hasPlayed,
   onClose,
+  onUse,
   onBuild,
 }: {
   teachingMoment: TeachingMoment;
   lesson: PhraseLesson;
   example: PhraseExample;
   npc: string;
-  closeRef: RefObject<HTMLButtonElement | null>;
+  hasPlayed: boolean;
   onClose: () => void;
+  onUse: () => void;
   onBuild: () => void;
 }) {
   return (
@@ -355,7 +260,7 @@ export function TeachingCard({
           <span>Quick refresher</span>
           <h3>{lesson.english}</h3>
         </div>
-        <button ref={closeRef} type="button" aria-label="Close refresher" onClick={onClose}>×</button>
+        <button type="button" aria-label="Close refresher" onClick={onClose}>×</button>
       </div>
 
       <p className="teaching-reassurance">
@@ -384,8 +289,11 @@ export function TeachingCard({
       </div>
 
       <div className="teaching-actions">
+        <button type="button" className="lesson-use" onClick={onUse} disabled={!hasPlayed}>
+          Use this reply <span aria-hidden="true">→</span>
+        </button>
         <button type="button" className="lesson-practice" onClick={onBuild}>
-          Close and write my response <span aria-hidden="true">→</span>
+          I’ll build it myself
         </button>
       </div>
     </section>
@@ -395,31 +303,27 @@ export function TeachingCard({
 export function ResponseComposer({
   responseRef,
   input,
-  interactionPhase,
+  hasPlayed,
   teachingOpen,
+  suggestions,
   onInput,
   onSubmit,
   onTeach,
 }: {
   responseRef: RefObject<HTMLTextAreaElement | null>;
   input: string;
-  interactionPhase: Extract<InteractionPhase, "ready_to_respond" | "submitting">;
+  hasPlayed: boolean;
   teachingOpen: boolean;
+  suggestions: string[];
   onInput: (value: string) => void;
   onSubmit: (event?: FormEvent) => void;
   onTeach: () => void;
 }) {
-  const submitting = interactionPhase === "submitting";
   return (
-    <form className="response-box" onSubmit={onSubmit} aria-busy={submitting}>
+    <form className="response-box" onSubmit={onSubmit}>
       <div className="response-heading">
         <label htmlFor="player-response">Your response</label>
-        <button
-          type="button"
-          onClick={onTeach}
-          disabled={submitting}
-          aria-expanded={teachingOpen}
-        >
+        <button type="button" onClick={onTeach} disabled={!hasPlayed || teachingOpen}>
           <span aria-hidden="true">＋</span> Teach me a phrase
         </button>
       </div>
@@ -429,8 +333,8 @@ export function ResponseComposer({
           id="player-response"
           value={input}
           onChange={(event) => onInput(event.target.value)}
-          placeholder="Type what you would say or do…"
-          disabled={submitting}
+          placeholder={hasPlayed ? "Type what you would say or do…" : "Play the Italian line first…"}
+          disabled={!hasPlayed || teachingOpen}
           rows={2}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -439,63 +343,26 @@ export function ResponseComposer({
             }
           }}
         />
-        <button
-          type="submit"
-          className={`send-button ${submitting ? "submitting" : ""}`}
-          disabled={submitting || !input.trim()}
-          data-primary-action={!submitting ? "true" : undefined}
-        >
-          {submitting ? "Submitting…" : "Respond"} <span aria-hidden="true">↗</span>
+        <button type="submit" className="send-button" disabled={!hasPlayed || !input.trim() || teachingOpen}>
+          Respond <span aria-hidden="true">↗</span>
         </button>
       </div>
+      <details className="suggestion-row">
+        <summary>Need an idea?</summary>
+        <div>
+          {suggestions.map((suggestion) => (
+            <button type="button" key={suggestion} onClick={() => onInput(suggestion)} disabled={!hasPlayed}>
+              {suggestion}
+            </button>
+          ))}
+        </div>
+      </details>
     </form>
   );
 }
 
 export function nextSceneFor(game: Pick<GameState, "episodeId">): Scene | null {
   return nextImplementedEpisode(game.episodeId)?.scene ?? null;
-}
-
-const OBSERVED_MOVE_LABELS: Record<ObservedMove, string> = {
-  identify: "identifying yourself",
-  request: "requesting what you needed",
-  quantity: "clarifying the quantity",
-  preference: "stating your preference",
-  location: "confirming the location details",
-  price: "confirming the price",
-  recovery: "recovering from a misunderstanding",
-  confirm: "confirming the practical plan",
-  decline: "declining the offer",
-  pay: "choosing how to pay",
-  boundary: "ending the exchange on your terms",
-  problem: "reporting the practical problem",
-};
-
-function naturalList(items: readonly string[]): string {
-  if (items.length === 0) return "no additional communicative move";
-  if (items.length === 1) return items[0];
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(", ")}, and ${items.at(-1)}`;
-}
-
-export function recordedIntentSummary(game: GameState): string {
-  if (game.feedback?.understood) return game.feedback.understood;
-  const result = episodeResultFor(game.episodeResults, game.episodeId);
-  const moves = [...new Set(result?.observedMoves ?? [])].map((move) => OBSERVED_MOVE_LABELS[move]);
-  if (moves.length === 0) {
-    return "No additional communicative move was recorded beyond the authoritative result below.";
-  }
-  return `The accepted response was recorded as ${naturalList(moves)}.`;
-}
-
-export type PocketDeckReviewState = "available" | "strengthened" | "none";
-
-export function pocketDeckReviewState(
-  handoff: PocketDeckPracticeEvidence | null | undefined,
-  handoffApplied: boolean,
-): PocketDeckReviewState {
-  if (!handoff) return "none";
-  return handoffApplied ? "strengthened" : "available";
 }
 
 export function OutcomeCard({
@@ -526,106 +393,40 @@ export function OutcomeCard({
   onOpenTripMode?: () => void;
 }) {
   const availableNextScene = nextScene === undefined ? nextSceneFor(game) : nextScene;
-  const scene = sceneForEpisode(game.episodeId)!;
-  const episode = EPISODE_BY_ID.get(game.episodeId);
-  const result = episodeResultFor(game.episodeResults, game.episodeId);
-  const pocketCard = episode?.pocketCardId
-    ? CORE_POCKET_DECK_CARD_BY_ID.get(episode.pocketCardId)
-    : null;
-  const fallbackPhrase = phraseExampleFor(
-    fallbackPhraseForContext(scene.id, game.turnId, game.episodeId),
-    scene.id,
-    game.episodeId,
-  );
-  const usefulPhrase = game.feedback?.natural ?? pocketCard?.primaryItalian ?? fallbackPhrase.italian;
-  const variation = game.feedback?.variation
-    ?? (pocketCard?.shortItalian !== usefulPhrase ? pocketCard?.shortItalian : undefined);
-  const deckState = pocketDeckReviewState(handoff, Boolean(handoffApplied));
-  const deckCardName = handoff
-    ? CORE_POCKET_DECK_CARD_BY_ID.get(handoff.cardId)?.englishIntent ?? "this situation"
-    : null;
   return (
-    <div className={`outcome-card ${game.outcome?.tone ?? "success"}`} aria-labelledby="completion-review-title">
-      <div className="outcome-review-heading">
-        <div>
-          <p>Day complete</p>
-          <h3 id="completion-review-title">{game.outcome?.title}</h3>
-          <span>The practical result is recorded.</span>
-        </div>
-        <div className="outcome-icon" aria-hidden="true">{game.outcome?.tone === "success" ? "✓" : game.outcome?.tone === "partial" ? "~" : "↗"}</div>
-      </div>
+    <div className={`outcome-card ${game.outcome?.tone ?? "success"}`}>
+      <div className="outcome-icon">{game.outcome?.tone === "success" ? "✓" : game.outcome?.tone === "partial" ? "~" : "↗"}</div>
+      <p>What happened</p>
+      <h3>{game.outcome?.title}</h3>
+      <p className="outcome-detail">{game.outcome?.detail}</p>
+      <div className="consequence-line"><span>World consequence</span><strong>{game.outcome?.consequence}</strong></div>
 
-      <section className="review-section objective-result" data-review-section="objective-result">
-        <span className="review-number">1</span>
-        <div>
-          <p>Practical result</p>
-          <strong>{game.outcome?.consequence}</strong>
-          <span>{game.outcome?.detail}</span>
+      {game.feedback?.automatic && (
+        <div className="feedback-card">
+          <p>Useful correction</p>
+          <div><span>What we understood</span><strong>{game.feedback.understood}</strong></div>
+          <div><span>A natural way to say it</span><strong lang="it">{game.feedback.natural}</strong></div>
+          <button type="button" onClick={onToggleNatural}>
+            {showNatural ? "Hide variation" : "Show one useful variation"}
+          </button>
+          {showNatural && <em lang="it">{game.feedback.variation}</em>}
         </div>
-      </section>
+      )}
 
-      <section className="review-section useful-phrasing" data-review-section="useful-phrasing">
-        <span className="review-number">2</span>
-        <div>
-          <p>One useful phrasing</p>
-          <strong lang="it">{usefulPhrase}</strong>
-        </div>
-      </section>
-
-      <section className="review-section pocket-deck-effect" data-review-section="pocket-deck-effect" data-pocket-deck-state={deckState}>
-        <span className="review-number">3</span>
-        <div>
-          <p>Pocket Deck effect</p>
-          {deckState === "available" && (
-            <>
-              <strong>Evidence is available, but it has not been carried.</strong>
-              <span>The existing “{deckCardName}” card can be strengthened{handoff?.preferenceSelected ? ` with your ${handoff.preferenceSelected} choice` : ""}.</span>
-            </>
-          )}
-          {deckState === "strengthened" && (
-            <>
-              <strong>An existing Pocket Deck card was strengthened.</strong>
-              <span>This attempt{handoff?.preferenceSelected ? ` and its ${handoff.preferenceSelected} choice` : ""} is persisted on “{deckCardName}.”</span>
-            </>
-          )}
-          {deckState === "none" && (
-            <>
-              <strong>This attempt earned no Pocket Deck evidence.</strong>
-              <span>No card was added or strengthened.</span>
-            </>
+      {!game.feedback?.automatic && game.feedback && (
+        <div className="optional-feedback">
+          <button type="button" onClick={onToggleNatural}>
+            {showNatural ? "Hide language note" : "See a natural way to say it"}
+          </button>
+          {showNatural && (
+            <div>
+              <span>We understood: {game.feedback.understood}</span>
+              <strong lang="it">{game.feedback.natural}</strong>
+              <em lang="it">{game.feedback.variation}</em>
+            </div>
           )}
         </div>
-      </section>
-
-      <details className="review-details">
-        <summary>Response and evidence</summary>
-        <section className="review-section understood-intent" data-review-section="understood-intent">
-          <div>
-            <p>Understood intent</p>
-            {result?.response && <span className="recorded-response">You wrote “{result.response}”</span>}
-            <strong>{recordedIntentSummary(game)}</strong>
-          </div>
-        </section>
-        <section className="review-section world-consequence" data-review-section="world-consequence">
-          <div>
-            <p>Authoritative evidence</p>
-            <strong>{scene.objective}</strong>
-            <span>{game.outcome?.consequence}</span>
-          </div>
-        </section>
-        {variation && (
-          <details
-            className="review-variation"
-            open={showNatural}
-            onToggle={(event) => {
-              if (event.currentTarget.open !== showNatural) onToggleNatural();
-            }}
-          >
-            <summary>{showNatural ? "Hide phrase variation" : "Show phrase variation"}</summary>
-            <span lang="it">{variation}</span>
-          </details>
-        )}
-      </details>
+      )}
 
       {game.seasonCompletion && game.status !== "complete" && (
         <div className="historical-completion-note" role="status">
@@ -636,57 +437,50 @@ export function OutcomeCard({
         </div>
       )}
 
-      <section className="review-section next-action" data-review-section="next-action">
-        <span className="review-number">4</span>
-        <div>
-          <p>Next action</p>
-          {game.status === "complete" ? (
-            <div className="season-completion-summary">
-              <strong>Your 31-session rehearsal season is complete.</strong>
-              <span>Keys: {game.seasonCompletion?.keyResolution.apartment} apartment · {game.seasonCompletion?.keyResolution.hotel} hotel · Departure: {game.seasonCompletion?.departurePlan}</span>
-              <button type="button" className="primary-action" data-primary-action="true" onClick={onOpenTripMode}>
-                Open Trip Mode <span>→</span>
-              </button>
-            </div>
-          ) : availableNextScene ? (
-            <>
-              <strong>{availableNextScene.title} is next.</strong>
-              <button type="button" className="primary-action" data-primary-action="true" onClick={onNext}>
-                Continue to {availableNextScene.day} <span>→</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <strong>{game.episodeId === "day-30"
-                ? "Replay Day 30 when the keys and departure plan are resolved."
-                : "The next rehearsal is scheduled closer to departure."}</strong>
-              <button type="button" className="primary-action" data-primary-action="true" onClick={onReview}>
-                Return to season overview <span>→</span>
-              </button>
-            </>
-          )}
-
-          <div className="review-secondary-actions">
-            <button type="button" className="secondary-action" onClick={onRestart}>Replay this day</button>
+      <div className="outcome-actions">
+        {game.status === "complete" ? (
+          <div className="season-completion-summary">
+            <p className="season-completion-kicker">Your rehearsal season is complete</p>
+            <h4>31 practical sessions, carried into one departure-ready record.</h4>
+            <ul>
+              <li>Keys: {game.seasonCompletion?.keyResolution.apartment} apartment · {game.seasonCompletion?.keyResolution.hotel} hotel</li>
+              <li>Departure: {game.seasonCompletion?.departurePlan}</li>
+              <li>{game.seasonCompletion?.openIssues.length ? `${game.seasonCompletion.openIssues.length} acknowledged open issue` : "No open issues recorded"}</li>
+            </ul>
+            <button type="button" className="primary-action" onClick={onOpenTripMode}>
+              Open Trip Mode <span>→</span>
+            </button>
             <button type="button" className="secondary-action" onClick={onReview}>Review the season</button>
-            {handoff && onCarryToDeck && (
-              handoffApplied ? (
-                onOpenInTripMode ? (
-                  <button type="button" className="secondary-action" onClick={onOpenInTripMode}>
-                    Open strengthened card in Trip Mode
-                  </button>
-                ) : (
-                  <span className="demo-trip-locked">Carried in Demo mode · Trip Mode unlocks after Day 30</span>
-                )
-              ) : (
-                <button type="button" className="secondary-action" onClick={onCarryToDeck}>
-                  Carry this into my Pocket Deck
-                </button>
-              )
-            )}
           </div>
-        </div>
-      </section>
+        ) : availableNextScene ? (
+          <button type="button" className="primary-action" onClick={onNext}>
+            Continue to {availableNextScene.day} <span>→</span>
+          </button>
+        ) : (
+          <>
+            <p className="season-planned-note">
+              {game.episodeId === "day-30"
+                ? "This checkout attempt did not complete the season. Replay Day 30 when the keys and departure plan are resolved."
+                : "The next rehearsal is scheduled closer to departure. Completed sessions remain available for replay."}
+            </p>
+            <button type="button" className="primary-action" onClick={onReview}>
+              Return to season overview <span>→</span>
+            </button>
+          </>
+        )}
+        <button type="button" className="secondary-action" onClick={onRestart}>Replay this day</button>
+        {handoff && onCarryToDeck && onOpenInTripMode && (
+          handoffApplied ? (
+            <button type="button" className="secondary-action" onClick={onOpenInTripMode}>
+              Open strengthened card in Trip Mode
+            </button>
+          ) : (
+            <button type="button" className="secondary-action" onClick={onCarryToDeck}>
+              Carry this into my Pocket Deck
+            </button>
+          )
+        )}
+      </div>
     </div>
   );
 }
@@ -699,7 +493,6 @@ export function WorldPanel({
   totalSupport,
   totalPhraseRefreshers,
   activePhraseId,
-  relevantPhraseIds,
   onOpenPhrase,
 }: {
   game: GameState;
@@ -709,62 +502,50 @@ export function WorldPanel({
   totalSupport: number;
   totalPhraseRefreshers: number;
   activePhraseId: PhraseId | null;
-  relevantPhraseIds: readonly PhraseId[];
   onOpenPhrase: (phraseId: PhraseId) => void;
 }) {
-  const relevantLessons = relevantPhraseIds.map((phraseId) => PHRASE_LESSONS.find((lesson) => lesson.id === phraseId)!).filter(Boolean);
-  const remainingLessons = PHRASE_LESSONS.filter((lesson) => !relevantPhraseIds.includes(lesson.id));
-
-  function phraseButton(lesson: PhraseLesson) {
-    const count = game.phrasePractice?.[lesson.id] ?? 0;
-    return (
-      <button
-        type="button"
-        key={lesson.id}
-        onClick={() => onOpenPhrase(lesson.id)}
-        className={activePhraseId === lesson.id ? "active" : ""}
-      >
-        <span>{lesson.english}</span>
-        <strong lang="it">{lesson.italian.replace("…", "")}</strong>
-        {count > 0 && <small aria-label={`Refreshed ${count} times`}>{count}×</small>}
-      </button>
-    );
-  }
-
   return (
-    <aside className="world-panel" aria-label="Optional rehearsal help">
+    <aside className="world-panel">
       <div className="world-header">
-        <div><p>Optional help</p><h3>For this turn</h3></div>
+        <div><p>Right now</p><h3>{scene.location.split(" · ")[0]}</h3></div>
         <span>{sceneTime(game.episodeId)} · {money(game.money)}</span>
       </div>
 
       <details className="world-section phrase-toolkit">
         <summary>
-          <span>Phrase help</span>
-          <small>{relevantLessons.length} relevant patterns</small>
+          <span>Need a phrase?</span>
+          <small>{totalPhraseRefreshers ? `${totalPhraseRefreshers} refreshed` : `${PHRASE_LESSONS.length} quick patterns`}</small>
         </summary>
-        <p className="phrase-context-note">These are the closest patterns for the current episode and turn.</p>
-        <div className="phrase-grid phrase-grid-relevant">{relevantLessons.map(phraseButton)}</div>
-        <details className="phrase-library-disclosure">
-          <summary>Browse the other {remainingLessons.length} patterns</summary>
-          <div className="phrase-grid phrase-grid-full">{remainingLessons.map(phraseButton)}</div>
-        </details>
+        <div className="phrase-grid">
+          {PHRASE_LESSONS.map((lesson) => {
+            const count = game.phrasePractice?.[lesson.id] ?? 0;
+            return (
+              <button
+                type="button"
+                key={lesson.id}
+                onClick={() => onOpenPhrase(lesson.id)}
+                className={activePhraseId === lesson.id ? "active" : ""}
+                disabled={game.status !== "active"}
+              >
+                <span>{lesson.english}</span>
+                <strong lang="it">{lesson.italian.replace("…", "")}</strong>
+                {count > 0 && <small aria-label={`Refreshed ${count} times`}>{count}×</small>}
+              </button>
+            );
+          })}
+        </div>
       </details>
 
       <details className="world-section context-details">
-        <summary>Trip detail and listening history</summary>
+        <summary>Trip context and support</summary>
         <div className="context-detail-grid">
           <div>
-            <span>Right now</span>
-            <p>{scene.location.split(" · ")[0]} · {possessions.length ? possessions.join(" · ") : "Phone and wallet"}</p>
+            <span>With you</span>
+            <p>{possessions.length ? possessions.join(" · ") : "Phone and wallet"}</p>
           </div>
           <div>
             <span>Listening help</span>
             <p>{totalSupport ? `${totalSupport} used today` : "None yet"}</p>
-          </div>
-          <div>
-            <span>Phrase refreshers</span>
-            <p>{totalPhraseRefreshers ? `${totalPhraseRefreshers} practiced` : "None yet"}</p>
           </div>
         </div>
         <div className="support-meter">
@@ -787,262 +568,149 @@ export function WorldPanel({
   );
 }
 
-export function DemoModeBanner({
-  conductor,
-  checkpoint,
-  onOpenConductor,
-  onExit,
-  onReturnFromPreview,
-}: {
-  conductor: DemoConductor;
-  checkpoint: (typeof ADMIN_FAST_TRACK_CHECKPOINTS)[number];
-  onOpenConductor: () => void;
-  onExit: () => void;
-  onReturnFromPreview: () => void;
-}) {
-  const sequence = ADMIN_FAST_TRACK_CHECKPOINTS.findIndex((item) => item.id === checkpoint.id) + 1;
-  const statusLabel = conductor.previewId
-    ? "Conditional truth preview"
-    : checkpoint.id === "trip"
-      ? "Season complete · Trip Mode open"
-    : conductor.checkpointStatus === "simulated"
-      ? "Canonically simulated"
-      : conductor.checkpointStatus === "resolved"
-        ? "Played normally"
-        : conductor.checkpointStatus === "active"
-          ? "Playing normally"
-          : "Unplayed";
-  return (
-    <section className="demo-mode-banner" aria-label="Demo mode" data-demo-checkpoint={checkpoint.id}>
-      <div>
-        <span>Demo mode · checkpoint {sequence} of {ADMIN_FAST_TRACK_CHECKPOINTS.length}</span>
-        <strong>{checkpoint.id === "trip" ? "Trip Mode" : checkpoint.detail.split(" · ")[0]} · {checkpoint.title}</strong>
-        <p>{statusLabel}. Synthetic, isolated state—never owner history.</p>
-      </div>
-      <div className="demo-banner-actions">
-        {conductor.previewId && (
-          <button type="button" onClick={onReturnFromPreview}>Return to checkpoint</button>
-        )}
-        <button type="button" onClick={onOpenConductor}>Open conductor</button>
-        <button type="button" className="demo-exit" onClick={onExit}>Exit demo</button>
-      </div>
-    </section>
-  );
-}
-
-function journeyPhase(checkpointId: AdminFastTrackCheckpointId): string {
-  if (checkpointId === "trip") return "During the trip";
-  const day = Number(checkpointId.slice(4));
-  if (day <= 7) return "Arrival foundation";
-  if (day <= 13) return "Independent routines";
-  if (day <= 20) return "Recovery and continuity";
-  if (day <= 26) return "Familiarity";
-  return "Departure and independence";
-}
-
 export function AdminModal({
   game,
   profile,
-  sessionMode,
-  conductor,
-  canOpenTripMode,
+  activeCheckpointId,
+  nextCheckpointId,
   onClose,
-  onStartDemo,
   onSelectCheckpoint,
   onSelectTruthPreview,
-  onPreviousCheckpoint,
-  onPlayCheckpoint,
-  onAdvanceCanonical,
-  onNextCheckpoint,
-  onOpenTripMode,
-  onExitDemo,
-  onResetDemo,
-  onResetOwner,
+  onRestart,
+  onUseLiveDate,
+  onReset,
 }: {
   game: GameState;
   profile: TripProfile;
-  sessionMode: ApplicationSessionMode;
-  conductor: DemoConductor | null;
-  canOpenTripMode: boolean;
+  activeCheckpointId: AdminFastTrackCheckpointId | null;
+  nextCheckpointId: AdminFastTrackCheckpointId | null;
   onClose: () => void;
-  onStartDemo: () => void;
   onSelectCheckpoint: (id: AdminFastTrackCheckpointId) => void;
   onSelectTruthPreview: (id: AdminTruthPreviewId) => void;
-  onPreviousCheckpoint: () => void;
-  onPlayCheckpoint: () => void;
-  onAdvanceCanonical: () => void;
-  onNextCheckpoint: () => void;
-  onOpenTripMode: () => void;
-  onExitDemo: () => void;
-  onResetDemo: () => void;
-  onResetOwner: () => void;
+  onRestart: () => void;
+  onUseLiveDate: () => void;
+  onReset: () => void;
 }) {
-  const [confirmingDemoReset, setConfirmingDemoReset] = useState(false);
-  const [confirmingOwnerReset, setConfirmingOwnerReset] = useState(false);
-  const activeCheckpoint = conductor
-    ? ADMIN_FAST_TRACK_CHECKPOINTS.find((checkpoint) => checkpoint.id === conductor.activeCheckpointId) ?? null
-    : null;
-  const activeIndex = activeCheckpoint
-    ? ADMIN_FAST_TRACK_CHECKPOINTS.findIndex((checkpoint) => checkpoint.id === activeCheckpoint.id)
-    : -1;
-  const canPrevious = Boolean(conductor && activeIndex > 0);
-  const canPlay = Boolean(conductor && conductor.activeCheckpointId !== "trip" && conductor.checkpointStatus !== "active");
-  const canAdvance = Boolean(conductor && conductor.activeCheckpointId !== "trip" && (conductor.checkpointStatus === "unplayed" || conductor.checkpointStatus === "active"));
-  const canNext = Boolean(
-    conductor &&
-    conductor.activeCheckpointId !== "trip" &&
-    activeIndex < IMPLEMENTED_EPISODES.length - 1 &&
-    (conductor.checkpointStatus === "resolved" || conductor.checkpointStatus === "simulated"),
+  const nextCheckpoint = ADMIN_FAST_TRACK_CHECKPOINTS.find(
+    (checkpoint) => checkpoint.id === nextCheckpointId,
   );
-  const showTripAction = Boolean(
-    conductor && conductor.activeCheckpointId === "day-30" && canOpenTripMode,
-  );
-
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-      <section className="admin-modal conductor-modal" role="dialog" aria-modal="true" aria-label="Demo conductor" onMouseDown={(event) => event.stopPropagation()}>
+      <section className="admin-modal" role="dialog" aria-modal="true" aria-label="Prototype admin" onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal-header">
-          <div><p>Prototype admin</p><h2>{sessionMode === "demo" ? "Demo conductor" : "Safe demo walkthrough"}</h2></div>
+          <div><p>Prototype admin</p><h2>Fast-track and inspect</h2></div>
           <button type="button" onClick={onClose} aria-label="Close admin">×</button>
         </div>
 
-        {sessionMode === "owner" ? (
-          <>
-            <section className="admin-section demo-start-section">
-              <p>Isolated walkthrough</p>
-              <div className="admin-fast-track-intro">
-                <strong>Inspect all 31 days without touching this journey.</strong>
-                <span>A fresh synthetic profile, game, guided session, and Pocket Deck live in a separate local namespace.</span>
-                <span>Your saved departure remains {profile.departureDate}.</span>
-              </div>
-              <button type="button" className="admin-start-demo" onClick={onStartDemo}>Start demo walkthrough</button>
-            </section>
+        <div className="admin-summary">
+          <div><span>Money</span><strong>{money(game.money)}</strong></div>
+          <div><span>Completed</span><strong>{game.completed.length} / {IMPLEMENTED_EPISODES.length} playable</strong></div>
+          <div><span>Current state</span><strong>{game.status}</strong></div>
+        </div>
 
-            <section className="admin-section owner-reset-section">
-              <p>Owner data</p>
-              {!confirmingOwnerReset ? (
-                <button type="button" className="danger-secondary" onClick={() => setConfirmingOwnerReset(true)}>Reset owner journey</button>
-              ) : (
-                <div className="reset-confirmation" role="alertdialog" aria-label="Confirm owner journey reset">
-                  <strong>Reset owner journey?</strong>
-                  <p>This removes journey progress, trip profile, lifecycle mode, guided-session evidence, Pocket Deck practice evidence, pins, and Recents.</p>
-                  <div>
-                    <button type="button" onClick={() => setConfirmingOwnerReset(false)}>Cancel</button>
-                    <button type="button" className="danger" onClick={onResetOwner}>Remove owner journey data</button>
-                  </div>
-                </div>
-              )}
-            </section>
-          </>
-        ) : conductor && activeCheckpoint ? (
-          <>
-            <div className="admin-summary conductor-summary">
-              <div><span>Checkpoint</span><strong>{activeIndex + 1} / {ADMIN_FAST_TRACK_CHECKPOINTS.length}</strong></div>
-              <div><span>Completed prefix</span><strong>{game.completed.length} / {IMPLEMENTED_EPISODES.length}</strong></div>
-              <div><span>Current state</span><strong>{conductor.checkpointStatus}</strong></div>
-            </div>
-
-            <section className="admin-section conductor-current">
-              <p>Current checkpoint</p>
-              <div className="conductor-current-card">
-                <span>{journeyPhase(activeCheckpoint.id)} · {activeCheckpoint.eyebrow}</span>
-                <strong>{activeCheckpoint.id === "trip" ? "Trip Mode" : activeCheckpoint.detail.split(" · ")[0]} · {activeCheckpoint.title}</strong>
-                <small>{conductor.previewId ? `Audit preview: ${conductor.previewId}` : `${conductor.checkpointStatus} · ${conductor.advancedCanonically.includes(activeCheckpoint.id as EpisodeId) ? "simulated" : conductor.playedNormally.includes(activeCheckpoint.id as EpisodeId) ? "played" : "no completion claim"}`}</small>
-              </div>
-              <div className="conductor-controls">
-                {canPrevious && <button type="button" onClick={onPreviousCheckpoint}>Previous checkpoint</button>}
-                {canPlay && <button type="button" className="primary-control" onClick={onPlayCheckpoint}>Play this checkpoint</button>}
-                {canAdvance && <button type="button" onClick={onAdvanceCanonical}>Advance with canonical result <small>Simulated demo action</small></button>}
-                {canNext && <button type="button" className="primary-control" onClick={onNextCheckpoint}>Next checkpoint</button>}
-                {showTripAction && <button type="button" className="primary-control" onClick={onOpenTripMode}>Open Trip Mode</button>}
-                <button type="button" onClick={() => document.getElementById("all-demo-checkpoints")?.scrollIntoView({ block: "start" })}>All checkpoints</button>
-                <button type="button" onClick={onExitDemo}>Exit demo</button>
-              </div>
-              {!canOpenTripMode && activeCheckpoint.id === "day-30" && (
-                <p className="trip-locked-note">Trip Mode stays locked until Day 30 produces a valid season completion.</p>
-              )}
-            </section>
-
-            <section className="admin-section" id="all-demo-checkpoints">
-              <p>All checkpoints</p>
-              <div className="admin-days admin-checkpoints conductor-checkpoints">
-                {ADMIN_FAST_TRACK_CHECKPOINTS.map((checkpoint, index) => {
-                  const phase = journeyPhase(checkpoint.id);
-                  const previousPhase = index ? journeyPhase(ADMIN_FAST_TRACK_CHECKPOINTS[index - 1].id) : null;
-                  const status = checkpoint.id === "trip"
-                    ? conductor.visitedCheckpointIds.includes("trip") ? "resolved" : "unplayed"
-                    : checkpointAuditStatus(conductor, checkpoint.id);
-                  const valid = checkpoint.id !== "trip" || canOpenTripMode;
-                  const played = checkpoint.id !== "trip" && conductor.playedNormally.includes(checkpoint.id);
-                  const simulated = checkpoint.id !== "trip" && conductor.advancedCanonically.includes(checkpoint.id);
-                  return (
-                    <Fragment key={checkpoint.id}>
-                      {phase !== previousPhase && <h3 className="admin-phase-heading">{phase}</h3>}
-                      <button
-                        type="button"
-                        className={conductor.activeCheckpointId === checkpoint.id ? "active" : ""}
-                        aria-pressed={conductor.activeCheckpointId === checkpoint.id}
-                        disabled={!valid}
-                        onClick={() => onSelectCheckpoint(checkpoint.id)}
-                      >
-                        <span>{index + 1} · {checkpoint.eyebrow}</span>
-                        <strong>{checkpoint.title}</strong>
-                        <small>{checkpoint.detail}</small>
-                        <em>{status} · {played && simulated ? "played + canonical result" : played ? "played" : simulated ? "canonical result" : "no completion claim"} · {valid ? "entry valid" : "locked"}</em>
-                      </button>
-                    </Fragment>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="admin-section">
-              <p>Conditional truth previews</p>
-              <div className="admin-fast-track-intro">
-                <strong>Audit only—outside the walkthrough.</strong>
-                <span>Each preview remains in this demo namespace and returns to the selected checkpoint without advancing it.</span>
-              </div>
-              <div className="admin-days admin-checkpoints">
-                {ADMIN_TRUTH_PREVIEWS.map((preview) => (
-                  <button key={preview.id} type="button" onClick={() => onSelectTruthPreview(preview.id)}>
-                    <strong>{preview.label}</strong>
-                    <small>{preview.detail}</small>
+        <div className="admin-section">
+          <p>Fast-track the 30-day lifecycle</p>
+          <div className="admin-fast-track-intro">
+            <strong>No waiting required.</strong>
+            <span>
+              These checkpoints preview the calendar without changing your saved {profile.departureDate} departure.
+            </span>
+            <span>{IMPLEMENTED_EPISODES.length} playable · full Day 0–30 season</span>
+          </div>
+          <div className="admin-days admin-checkpoints">
+            {ADMIN_FAST_TRACK_CHECKPOINTS.map((checkpoint, index) => {
+              const day = checkpoint.id === "trip" ? 31 : Number(checkpoint.id.slice(4));
+              const phase = checkpoint.id === "trip" ? "During the trip" : day <= 7 ? "Arrival foundation" : day <= 13 ? "Independent routines" : day <= 20 ? "Recovery and continuity" : day <= 26 ? "Familiarity" : "Departure and independence";
+              const previous = index === 0 ? null : ADMIN_FAST_TRACK_CHECKPOINTS[index - 1];
+              const previousDay = previous?.id === "trip" ? 31 : previous ? Number(previous.id.slice(4)) : -1;
+              const previousPhase = !previous ? null : previous.id === "trip" ? "During the trip" : previousDay <= 7 ? "Arrival foundation" : previousDay <= 13 ? "Independent routines" : previousDay <= 20 ? "Recovery and continuity" : previousDay <= 26 ? "Familiarity" : "Departure and independence";
+              return (
+                <Fragment key={checkpoint.id}>
+                  {phase !== previousPhase && <h3 className="admin-phase-heading">{phase}</h3>}
+                  <button
+                    type="button"
+                    className={activeCheckpointId === checkpoint.id ? "active" : ""}
+                    aria-pressed={activeCheckpointId === checkpoint.id}
+                    onClick={() => onSelectCheckpoint(checkpoint.id)}
+                  >
+                    <span>{index + 1} · {checkpoint.eyebrow}</span>
+                    <strong>{checkpoint.title}</strong>
+                    <small>{checkpoint.detail}</small>
                   </button>
-                ))}
-              </div>
-            </section>
+                </Fragment>
+              );
+            })}
+          </div>
+          <div className="admin-fast-track-actions">
+            {nextCheckpoint ? (
+              <button type="button" className="admin-next-checkpoint" onClick={() => onSelectCheckpoint(nextCheckpoint.id)}>
+                Next checkpoint: {nextCheckpoint.title} <span aria-hidden="true">→</span>
+              </button>
+            ) : (
+              <span className="admin-fast-track-complete">You are at the final checkpoint.</span>
+            )}
+            {activeCheckpointId && (
+              <button type="button" className="admin-live-date" onClick={onUseLiveDate}>
+                Return to live date
+              </button>
+            )}
+          </div>
+        </div>
 
-            <section className="admin-section audit-section">
-              <p>Authoritative demo snapshot</p>
-              <dl>
-                <div><dt>Money</dt><dd>{money(game.money)}</dd></div>
-                <div><dt>Hotel / apartment key</dt><dd>{game.keyCustody.hotel} · {game.keyCustody.apartment}</dd></div>
-                <div><dt>Inventory</dt><dd>{game.inventory.length ? game.inventory.join(" · ") : "Empty"}</dd></div>
-                <div><dt>Transport</dt><dd>{game.transportMode} · {game.transportStatus}</dd></div>
-                <div><dt>Open issues</dt><dd>{game.openIssues.length ? game.openIssues.join(" · ") : "None"}</dd></div>
-                <div><dt>Departure</dt><dd>{game.departurePlan ?? game.departureStatus}</dd></div>
-                <div><dt>Season completion</dt><dd>{game.seasonCompletion ? `${game.seasonCompletion.outcomeId} · attempt ${game.seasonCompletion.attempt}` : "Not complete"}</dd></div>
-                <div><dt>Pocket Deck boundary</dt><dd>Canonical advances carry no practice evidence</dd></div>
-              </dl>
-            </section>
+        <div className="admin-section">
+          <p>Truth-state previews</p>
+          <div className="admin-fast-track-intro">
+            <strong>Audit the conditional episodes directly.</strong>
+            <span>These Admin-only seeds change rehearsal state so each Day 19 and Day 21 consequence can be checked without replaying prior days.</span>
+          </div>
+          <div className="admin-days admin-checkpoints">
+            {ADMIN_TRUTH_PREVIEWS.map((preview) => (
+              <button
+                key={preview.id}
+                type="button"
+                onClick={() => onSelectTruthPreview(preview.id)}
+              >
+                <strong>{preview.label}</strong>
+                <small>{preview.detail}</small>
+              </button>
+            ))}
+          </div>
+        </div>
 
-            <section className="admin-section demo-reset-section">
-              <p>Demo data only</p>
-              {!confirmingDemoReset ? (
-                <button type="button" className="danger-secondary" onClick={() => setConfirmingDemoReset(true)}>Reset demo</button>
-              ) : (
-                <div className="reset-confirmation" role="alertdialog" aria-label="Confirm demo reset">
-                  <strong>Reset this demo?</strong>
-                  <p>This clears only the synthetic demo game, profile, lifecycle, guided session, Pocket Deck, and conductor record. Owner data stays untouched.</p>
-                  <div>
-                    <button type="button" onClick={() => setConfirmingDemoReset(false)}>Cancel</button>
-                    <button type="button" className="danger" onClick={onResetDemo}>Reset demo only</button>
-                  </div>
-                </div>
-              )}
-            </section>
-          </>
-        ) : null}
+        <div className="admin-section audit-section">
+          <p>Authoritative snapshot</p>
+          <dl>
+            <div><dt>Hotel key</dt><dd>{game.hotelKey ? "Issued" : "Not issued"}</dd></div>
+            <div><dt>Apartment key</dt><dd>{game.apartmentKey ? "Issued" : "Not issued"}</dd></div>
+            <div><dt>Inventory</dt><dd>{game.inventory.length ? game.inventory.join(" · ") : "Empty"}</dd></div>
+            <div><dt>Bus route</dt><dd>{game.routeFact ?? "Not known"}</dd></div>
+            <div><dt>Pharmacy item</dt><dd>{game.pharmacyItem ?? "None"}</dd></div>
+            <div><dt>Beach rental</dt><dd>{game.rental ?? "None"}</dd></div>
+            <div><dt>Café state</dt><dd>{game.cafeOutcome ?? "No resolved event"}</dd></div>
+            <div><dt>Ferry memory</dt><dd>{game.ferryMemory ?? "Not shared"}</dd></div>
+            <div><dt>Location / time</dt><dd>{game.currentLocation} · {game.currentTime}</dd></div>
+            <div><dt>Laundry</dt><dd>{game.laundryStatus}</dd></div>
+            <div><dt>Transport</dt><dd>{game.transportMode} · {game.transportStatus}</dd></div>
+            <div><dt>Hot water</dt><dd>{game.hotWaterStatus}</dd></div>
+            <div><dt>Repair commitment</dt><dd>{game.repairCommitment ? `${game.repairCommitment.window} · ${game.repairCommitment.status}` : "None"}</dd></div>
+            <div><dt>Parcel</dt><dd>{game.parcelStatus}</dd></div>
+            <div><dt>Second parcel</dt><dd>{game.secondParcelStatus}</dd></div>
+            <div><dt>Beach plan / remedy</dt><dd>{game.beachPlanStatus} · {game.beachRemedy}</dd></div>
+            <div><dt>Invitation / attendance</dt><dd>{game.invitationResponse} · {game.eventAttendance}</dd></div>
+            <div><dt>Table preference</dt><dd>{game.tablePreference}</dd></div>
+            <div><dt>Repair credit</dt><dd>{game.repairCreditEligibility} · {game.repairCreditStatus}</dd></div>
+            <div><dt>Day-trip plan</dt><dd>{game.transportPlan ? `${game.transportPlan.firstDeparture} · ${game.transportPlan.changeAt} · ${game.transportPlan.connectionTime} · stand ${game.transportPlan.stand}` : "None"}</dd></div>
+            <div><dt>Key custody</dt><dd>hotel {game.keyCustody.hotel} · apartment {game.keyCustody.apartment}</dd></div>
+            <div><dt>Departure</dt><dd>{game.departurePlan ?? game.departureStatus}</dd></div>
+            <div><dt>Season completion</dt><dd>{game.seasonCompletion ? `${game.seasonCompletion.outcomeId} · attempt ${game.seasonCompletion.attempt}` : "Not complete"}</dd></div>
+            <div><dt>Last outcome</dt><dd>{game.outcome?.id ?? "None"}</dd></div>
+          </dl>
+        </div>
+
+        <div className="admin-actions">
+          <button type="button" onClick={onRestart}>Restart current day</button>
+          <button type="button" className="danger" onClick={onReset}>Reset entire prototype</button>
+        </div>
       </section>
     </div>
   );

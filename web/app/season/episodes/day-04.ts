@@ -30,8 +30,7 @@ export const day04Episode: EpisodeDefinition = {
     const two = any(normalized, ["due", "two", "standard", "trenta", "30"]);
     const umbrella = any(normalized, ["ombrell", "umbrella", "sombrilla", "shade"]);
     const chair = any(normalized, ["lettino", "chair", "sedia", "bed"]);
-    const explicitlyWithoutUmbrella = any(normalized, ["senza ombrellone", "without umbrella", "no umbrella"]);
-    const chairOnly = chair && any(normalized, ["senza", "only", "solo"]) && (!umbrella || explicitlyWithoutUmbrella);
+    const chairOnly = chair && any(normalized, ["senza", "only", "solo"]) && !umbrella;
     const accept = anyWholePhrase(normalized, YES) || any(normalized, PAY);
     if (state.turnId === "e02_01_need") {
       if (exit) return runtime.queueTerminal(state, "e02_08_exit", "E2-O4", {}, createId);

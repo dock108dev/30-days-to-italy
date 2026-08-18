@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createElement, createRef } from "react";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import {
@@ -14,14 +14,9 @@ import {
   ADMIN_TRUTH_PREVIEWS,
   seedAdminTruthPreview,
 } from "../app/admin/truth-previews";
-import { createDemoConductor } from "../app/admin/demo-conductor";
 import { seedEpisodeState } from "../app/game/engine";
 import { initialState } from "../app/game/model";
-import {
-  AdminModal,
-  CompactSessionProgress,
-  SeasonOverview,
-} from "../app/prototype/PrototypeViews";
+import { AdminModal, DayRail } from "../app/prototype/PrototypeViews";
 import { createDefaultTripProfile } from "../app/trip/model";
 
 test("admin fast-track covers the implemented lifecycle in order", () => {
@@ -113,102 +108,44 @@ test("calendar previews are local, deterministic, and never mutate departure", (
   assert.equal(departure, "2026-09-02");
 });
 
-test("Admin starts only an isolated walkthrough from owner mode", () => {
+test("Admin renders the immediate walkthrough and truthful date boundary", () => {
   const profile = createDefaultTripProfile(new Date(2026, 7, 3, 12));
   const html = renderToStaticMarkup(
     createElement(AdminModal, {
       game: initialState(),
       profile,
-      sessionMode: "owner",
-      conductor: null,
-      canOpenTripMode: false,
+      activeCheckpointId: "day-00",
+      nextCheckpointId: "day-01",
       onClose: () => undefined,
-      onStartDemo: () => undefined,
       onSelectCheckpoint: () => undefined,
       onSelectTruthPreview: () => undefined,
-      onPreviousCheckpoint: () => undefined,
-      onPlayCheckpoint: () => undefined,
-      onAdvanceCanonical: () => undefined,
-      onNextCheckpoint: () => undefined,
-      onOpenTripMode: () => undefined,
-      onExitDemo: () => undefined,
-      onResetDemo: () => undefined,
-      onResetOwner: () => undefined,
+      onRestart: () => undefined,
+      onUseLiveDate: () => undefined,
+      onReset: () => undefined,
     }),
   );
 
-  assert.match(html, /Start demo walkthrough/);
-  assert.match(html, /without touching this journey/);
-  assert.match(html, /saved departure remains 2026-09-02/);
-  assert.match(html, /Reset owner journey/);
-  assert.doesNotMatch(html, /Advance with canonical result/);
-});
-
-test("Demo conductor renders valid immediate controls, grouped audit states, and separate reset", () => {
-  const profile = createDefaultTripProfile(new Date(2026, 7, 3, 12));
-  const conductor = createDemoConductor("demo-12345678", new Date("2026-08-15T12:00:00.000Z"));
-  const html = renderToStaticMarkup(createElement(AdminModal, {
-    game: initialState(),
-    profile,
-    sessionMode: "demo",
-    conductor,
-    canOpenTripMode: false,
-    onClose: () => undefined,
-    onStartDemo: () => undefined,
-    onSelectCheckpoint: () => undefined,
-    onSelectTruthPreview: () => undefined,
-    onPreviousCheckpoint: () => undefined,
-    onPlayCheckpoint: () => undefined,
-    onAdvanceCanonical: () => undefined,
-    onNextCheckpoint: () => undefined,
-    onOpenTripMode: () => undefined,
-    onExitDemo: () => undefined,
-    onResetDemo: () => undefined,
-    onResetOwner: () => undefined,
-  }));
-  assert.match(html, /Demo conductor/);
-  assert.match(html, /Play this checkpoint/);
-  assert.match(html, /Advance with canonical result/);
-  assert.match(html, /Simulated demo action/);
-  assert.match(html, /All checkpoints/);
-  assert.match(html, /Arrival foundation/);
-  assert.match(html, /Departure and independence/);
-  assert.match(html, /Conditional truth previews/);
-  assert.match(html, /Reset demo/);
-  assert.match(html, /Exit demo/);
-  assert.match(html, /Trip Mode/);
-  assert.match(html, /locked/);
-  assert.doesNotMatch(html, /Reset owner journey/);
+  assert.match(html, /Fast-track the 30-day lifecycle/);
+  assert.match(html, /No waiting required/);
+  assert.match(html, /without changing your saved 2026-09-02 departure/);
+  assert.match(html, /The key to Casa Limone/);
+  assert.match(html, /Next checkpoint: The key to Casa Limone/);
+  assert.match(html, /Pocket Deck/);
+  assert.match(html, /Truth-state previews/);
+  assert.match(html, /Day 21 · no transport history/);
   assert.equal((html.match(/aria-pressed="true"/g) ?? []).length, 1);
 });
 
-test("active progress stays compact and the traveler overview owns all sessions", () => {
+test("the season rail stays calm while disclosing every playable session", () => {
   const profile = createDefaultTripProfile(new Date(2026, 7, 3, 12));
-  const game = seedEpisodeState(initialState(), "day-08");
-  const compact = renderToStaticMarkup(createElement(CompactSessionProgress, {
-    game,
+  const html = renderToStaticMarkup(createElement(DayRail, {
+    game: seedEpisodeState(initialState(), "day-08"),
     profile,
     today: "2026-08-10",
     adminBypass: true,
-    onBrowse: () => undefined,
-  }));
-  assert.match(compact, /Day 8/);
-  assert.match(compact, /Browse all 31 sessions/);
-  assert.doesNotMatch(compact, /Day 7/);
-  assert.doesNotMatch(compact, /Day 9/);
-
-  const overview = renderToStaticMarkup(createElement(SeasonOverview, {
-    game,
-    profile,
-    today: "2026-08-10",
-    adminBypass: true,
-    closeRef: createRef<HTMLButtonElement>(),
-    onClose: () => undefined,
-    onEditTrip: () => undefined,
     onSelect: () => undefined,
   }));
-  assert.match(overview, /All 31 practical sessions/);
-  assert.match(overview, /Day 30/);
-  assert.equal((overview.match(/aria-current="step"/g) ?? []).length, 1);
-  assert.doesNotMatch(overview, /Prototype admin/);
+  assert.match(html, /Showing the sessions around today/);
+  assert.match(html, /All 31 playable sessions/);
+  assert.equal((html.match(/class="day-node/g) ?? []).length, 36);
 });

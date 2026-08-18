@@ -56,17 +56,13 @@ test("derives absolute social metadata from the deployed request origin", async 
 });
 
 test("ships the player-facing save, support, teaching, and admin controls", async () => {
-  const [page, views, styles, hosting] = await Promise.all([
+  const [page, styles, hosting] = await Promise.all([
     readFile(new URL("../app/prototype/PrototypeApp.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/prototype/PrototypeViews.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /saveGame\(runtime!\.storage, game\)/);
-  assert.match(page, /loadActiveDemoSession/);
-  assert.match(page, /startDemoSession/);
-  assert.match(page, /exitDemoSession/);
+  assert.match(page, /saveGame\(window\.localStorage, game\)/);
   assert.match(page, /PrototypeHeader/);
   assert.match(page, /EncounterStage/);
   assert.match(page, /TeachingCard/);
@@ -74,23 +70,10 @@ test("ships the player-facing save, support, teaching, and admin controls", asyn
   assert.match(page, /AdminModal/);
   assert.match(page, /TripSetup/);
   assert.match(page, /ModeNavigation/);
-  assert.match(page, /CompactSessionProgress/);
-  assert.match(page, /SeasonOverview/);
-  assert.match(page, /onReview={openSeasonOverview}/);
-  assert.doesNotMatch(page, /onReview=\{\(\) => setAdminOpen\(true\)\}/);
+  assert.match(page, /PrepareFocus/);
   assert.match(page, /onEditTrip={openTripEditor}/);
   assert.match(page, /PocketDeck/);
-  assert.match(page, /clearAllLocalState\(storage\)/);
-  assert.match(views, /Start demo walkthrough/);
-  assert.match(views, /Reset demo only/);
-  assert.match(views, /Remove owner journey data/);
-  assert.match(views, /data-review-section="objective-result"/);
-  assert.match(views, /data-review-section="understood-intent"/);
-  assert.match(views, /data-review-section="useful-phrasing"/);
-  assert.match(views, /data-review-section="world-consequence"/);
-  assert.match(views, /data-review-section="pocket-deck-effect"/);
-  assert.match(views, /data-review-section="next-action"/);
-  assert.match(views, /Browse the other \{remainingLessons\.length\} patterns/);
+  assert.match(page, /clearAllLocalState\(window\.localStorage\)/);
   assert.match(styles, /@media \(max-width: 680px\)/);
   const hostingConfig = JSON.parse(hosting);
   assert.equal(hostingConfig.d1, null);
