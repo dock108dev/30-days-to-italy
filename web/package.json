@@ -1,0 +1,49 @@
+{
+  "name": "un-mese-sulla-costa",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "audio:generate": "node --import tsx scripts/generate-local-audio.ts",
+    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
+    "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build && node --import tsx scripts/build-offline.ts prepare && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build && node --import tsx scripts/build-offline.ts verify",
+    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "test:interaction": "npm run build && node --import tsx scripts/interaction-acceptance.ts",
+    "test:admin-demo": "npm run build && node --import tsx scripts/admin-demo-acceptance.ts",
+    "test:checkpoint-hardening": "npm run build && node --import tsx scripts/checkpoint-hardening.ts",
+    "test:response-contracts": "node --import tsx --test tests/response-contracts.test.ts tests/day19-day21-truth.test.ts tests/final-season.test.ts",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs && node --import tsx --test tests/game-engine.test.ts tests/middle-season.test.ts tests/day19-day21-truth.test.ts tests/final-season.test.ts tests/season-architecture.test.ts tests/trip-profile.test.ts tests/lifecycle.test.ts tests/guided-session.test.ts tests/pocket-deck.test.ts tests/offline-pwa.test.ts tests/admin-fast-track.test.ts tests/interaction-coordinator.test.ts tests/presentation-contract.test.ts tests/demo-session.test.ts tests/canonical-demo.test.ts",
+    "test:offline": "npm run build && node --import tsx scripts/offline-acceptance.ts",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+  },
+  "dependencies": {
+    "next": "^16.3.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "overrides": {
+    "nanoid": "3.3.18"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.26",
+    "eslint": "9.39.4",
+    "eslint-config-next": "^16.3.0",
+    "playwright-core": "^1.62.1",
+    "react-server-dom-webpack": "19.2.6",
+    "tailwindcss": "4.2.1",
+    "tsx": "^4.23.5",
+    "typescript": "5.9.3",
+    "vinext": "0.0.50",
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
+  },
+  "type": "module"
+}
