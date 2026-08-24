@@ -131,7 +131,11 @@ function markerFromRaw(raw: string | null): DemoMarker | null {
 function createSessionId(now: Date): string {
   const random = typeof globalThis.crypto?.randomUUID === "function"
     ? globalThis.crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
+    : typeof globalThis.crypto?.getRandomValues === "function"
+      ? Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)))
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("")
+      : now.getTime().toString(36);
   return `${now.getTime().toString(36)}-${random}`.replace(/[^a-z0-9-]/gi, "-");
 }
 
