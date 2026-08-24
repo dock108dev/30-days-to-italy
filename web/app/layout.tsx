@@ -58,8 +58,13 @@ function requestOrigin(host: string | null, forwardedProtocol: string | null): U
       : "https";
 
   try {
+    if (/[\\/@?#\s]/.test(cleanHost)) throw new TypeError("Invalid forwarded host syntax");
     return new URL(`${protocol}://${cleanHost}`);
-  } catch {
+  } catch (error) {
+    console.warn("[30-days-to-italy] metadata origin fallback", {
+      code: "INVALID_REQUEST_ORIGIN",
+      causeType: error instanceof Error ? error.name : typeof error,
+    });
     return new URL("http://localhost:3000");
   }
 }

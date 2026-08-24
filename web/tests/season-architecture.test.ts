@@ -41,12 +41,11 @@ function respond(state: GameState, response: string, createId: HistoryIdFactory)
   return result.state;
 }
 
-test("every implemented episode owns reviewed content, rules, observations, and an Admin seed", () => {
+test("every current episode owns reviewed content, rules, observations, and an Admin seed", () => {
   assert.equal(SEASON_01.length, 31);
   assert.equal(new Set(SEASON_01.map((episode) => episode.id)).size, 31);
   assert.equal(IMPLEMENTED_EPISODE_DEFINITIONS.length, 31);
   for (const definition of IMPLEMENTED_EPISODE_DEFINITIONS) {
-    assert.equal(definition.status, "implemented");
     assert.equal(definition.authoringStatus, "reviewed");
     assert.match(definition.contentVersion, /^\d+\.\d+\.\d+$/);
     assert.equal(definition.scene.episodeId, definition.id);
@@ -60,7 +59,7 @@ test("every implemented episode owns reviewed content, rules, observations, and 
   }
 });
 
-test("compatibility catalogs are exact aggregates of registered definitions", () => {
+test("derived scene, turn, and outcome catalogs exactly match registered definitions", () => {
   assert.deepEqual(SCENES, IMPLEMENTED_EPISODE_DEFINITIONS.map((definition) => definition.scene));
   assert.equal(
     Object.keys(TURNS).length,
@@ -83,7 +82,6 @@ test("a fixture definition executes through the generic coordinator without an e
   const metadata = seasonEpisode("day-08");
   const fixture: EpisodeDefinition = {
     ...metadata,
-    status: "implemented",
     sceneId: "hotel",
     scene: { id: "hotel", episodeId: "day-08", day: "Day 8", dateLabel: "Fixture", title: "Fixture", location: "Test counter", time: "12:00", npc: "Tester", role: "Fixture", objective: "Advance once.", firstTurn: "fixture-start", kicker: "Architecture only.", suggestions: [] },
     turns: {
@@ -100,7 +98,6 @@ test("a fixture definition executes through the generic coordinator without an e
     },
     adminSeed: () => ({}),
     buildResult: buildObservedEpisodeResult,
-    terminalBehavior: "resolve",
   };
   const state = { ...initialState(), episodeId: "day-08" as const, turnId: "fixture-start" };
   const fixtureRegistry = createEpisodeCoordinator([fixture]);

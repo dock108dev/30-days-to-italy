@@ -32,6 +32,7 @@ import {
   type RelationshipDisposition,
   type SupportRecord,
 } from "./model";
+import { reportClientFailure } from "../observability/client-failures";
 
 export type LocalGameStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -311,7 +312,7 @@ function normalizeRelationships(
   for (const [character, raw] of Object.entries(value).slice(0, 20)) {
     if (typeof raw !== "string" || !raw.trim()) continue;
     const normalized = raw.trim().toLowerCase();
-    if (schemaVersion === 3 || schemaVersion === 4 || schemaVersion === 5) {
+    if (schemaVersion === 3 || schemaVersion === 4 || schemaVersion === 5 || schemaVersion === 6) {
       if (DISPOSITIONS.has(normalized as RelationshipDisposition)) {
         relationships[character] = normalized as RelationshipDisposition;
       }
@@ -495,7 +496,7 @@ export function hydrateGameState(value: unknown): GameState {
 
   return {
     ...defaults,
-    schemaVersion: 5,
+    schemaVersion: 6,
     episodeId,
     turnId,
     status,
@@ -591,6 +592,9 @@ export function hydrateGameState(value: unknown): GameState {
     completed: normalizeCompleted(value.completed),
     outcome,
     feedback,
+    guidance: status === "active" && typeof value.guidance === "string" && value.guidance.trim()
+      ? value.guidance.trim().slice(0, 500)
+      : null,
     history: normalizeHistory(value.history),
     support: normalizeSupport(value.support),
     phrasePractice: normalizePhrasePractice(value.phrasePractice),
@@ -607,19 +611,61 @@ export function parseSavedGame(serialized: string | null): GameState {
   if (!serialized) return initialState();
   try {
     return hydrateGameState(JSON.parse(serialized));
-  } catch {
+  } catch (error) {
+    reportClientFailure({
+      code: "PERSISTENCE_DATA_INVALID",
+      domain: "game",
+      operation: "parse",
+      severity: "error",
+      userMessage: "Saved rehearsal progress could not be read. The app opened a safe new session without replacing the saved record.",
+    }, error);
     return initialState();
   }
 }
 
 export function loadGame(storage: LocalGameStorage): GameState {
-  return parseSavedGame(storage.getItem(STORAGE_KEY));
+  try {
+    return parseSavedGame(storage.getItem(STORAGE_KEY));
+  } catch (error) {
+    reportClientFailure({
+      code: "PERSISTENCE_READ_FAILED",
+      domain: "game",
+      operation: "load",
+      severity: "error",
+      userMessage: "Rehearsal progress could not be read from this browser. Keep this tab open and check browser storage settings.",
+    }, error);
+    return initialState();
+  }
 }
 
-export function saveGame(storage: LocalGameStorage, state: GameState): void {
-  storage.setItem(STORAGE_KEY, JSON.stringify(state));
+export function saveGame(storage: LocalGameStorage, state: GameState): boolean {
+  try {
+    storage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch (error) {
+    reportClientFailure({
+      code: "PERSISTENCE_WRITE_FAILED",
+      domain: "game",
+      operation: "save",
+      severity: "error",
+      userMessage: "Your latest rehearsal progress was not saved. Keep this tab open and free browser storage before continuing.",
+    }, error);
+    return false;
+  }
 }
 
-export function clearSavedGame(storage: LocalGameStorage): void {
-  storage.removeItem(STORAGE_KEY);
+export function clearSavedGame(storage: LocalGameStorage): boolean {
+  try {
+    storage.removeItem(STORAGE_KEY);
+    return true;
+  } catch (error) {
+    reportClientFailure({
+      code: "PERSISTENCE_CLEAR_FAILED",
+      domain: "game",
+      operation: "clear",
+      severity: "error",
+      userMessage: "The saved rehearsal could not be cleared completely. Reload before starting another journey.",
+    }, error);
+    return false;
+  }
 }

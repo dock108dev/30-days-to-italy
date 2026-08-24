@@ -27,6 +27,7 @@ import {
   lockPocketDeckDocumentScroll,
   releasePocketDeckShowViewLock,
 } from "./scroll-lock";
+import { reportClientFailure } from "../observability/client-failures";
 
 type PocketDeckProps = {
   profile: TripProfile;
@@ -38,6 +39,7 @@ type PocketDeckProps = {
   initialShowLargeText?: boolean;
   openCardId?: string | null;
   onOpenCardHandled?: () => void;
+  demoMode?: boolean;
 };
 
 type PlayingAudio = {
@@ -80,6 +82,7 @@ function PocketDeckCardTile({
   pinned,
   practiced,
   recent,
+  demoMode = false,
   onOpen,
   onTogglePin,
 }: {
@@ -87,6 +90,7 @@ function PocketDeckCardTile({
   pinned: boolean;
   practiced: boolean;
   recent: boolean;
+  demoMode?: boolean;
   onOpen: (cardId: string) => void;
   onTogglePin: (cardId: string) => void;
 }) {
@@ -95,7 +99,7 @@ function PocketDeckCardTile({
       <div className="deck-card-meta">
         <div className="deck-card-labels">
           <span>{POCKET_DECK_CATEGORY_LABELS[card.category]}</span>
-          {practiced && <strong>Practiced</strong>}
+          {practiced && <strong>{demoMode ? "Demo practiced" : "Practiced"}</strong>}
           {recent && <strong>Recent</strong>}
         </div>
         <PinButton card={card} pinned={pinned} onToggle={onTogglePin} />
@@ -119,6 +123,7 @@ function CardGrid({
   pinnedIds,
   practicedIds,
   recentIds = [],
+  demoMode = false,
   onOpen,
   onTogglePin,
 }: {
@@ -126,6 +131,7 @@ function CardGrid({
   pinnedIds: readonly string[];
   practicedIds: readonly string[];
   recentIds?: readonly string[];
+  demoMode?: boolean;
   onOpen: (cardId: string) => void;
   onTogglePin: (cardId: string) => void;
 }) {
@@ -138,6 +144,7 @@ function CardGrid({
           pinned={pinnedIds.includes(card.id)}
           practiced={practicedIds.includes(card.id)}
           recent={recentIds.includes(card.id)}
+          demoMode={demoMode}
           onOpen={onOpen}
           onTogglePin={onTogglePin}
         />
@@ -156,6 +163,7 @@ export function PocketDeck({
   initialShowLargeText = false,
   openCardId,
   onOpenCardHandled,
+  demoMode = false,
 }: PocketDeckProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<PocketDeckCategory | null>(null);
@@ -345,7 +353,14 @@ export function PocketDeck({
     setPlaying({ cardId: card.id, speed });
     try {
       await audio.play();
-    } catch {
+    } catch (error) {
+      reportClientFailure({
+        code: "AUDIO_PLAYBACK_FAILED",
+        domain: "audio",
+        operation: "play-pocket-deck-card",
+        severity: "warning",
+        userMessage: "Pocket Deck audio could not play. The Italian text remains available on the card.",
+      }, error);
       setPlaying(null);
       setAudioError("Audio could not play. The Italian text is still available below.");
     }
@@ -425,6 +440,13 @@ export function PocketDeck({
           </div>
         </div>
 
+        {demoMode && (
+          <section className="demo-deck-boundary" aria-label="Demo Pocket Deck evidence boundary">
+            <strong>Demo-only Pocket Deck</strong>
+            <p>Core catalog cards are always available. “Demo practiced” marks evidence deliberately carried from a played demo scene; canonically advanced checkpoints add no practice evidence. Pins and Recents here disappear when Demo mode exits.</p>
+          </section>
+        )}
+
         {activeCard ? (
           <article className="deck-card-detail" aria-labelledby="deck-card-italian">
             <div className="deck-detail-toolbar">
@@ -488,8 +510,8 @@ export function PocketDeck({
             {latestPractice && latestPracticeSummary && (
               <section className="deck-practice-evidence" aria-labelledby="deck-practice-title">
                 <div>
-                  <span>From your rehearsal</span>
-                  <h3 id="deck-practice-title">You have handled this before.</h3>
+                  <span>{demoMode ? "Demo-only carried evidence" : "From your rehearsal"}</span>
+                  <h3 id="deck-practice-title">{demoMode ? "This was practiced inside the demo." : "You have handled this before."}</h3>
                   <p>{latestPracticeSummary.reminder}</p>
                 </div>
                 <div>
@@ -564,6 +586,7 @@ export function PocketDeck({
                     cards={results}
                     pinnedIds={state.pinnedCardIds}
                     practicedIds={practicedCardIds}
+                    demoMode={demoMode}
                     onOpen={openCard}
                     onTogglePin={togglePin}
                   />
@@ -575,6 +598,7 @@ export function PocketDeck({
                       cards={recoveryCards}
                       pinnedIds={state.pinnedCardIds}
                       practicedIds={practicedCardIds}
+                      demoMode={demoMode}
                       onOpen={openCard}
                       onTogglePin={togglePin}
                     />
@@ -596,6 +620,7 @@ export function PocketDeck({
                       cards={quickAccessCards}
                       pinnedIds={state.pinnedCardIds}
                       practicedIds={practicedCardIds}
+                      demoMode={demoMode}
                       recentIds={state.recentCardIds}
                       onOpen={openCard}
                       onTogglePin={togglePin}
@@ -639,6 +664,7 @@ export function PocketDeck({
                     cards={remainingRecoveryCards}
                     pinnedIds={state.pinnedCardIds}
                     practicedIds={practicedCardIds}
+                    demoMode={demoMode}
                     onOpen={openCard}
                     onTogglePin={togglePin}
                   />
@@ -655,6 +681,7 @@ export function PocketDeck({
                       cards={CORE_POCKET_DECK_CARDS}
                       pinnedIds={state.pinnedCardIds}
                       practicedIds={practicedCardIds}
+                      demoMode={demoMode}
                       recentIds={state.recentCardIds}
                       onOpen={openCard}
                       onTogglePin={togglePin}

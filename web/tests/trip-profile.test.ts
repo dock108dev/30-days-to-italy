@@ -152,7 +152,7 @@ test("trip profile and rehearsal state use separate local keys", () => {
   assert.equal(values.has(TRIP_PROFILE_STORAGE_KEY), false);
 });
 
-test("profile storage failures never crash the prototype", () => {
+test("profile storage failures never crash the application", () => {
   const profile = createDefaultTripProfile(new Date(2026, 7, 3, 12));
   const failingStorage: TripProfileStorage = {
     getItem() { throw new Error("blocked"); },

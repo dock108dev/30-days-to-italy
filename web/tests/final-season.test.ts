@@ -14,7 +14,7 @@ import { hydrateGameState, loadGame, saveGame, type LocalGameStorage } from "../
 import { createDefaultLifecycleState, withLifecycleMode } from "../app/lifecycle/model";
 import { clearAllLocalState } from "../app/persistence/reset";
 import { CORE_POCKET_DECK_CARD_BY_ID, CORE_POCKET_DECK_CARDS } from "../app/pocket-deck/catalog";
-import { IMPLEMENTED_EPISODES, SEASON_01 } from "../app/season/manifest";
+import { SEASON_01 } from "../app/season/manifest";
 
 function ids(): HistoryIdFactory {
   let index = 0;
@@ -52,10 +52,8 @@ function memoryStorage(): { values: Map<string, string>; storage: LocalGameStora
   };
 }
 
-test("the full registry has 31 playable sessions and no planned placeholders", () => {
+test("the current season contains exactly 31 supported sessions", () => {
   assert.equal(SEASON_01.length, 31);
-  assert.equal(IMPLEMENTED_EPISODES.length, 31);
-  assert.equal(SEASON_01.every((episode) => episode.status === "implemented"), true);
 });
 
 test("every final-arc episode has a clean early exit", () => {
@@ -503,10 +501,11 @@ test("a pending Day 28 purchase survives hydration without a duplicate charge", 
   assert.equal(resolved.worldEvents.filter((event) => event === "day28-vietri-fare-paid").length, 1);
 });
 
-test("v1 through v4 saves migrate to bounded v5 defaults", () => {
-  for (const schemaVersion of [1, 2, 3, 4]) {
+test("v1 through v5 saves migrate to bounded v6 defaults", () => {
+  for (const schemaVersion of [1, 2, 3, 4, 5]) {
     const migrated = hydrateGameState({ schemaVersion, episodeId: "day-21", turnId: "e04_01_usual", status: "active" });
-    assert.equal(migrated.schemaVersion, 5);
+    assert.equal(migrated.schemaVersion, 6);
+    assert.equal(migrated.guidance, null);
     assert.equal(migrated.seasonCompletion, null);
     assert.equal(migrated.secondParcelStatus, "none");
     assert.equal(migrated.eventAttendance, "unknown");

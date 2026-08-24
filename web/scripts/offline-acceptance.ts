@@ -99,6 +99,7 @@ function practiceEvidence(): PocketDeckPracticeEvidence {
     refresherMethod: "inserted",
     quantityClarified: true,
     priceConfirmed: true,
+    preferenceSelected: null,
     normalReplayCount: 0,
     carefulReplayCount: 0,
     transcriptRevealCount: 0,

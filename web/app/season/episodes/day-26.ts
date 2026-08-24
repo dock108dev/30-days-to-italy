@@ -6,7 +6,7 @@ import { finalArcAdminSeed } from "./shared";
 const metadata = seasonEpisode("day-26");
 
 export const day26Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "quiet-table",
+  ...metadata, sceneId: "quiet-table",
   scene: { id: "quiet-table", episodeId: "day-26", day: "Day 26", dateLabel: "A table on your terms", title: metadata.title, location: metadata.location, time: "19:00", npc: "Rosa", role: "Trattoria host", objective: "Choose the quiet table instead of the louder view table. No meal is ordered in this rehearsal.", firstTurn: "d26_01_choice", kicker: "A table preference does not create a food order or a charge.", suggestions: ["Preferirei un tavolo tranquillo.", "Non quello con la vista, grazie.", "No, grazie."] },
   turns: {
     d26_01_choice: authoredTurn("d26_01_choice", "Rosa", "Ho un tavolo tranquillo dentro oppure un tavolo con vista, ma fuori c'è più rumore.", "Choose quiet, choose the view, or leave."),
@@ -36,5 +36,5 @@ export const day26Episode: EpisodeDefinition = {
     if (after.turnId === "d26_04_exit") return observation(["decline", "boundary"]);
     return noObservation();
   },
-  adminSeed: () => finalArcAdminSeed(26), buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  adminSeed: () => finalArcAdminSeed(26), buildResult: buildObservedEpisodeResult,
 };

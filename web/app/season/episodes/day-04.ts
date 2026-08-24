@@ -5,7 +5,7 @@ import { authoredTurn, buildObservedEpisodeResult, isAcceptedTransition, noObser
 const metadata = seasonEpisode("day-04");
 
 export const day04Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "beach",
+  ...metadata, sceneId: "beach",
   scene: { id: "beach", episodeId: "day-04", day: "Day 4", dateLabel: "Settling in", title: metadata.title, location: metadata.location, time: "10:00", npc: "Nadia", role: "Lido attendant", objective: "Rent one beach chair and one umbrella for today without accidentally buying a two-chair package.", firstTurn: "e02_01_need", kicker: "The standard offer is designed for two people. You are here alone.", suggestions: ["Un lettino e un ombrellone.", "Solo un lettino.", "No, grazie."] },
   turns: {
     e02_01_need: authoredTurn("e02_01_need", "Nadia", "Buongiorno. Cosa le serve?", "Ask for what you need. English nouns are okay."),
@@ -30,7 +30,8 @@ export const day04Episode: EpisodeDefinition = {
     const two = any(normalized, ["due", "two", "standard", "trenta", "30"]);
     const umbrella = any(normalized, ["ombrell", "umbrella", "sombrilla", "shade"]);
     const chair = any(normalized, ["lettino", "chair", "sedia", "bed"]);
-    const chairOnly = chair && any(normalized, ["senza", "only", "solo"]) && !umbrella;
+    const explicitlyWithoutUmbrella = any(normalized, ["senza ombrellone", "without umbrella", "no umbrella"]);
+    const chairOnly = chair && any(normalized, ["senza", "only", "solo"]) && (!umbrella || explicitlyWithoutUmbrella);
     const accept = anyWholePhrase(normalized, YES) || any(normalized, PAY);
     if (state.turnId === "e02_01_need") {
       if (exit) return runtime.queueTerminal(state, "e02_08_exit", "E2-O4", {}, createId);
@@ -71,5 +72,5 @@ export const day04Episode: EpisodeDefinition = {
     return noObservation();
   },
   adminSeed: () => ({ money: 8960, hotelKey: true, apartmentKey: true, inventory: ["Bread", "Cheese", "Water"], relationships: { Giulia: "neutral" }, knownFacts: ["Giulia served the first espresso"], completed: ["day-00", "day-01", "day-02", "day-03"] }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

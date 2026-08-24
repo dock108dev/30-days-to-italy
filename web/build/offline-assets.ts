@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { relative, sep } from "node:path";
-import { TURNS } from "../app/game/model";
 import { CORE_POCKET_DECK_CARDS } from "../app/pocket-deck/catalog";
+import { TURNS } from "../app/season/registry";
 
 export const OFFLINE_CACHE_PREFIX = "thirty-days-to-italy-offline-";
 export const OFFLINE_MANIFEST_SCHEMA_VERSION = 1 as const;
@@ -140,7 +140,7 @@ async function statusReport(reason) {
       networkAvailable: await networkIsAvailable(),
       ...(reason ? { reason } : {}),
     };
-  } catch (error) {
+  } catch {
     return {
       type: "OFFLINE_STATUS",
       ready: false,
@@ -148,7 +148,7 @@ async function statusReport(reason) {
       requiredCount: REQUIRED_URLS.length,
       cachedCount: 0,
       networkAvailable: await networkIsAvailable(),
-      reason: error instanceof Error ? error.message : "Cache Storage unavailable",
+      reason: "CACHE_STORAGE_UNAVAILABLE",
     };
   }
 }
@@ -180,8 +180,8 @@ self.addEventListener("message", (event) => {
     if (event.data.type === "REPAIR_OFFLINE_CACHE") {
       try {
         await populateCache({ missingOnly: true });
-      } catch (error) {
-        reason = error instanceof Error ? error.message : "Offline repair failed";
+      } catch {
+        reason = "OFFLINE_REPAIR_FAILED";
       }
     }
     event.ports[0]?.postMessage(await statusReport(reason));

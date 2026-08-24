@@ -16,7 +16,7 @@ function issueIsExplicitlyAcknowledged(issue: string, normalized: string): boole
 }
 
 export const day30Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "checkout",
+  ...metadata, sceneId: "checkout",
   scene: { id: "checkout", episodeId: "day-30", day: "Day 30", dateLabel: "Departure ready", title: metadata.title, location: metadata.location, time: "18:00", npc: "Raffaele", role: "Host", objective: "Return every held key, confirm the checkout obligations, acknowledge any open issue, and state the departure plan.", firstTurn: "d30_01_keys", kicker: "The season completes only after the saved obligations are actually resolved.", suggestions: ["Ecco le chiavi dell'appartamento e dell'hotel.", "È tutto a posto?", "Parto domani mattina."] },
   turns: {
     d30_01_keys: authoredTurn("d30_01_keys", "Raffaele", "Prima del check-out devo ritirare la chiave dell'appartamento e qualsiasi chiave dell'hotel che ha ancora.", "Return every held key, report a missing key, or leave."),
@@ -123,6 +123,5 @@ export const day30Episode: EpisodeDefinition = {
     return noObservation();
   },
   adminSeed: () => finalArcAdminSeed(30), buildResult: buildObservedEpisodeResult,
-  terminalBehavior: "resolve",
   completionOutcomeIds: ["D30-O1", "D30-O2"],
 };

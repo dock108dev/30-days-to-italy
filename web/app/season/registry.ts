@@ -30,9 +30,10 @@ import { day28Episode } from "./episodes/day-28";
 import { day29Episode } from "./episodes/day-29";
 import { day30Episode } from "./episodes/day-30";
 import { SEASON_01, type EpisodeId } from "./manifest";
-import type { EpisodeDefinition } from "./types";
+import { CANONICAL_DEMO_PATHS } from "./canonical-demo-fixtures";
+import type { DemoEpisodeDefinition, EpisodeDefinition } from "./types";
 
-export const IMPLEMENTED_EPISODE_DEFINITIONS: readonly EpisodeDefinition[] = [
+const AUTHORED_EPISODE_DEFINITIONS: readonly EpisodeDefinition[] = [
   day00Episode,
   day01Episode,
   day02Episode,
@@ -66,7 +67,13 @@ export const IMPLEMENTED_EPISODE_DEFINITIONS: readonly EpisodeDefinition[] = [
   day30Episode,
 ];
 
-export const EPISODE_DEFINITION_BY_ID = new Map<EpisodeId, EpisodeDefinition>(
+export const IMPLEMENTED_EPISODE_DEFINITIONS: readonly DemoEpisodeDefinition[] =
+  AUTHORED_EPISODE_DEFINITIONS.map((definition) => ({
+    ...definition,
+    canonicalDemo: CANONICAL_DEMO_PATHS[definition.id],
+  }));
+
+export const EPISODE_DEFINITION_BY_ID = new Map<EpisodeId, DemoEpisodeDefinition>(
   IMPLEMENTED_EPISODE_DEFINITIONS.map((definition) => [definition.id, definition]),
 );
 
@@ -100,13 +107,13 @@ export const PENDING_TERMINAL_TURNS = new Map(
   ),
 );
 
-export function implementedEpisode(id: EpisodeId): EpisodeDefinition | null {
+export function implementedEpisode(id: EpisodeId): DemoEpisodeDefinition | null {
   return EPISODE_DEFINITION_BY_ID.get(id) ?? null;
 }
 
-export function nextImplementedEpisode(id: EpisodeId): EpisodeDefinition | null {
-  const currentDay = SEASON_01.find((episode) => episode.id === id)?.day ?? -1;
-  return IMPLEMENTED_EPISODE_DEFINITIONS.find((definition) => definition.day > currentDay) ?? null;
+export function nextImplementedEpisode(id: EpisodeId): DemoEpisodeDefinition | null {
+  const currentIndex = IMPLEMENTED_EPISODE_DEFINITIONS.findIndex((definition) => definition.id === id);
+  return currentIndex < 0 ? null : IMPLEMENTED_EPISODE_DEFINITIONS[currentIndex + 1] ?? null;
 }
 
 export function sceneForEpisode(id: EpisodeId) {
@@ -142,6 +149,9 @@ export function assertSeasonRegistry(): void {
     }
     if (!definition.contentVersion || definition.authoringStatus !== "reviewed") {
       throw new Error(`Incomplete review metadata for ${definition.id}.`);
+    }
+    if (!definition.canonicalDemo.responses.length || !definition.outcomes[definition.canonicalDemo.expectedOutcomeId]) {
+      throw new Error(`Invalid canonical demo path for ${definition.id}.`);
     }
     for (const turnId of Object.keys(definition.turns)) {
       if (TURN_EPISODE.get(turnId) !== definition.id) throw new Error(`Duplicate turn ${turnId}.`);

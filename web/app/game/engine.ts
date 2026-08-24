@@ -4,6 +4,7 @@ import {
   initialPhrasePractice,
   initialState,
   normalize,
+  PLAYER_RESPONSE_MAX_LENGTH,
   type Feedback,
   type GameState,
   type HistoryItem,
@@ -59,12 +60,16 @@ export function moveToTurn(
   systemText?: string,
   createId: HistoryIdFactory = defaultHistoryId,
 ): GameState {
+  const sameTurn = turnId === state.turnId;
   return {
     ...state,
     ...updates,
     turnId,
-    attempts: turnId === state.turnId ? state.attempts + 1 : 0,
-    history: systemText ? appendHistory(state, "system", systemText, createId) : state.history,
+    attempts: sameTurn ? state.attempts + 1 : 0,
+    guidance: sameTurn ? systemText ?? state.guidance : null,
+    history: systemText && !sameTurn
+      ? appendHistory(state, "system", systemText, createId)
+      : state.history,
   };
 }
 
@@ -151,6 +156,7 @@ export function resolveOutcome(
     feedback: feedback === undefined
       ? state.feedback ?? createFeedback(definition.scene.id, state.lastResponse)
       : feedback,
+    guidance: null,
     completed,
     seasonCompletion: completesSeason ? {
       attempt: completionAttempt,
@@ -218,6 +224,24 @@ export function applyResponse(
   return registeredEpisodeCoordinator.applyResponse(state, rawResponse, createId);
 }
 
+/**
+ * Submit at the shared interaction boundary. Episode definitions may queue a
+ * terminal line, but the authoritative result is committed in the same
+ * transaction instead of waiting for media playback to finish.
+ */
+export function submitEpisodeResponse(
+  state: GameState,
+  rawResponse: string,
+  createId: HistoryIdFactory = defaultHistoryId,
+): ResponseResult {
+  const result = applyResponse(state, rawResponse, createId);
+  if (result.kind === "teaching") return result;
+  return {
+    kind: "advanced",
+    state: finishPendingOutcome(result.state, createId),
+  };
+}
+
 export function createEpisodeCoordinator(
   definitions: readonly EpisodeDefinition[],
 ): EpisodeCoordinator {
@@ -232,17 +256,17 @@ export function createEpisodeCoordinator(
   };
 }
 
-export const registeredEpisodeCoordinator = createEpisodeCoordinator(
+const registeredEpisodeCoordinator = createEpisodeCoordinator(
   IMPLEMENTED_EPISODE_DEFINITIONS,
 );
 
-export function coordinateEpisodeResponse(
+function coordinateEpisodeResponse(
   definition: EpisodeDefinition,
   state: GameState,
   rawResponse: string,
   createId: HistoryIdFactory = defaultHistoryId,
 ): ResponseResult {
-  const raw = rawResponse.trim();
+  const raw = rawResponse.trim().slice(0, PLAYER_RESPONSE_MAX_LENGTH);
   if (!raw || state.status !== "active" || state.episodeId !== definition.id) {
     return { kind: "advanced", state };
   }
@@ -340,6 +364,7 @@ function resetInteraction(state: GameState, episodeId: EpisodeId): GameState {
     turnId: definition.initialTurn?.(state) ?? definition.scene.firstTurn,
     status: "active",
     pendingOutcome: null,
+    guidance: null,
     outcome: null,
     feedback: null,
     history: [],
@@ -373,21 +398,6 @@ export function seedEpisodeState(state: GameState, episodeId: EpisodeId): GameSt
     },
   };
   return resetInteraction(seeded, episodeId);
-}
-
-const LEGACY_ANCHORS: EpisodeId[] = ["day-00", "day-04", "day-13", "day-21"];
-
-export function seedLegacyAnchorState(anchorIndex: number): GameState {
-  const safe = Math.max(0, Math.min(anchorIndex, LEGACY_ANCHORS.length - 1));
-  const episodeId = LEGACY_ANCHORS[safe];
-  const state = seedEpisodeState(initialState(), episodeId);
-  const legacySeeds: Partial<GameState>[] = [
-    {},
-    { money: 10000, hotelKey: true, completed: ["day-00"] },
-    { money: 7800, hotelKey: true, rental: "custom", completed: ["day-00", "day-04"] },
-    { money: 7550, hotelKey: true, rental: "custom", cafeOutcome: "Both errors corrected", completed: ["day-00", "day-04", "day-13"] },
-  ];
-  return { ...state, ...legacySeeds[safe], episodeId };
 }
 
 export function restartEpisodeState(state: GameState): GameState {

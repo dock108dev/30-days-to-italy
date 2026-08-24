@@ -6,7 +6,7 @@ import { addFact, addItem, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-15");
 
 export const day15Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "grocery-correction",
+  ...metadata, sceneId: "grocery-correction",
   scene: { id: "grocery-correction", episodeId: "day-15", day: "Day 15", dateLabel: "16 days out", title: metadata.title, location: metadata.location, time: "17:35", npc: "Enzo", role: "Grocer", objective: "Notice an extra bag, correct €7.20 to €4.00, and pay only the accepted total.", firstTurn: "d15_01_total", kicker: "The extra receipt line is a bag you did not request.", suggestions: ["Scusi, non ho chiesto la borsa.", "Il totale corretto è quattro euro?", "Pago quattro euro con la carta."] },
   turns: {
     d15_01_total: authoredTurn("d15_01_total", "Enzo", "Sono sette euro e venti, compresa la seconda borsa.", "Challenge the extra bag, accept it knowingly, or leave."),
@@ -54,5 +54,5 @@ export const day15Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d15_03_close" ? { correctionAccepted: true, priceConfirmed: any(normalized, ["quattro", "four", "corretto", "correct"]) } : undefined);
   },
   adminSeed: () => ({ money: 1360, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotWaterStatus: "reported", repairCommitment: { window: "Tuesday 09:00–11:00", status: "active" }, hotelKey: true, apartmentKey: true, rental: "chair", pharmacyItem: "Mosquito-bite cream", routeFact: "Piazza Alta, opposite Farmacia Luce, five minutes away", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream"], cafeOutcome: "Both errors corrected", relationships: { Giulia: "efficient", Rosa: "efficient", Raffaele: "efficient" }, knownFacts: ["Temporary bus stop: Piazza Alta, opposite Farmacia Luce, five minutes away"], commitments: ["Hot-water repair: Tuesday 09:00–11:00"], completed: completedBefore(15), currentLocation: metadata.location, currentTime: "17:35" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

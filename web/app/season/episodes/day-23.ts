@@ -7,7 +7,7 @@ const metadata = seasonEpisode("day-23");
 const custodyEvent = "day23-second-parcel-collected";
 
 export const day23Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "neighbor-parcel",
+  ...metadata, sceneId: "neighbor-parcel",
   scene: { id: "neighbor-parcel", episodeId: "day-23", day: "Day 23", dateLabel: "A neighbor’s favor", title: metadata.title, location: metadata.location, time: "17:10", npc: "Marta", role: "Neighbor", objective: "Take custody of the second parcel, then accept or decline coffee separately.", firstTurn: "d23_01_parcel", kicker: "The parcel handoff and the social invitation are two different decisions.", suggestions: ["Prendo il pacco, grazie.", "No, grazie. Devo andare.", "Magari più tardi."] },
   turns: {
     d23_01_parcel: authoredTurn("d23_01_parcel", "Marta", "Il corriere ha lasciato questo secondo pacco da me. È per lei?", "Confirm the parcel or decline custody."),
@@ -47,5 +47,5 @@ export const day23Episode: EpisodeDefinition = {
     if (after.turnId === "d23_04_accept") return observation(["confirm"]);
     return noObservation();
   },
-  adminSeed: () => finalArcAdminSeed(23), buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  adminSeed: () => finalArcAdminSeed(23), buildResult: buildObservedEpisodeResult,
 };

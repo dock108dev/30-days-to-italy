@@ -23,6 +23,7 @@ export function createSeasonEpisodeHandoff(game: GameState): PocketDeckPracticeE
     refresherMethod: (refresher?.applied ?? 0) > 0 ? refresher?.method ?? null : null,
     quantityClarified: result.verifiedFacts.quantityClarified === true,
     priceConfirmed: result.verifiedFacts.priceConfirmed === true,
+    preferenceSelected: result.verifiedFacts.preferenceSelected ?? null,
     normalReplayCount: result.support.replay,
     carefulReplayCount: result.support.careful,
     transcriptRevealCount: result.support.transcript,

@@ -1,46 +1,66 @@
 # 30 Days to Italy
 
-**Your trip starts 30 days before departure.**
+30 Days to Italy is an owner-only, mobile-friendly rehearsal app for an Italian coastal trip. It provides 31 playable preparation sessions, a guided beach rehearsal, a device-local trip profile, persistent Prepare and Trip modes, and an offline Pocket Deck with 30 reviewed cards.
 
-30 Days to Italy is a guided vacation-preparation experience for a 7–10 day Italian coastal trip. Before departure, the traveler rehearses likely situations through short audio-first simulations. During the trip, that preparation becomes a fast, personal, offline-friendly Pocket Deck.
+The player listens and types; the app never requests microphone access. Progress and trip details stay in the current browser. There is no account, analytics service, application API, or cross-device sync.
 
-> Rehearse your trip before you take it, then carry the most useful parts with you.
+## Quick start
 
-## Current state
+Requires Node.js 22.13 or newer.
 
-The first interaction proof is implemented in [`web/`](web/). It includes a short device-local trip profile and departure countdown, four playable coastal encounters, normal/careful Italian audio, typed responses, bounded consequences, local save/resume, Admin controls, contextual teaching when the player falls back to English, and a 12-pattern phrase toolkit.
+```bash
+cd web
+npm ci
+npm run dev
+```
 
-That prototype proves the encounter loop and departure setup. It does **not yet** prove the complete product lifecycle: Prepare/Trip modes, guided daily sessions, Pocket Deck creation, and offline card retrieval remain in the next slice.
+Open the local address printed by the development server. Development mode does not register the production service worker.
 
-The earlier **Un mese sulla costa** premise and content map are retained as reusable rehearsal material. The 30 sessions now prepare for a shorter real trip; they do not represent 30 literal vacation days.
+To exercise the production and offline paths:
 
-## Start here
+```bash
+cd web
+npm run build
+npm run start -- --hostname 127.0.0.1 --port 3001
+```
 
-1. [`docs/PRODUCT_DIRECTION.md`](docs/PRODUCT_DIRECTION.md) — the authoritative two-mode product direction.
-2. [`docs/NEXT_SESSION_HANDOFF.md`](docs/NEXT_SESSION_HANDOFF.md) — the exact next implementation slice and definition of done.
-3. [`docs/GUIDED_REHEARSAL_SPEC.md`](docs/GUIDED_REHEARSAL_SPEC.md) — how guided daily preparation, teaching, recurrence, and missed days work.
-4. [`docs/TRIP_MODE_AND_POCKET_DECK.md`](docs/TRIP_MODE_AND_POCKET_DECK.md) — the trip-pack, card, offline, and mode-transition contract.
-5. [`web/README.md`](web/README.md) — run and use the current web prototype.
-6. [`docs/PRODUCT_CONTRACT.md`](docs/PRODUCT_CONTRACT.md) — encounter, agency, consequence, and lifecycle rules.
-7. [`docs/LEARNING_MODEL.md`](docs/LEARNING_MODEL.md) — language activation, support, correction, and evaluation.
-8. [`docs/SEASON_01_MAP.md`](docs/SEASON_01_MAP.md) — the legacy 30-day content library to be rescheduled as pre-departure rehearsal.
-9. [`docs/CONTENT_AND_STATE_MODEL.md`](docs/CONTENT_AND_STATE_MODEL.md) — authored constraints, trip profile, rehearsal state, and Pocket Deck concepts.
-10. [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md) — the two-mode architecture and technical boundaries.
-11. [`docs/ROADMAP_AND_DECISIONS.md`](docs/ROADMAP_AND_DECISIONS.md) — confirmed decisions, risks, gates, and milestone status.
+Visit `http://127.0.0.1:3001`, switch to Trip Mode, and wait for **Ready offline** before disconnecting. A first visit while disconnected is intentionally unsupported.
 
-## Next milestone
+## Repository layout
 
-Do not add more encounters yet. Prove the lifecycle with one guided rehearsal and one useful handoff:
+- `web/` — the application, worker, local media, scripts, and automated tests.
+- `docs/` — product, development, architecture, operations, security, and episode-authoring guidance.
 
-1. use the completed trip profile and departure countdown;
-2. add the Prepare/Trip lifecycle shell;
-3. wrap the existing beach encounter as a guided preparation session;
-4. turn its practice evidence into a personalized Pocket Deck card;
-5. find, play, pin, and show the card in Trip Mode; and
-6. verify the essential small deck remains usable locally/offline.
+## Validation
 
-The milestone succeeds only if the Pocket Deck feels meaningfully more useful than an ordinary phrase list.
+Run commands from `web/`:
 
-## Product boundaries
+```bash
+npm run lint
+npx tsc --noEmit
+npm test
+```
 
-The first version remains private, web-first, typed, and microphone-free. It does not provide booking, itinerary management, current transportation facts, unrestricted live AI translation, or fluency claims. Simulated details are rehearsal content, never live travel information.
+The full browser campaigns are slower and should be run for the areas they cover:
+
+```bash
+npm run test:interaction
+npm run test:admin-demo
+npm run test:checkpoint-hardening
+npm run test:offline
+```
+
+See [Development](docs/DEVELOPMENT.md) for the complete command map and change boundaries.
+
+## Documentation
+
+- [Product behavior](docs/PRODUCT.md)
+- [Development and validation](docs/DEVELOPMENT.md)
+- [Architecture and source-of-truth boundaries](docs/ARCHITECTURE_AND_SSOT.md)
+- [Episode authoring](docs/EPISODE_AUTHORING_GUIDE.md)
+- [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md)
+- [Security model](docs/SECURITY.md)
+
+## Release boundary
+
+The supported release is owner-only. Admin controls are local review tools, not authentication. Public or shared access requires a separate security and privacy decision; deployment access and response headers must be verified outside this repository. See [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md#build-and-deployment-boundary) for the release boundary.

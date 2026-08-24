@@ -1,24 +1,26 @@
 # Episode authoring guide
 
+Application paths in this document are relative to `web/`.
+
 The Season 01 runtime has one rule: episode-specific behavior belongs in an episode module, never in the generic game coordinator.
 
 ## Authorities
 
-- `web/app/season/manifest.ts` owns the 31 stable slots (`day-00` through `day-30`) and their planning metadata.
-- `web/app/season/types.ts` owns the typed `EpisodeDefinition`, observed-move, verified-fact, runtime, and review-result contracts.
-- `web/app/season/episodes/day-NN.ts` owns one implemented episode's scene, turns, outcomes, response rules, mutations, evidence extraction, Admin seed, version, and review builder.
-- `web/app/season/registry.ts` registers implemented modules and derives compatibility catalogs for scenes, turns, outcomes, turn ownership, outcome ownership, and terminal validation.
-- `web/app/game/engine.ts` coordinates any registered definition. It must not gain day-specific handlers, ID-prefix inference, positional progression, or a multi-day conditional.
-- `web/app/game/persistence.ts` validates current state through the registry. Legacy scene positions are accepted only at this migration boundary and are discarded immediately.
+- `app/season/manifest.ts` owns the 31 stable slots (`day-00` through `day-30`) and their planning metadata.
+- `app/season/types.ts` owns the typed `EpisodeDefinition`, observed-move, verified-fact, runtime, and review-result contracts.
+- `app/season/episodes/day-NN.ts` owns one implemented episode's scene, turns, outcomes, response rules, mutations, evidence extraction, Admin seed, version, and review builder.
+- `app/season/registry.ts` registers the current modules and derives the authoritative scenes, turns, outcomes, turn ownership, outcome ownership, and terminal-validation indexes.
+- `app/game/engine.ts` coordinates any registered definition. It must not gain day-specific handlers, ID-prefix inference, positional progression, or a multi-day conditional.
+- `app/game/persistence.ts` validates current state through the registry. Legacy scene positions are accepted only at this migration boundary and are discarded immediately.
 
 ## Revising season metadata
 
-Season 01 contains all 31 implemented slots. Revise truthful metadata in `manifest.ts`: title, objective, place, characters, target language, listening challenge, support stage, prerequisites, content version, and authoring status. Do not create fake turns, outcomes, audio, rules, or state to fill a future registry position.
+Season 01 contains exactly 31 supported sessions. Revise truthful metadata in `manifest.ts`: title, objective, place, characters, target language, listening challenge, support stage, prerequisites, content version, and authoring status. There is no planned-session runtime or placeholder fallback.
 
-## Implementing or replacing an episode
+## Replacing or substantially revising an episode
 
 1. Create `app/season/episodes/day-NN.ts`.
-2. Spread the slot metadata from `seasonEpisode("day-NN")` into an `EpisodeDefinition` and change its runtime status to `implemented`.
+2. Spread the session metadata from `seasonEpisode("day-NN")` into an `EpisodeDefinition`.
 3. Supply the complete scene, owned turns and outcomes, terminal-outcome mapping, bounded evaluator, observational evidence extractor, state mutations, canonical Admin seed, review builder, and any outcome-specific completion IDs.
 4. Register the module once in `IMPLEMENTED_EPISODE_DEFINITIONS` in `registry.ts`.
 5. Add the exact normal/careful audio assets named by the turn IDs and the required unit, persistence, browser, and offline tests. `npm run audio:generate` fills missing registry-owned assets; it never runs in the product.
@@ -54,7 +56,7 @@ Pocket Deck eligibility and practiced evidence are different. The manifest may m
 
 All state mutations must be declared inside the episode evaluator and remain atomic with the accepted transition. Character relationship state is limited to `neutral`, `efficient`, `warm`, or `strained`. Factual memories belong in `knownFacts`; never store “served the first espresso” as a relationship disposition.
 
-Schema v5 owns controlled continuity for location, time, laundry, transport mode/status/owned fare, hot-water state, exact repair commitments, both parcel handoffs, beach entitlement/remedy, invitations without invented attendance, table preference, repair-credit eligibility, the Day 28 multi-leg plan, key custody, checkout obligations, departure, and the bounded season-completion record. Later episodes may reference only the normalized saved value. A callback must degrade to a neutral or no-history variant when its prerequisite fact is absent.
+Schema v6 owns controlled continuity for location, time, laundry, transport mode/status/owned fare, hot-water state, exact repair commitments, both parcel handoffs, beach entitlement/remedy, invitations without invented attendance, table preference, repair-credit eligibility, the Day 28 multi-leg plan, key custody, checkout obligations, departure, preference evidence, and the bounded season-completion record. Later episodes may reference only the normalized saved value. A callback must degrade to a neutral or no-history variant when its prerequisite fact is absent.
 
 `adminSeed()` constructs the canonical world immediately before the episode. It must be deterministic and must not mutate the traveler’s departure date. The generic seeder preserves support, phrase practice, and bounded prior attempt history while resetting only transient conversation evidence.
 

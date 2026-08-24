@@ -13,18 +13,17 @@ const metadata = seasonEpisode("day-01");
 
 export const day01Episode: EpisodeDefinition = {
   ...metadata,
-  status: "implemented",
   sceneId: "apartment",
   scene: {
     id: "apartment", episodeId: "day-01", day: "Day 1", dateLabel: "30 days out",
     title: metadata.title, location: metadata.location, time: "16:10", npc: "Raffaele",
-    role: "Apartment manager", objective: "Get the apartment key and confirm which green door leads upstairs. You can leave once access is clear.",
+    role: "Apartment manager", objective: "Find the correct entrance and floor.",
     firstTurn: "d01_01_arrival", kicker: "Raffaele is busy and expects a compact key handoff.",
-    suggestions: ["Sono Michael. Sono qui per la chiave.", "La porta verde?", "Grazie, a dopo."],
+    suggestions: ["Sì, sono Michael.", "La porta verde, primo piano.", "Grazie, a dopo."],
   },
   turns: {
-    d01_01_arrival: authoredTurn("d01_01_arrival", "Raffaele", "Buonasera. Lei è Michael? È qui per la chiave?", "Confirm who you are and why you are here."),
-    d01_02_door: authoredTurn("d01_02_door", "Raffaele", "Ecco la chiave. La porta verde, poi il primo piano. È chiaro?", "Listen for the door color and floor."),
+    d01_01_arrival: authoredTurn("d01_01_arrival", "Raffaele", "Buonasera. Lei è Michael? È qui per la chiave?", "Confirm briefly so you can get the entrance directions."),
+    d01_02_door: authoredTurn("d01_02_door", "Raffaele", "Ecco la chiave. La porta verde, poi il primo piano. È chiaro?", "Confirm the green door and first floor."),
     d01_03_close: authoredTurn("d01_03_close", "Raffaele", "Perfetto. Se serve qualcosa, mi scriva. A dopo.", "The key handoff is complete.", true),
   },
   outcomes: {
@@ -36,8 +35,8 @@ export const day01Episode: EpisodeDefinition = {
     const exit = any(normalized, EXIT);
     if (state.turnId === "d01_01_arrival") {
       if (exit) return runtime.resolveOutcome(state, "D01-O2", {}, null, createId);
-      if (any(normalized, ["michael", "fuscoletti", "chiave", "key", "casa limone", "sono qui"])) {
-        return runtime.moveToTurn(state, "d01_02_door", { apartmentKey: true }, "Raffaele matched your name and handed over the key.", createId);
+      if (any(normalized, ["si", "yes", "michael", "fuscoletti", "chiave", "key", "casa limone", "sono qui"])) {
+        return runtime.moveToTurn(state, "d01_02_door", { apartmentKey: true, keyCustody: { ...state.keyCustody, apartment: "held" } }, "Raffaele matched your name and handed over the key.", createId);
       }
       return runtime.moveToTurn(state, "d01_01_arrival", {}, "Raffaele only needs your name or the reason you are here.", createId);
     }
@@ -45,6 +44,7 @@ export const day01Episode: EpisodeDefinition = {
       if (any(normalized, ["verde", "green", "primo", "first", "chiaro", "capito", "grazie"]) || exit) {
         return runtime.queueTerminal(state, "d01_03_close", "D01-O1", {
           apartmentKey: true,
+          keyCustody: { ...state.keyCustody, apartment: "held" },
           knownFacts: [...new Set([...state.knownFacts, "Casa Limone: green door, first floor", "Raffaele completed the apartment-key handoff"])],
           relationships: { ...state.relationships, Raffaele: "efficient" },
         }, createId);
@@ -69,5 +69,4 @@ export const day01Episode: EpisodeDefinition = {
   },
   adminSeed: () => ({ hotelKey: true, completed: ["day-00"] }),
   buildResult: buildObservedEpisodeResult,
-  terminalBehavior: "resolve",
 };

@@ -7,7 +7,7 @@ const metadata = seasonEpisode("day-14");
 const temporaryStop = "Piazza Alta, opposite Farmacia Luce, five minutes away";
 
 export const day14Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "changed-stop",
+  ...metadata, sceneId: "changed-stop",
   scene: { id: "changed-stop", episodeId: "day-14", day: "Day 14", dateLabel: "17 days out", title: metadata.title, location: metadata.location, time: "08:55", npc: "Attendant", role: "Bus attendant", objective: "Ignore the closed old stop and confirm the temporary stop before continuing.", firstTurn: "d14_01_change", kicker: "Both stop names are spoken; only Piazza Alta is active today.", suggestions: ["Qual è la fermata provvisoria?", "Piazza Alta, di fronte alla farmacia?", "Aspetto il prossimo autobus."] },
   turns: {
     d14_01_change: authoredTurn("d14_01_change", "Attendant", "La fermata Porto è chiusa. Oggi l'autobus parte dalla fermata provvisoria di Piazza Alta.", "Ask where Piazza Alta is or confirm the change."),
@@ -50,5 +50,5 @@ export const day14Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d14_03_close" ? { routeConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 1360, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotWaterStatus: "reported", repairCommitment: { window: "Tuesday 09:00–11:00", status: "active" }, hotelKey: true, apartmentKey: true, rental: "chair", pharmacyItem: "Mosquito-bite cream", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream"], cafeOutcome: "Both errors corrected", relationships: { Giulia: "efficient", Rosa: "efficient", Raffaele: "efficient" }, knownFacts: ["Lido alternative: shaded chair under pergola, no umbrella, €8", "Giulia corrected both café errors"], commitments: ["Hot-water repair: Tuesday 09:00–11:00"], completed: completedBefore(14), currentLocation: metadata.location, currentTime: "08:55" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

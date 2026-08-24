@@ -18,7 +18,7 @@ export type OfflineWorkerReport = {
   requiredCount: number;
   cachedCount: number;
   networkAvailable?: boolean;
-  reason?: string;
+  reason?: "CACHE_STORAGE_UNAVAILABLE" | "OFFLINE_REPAIR_FAILED";
 };
 
 export const PREPARING_OFFLINE: OfflineReadiness = {
@@ -43,7 +43,7 @@ export function readinessFromWorkerReport(
     return {
       ...OFFLINE_UNAVAILABLE,
       detail: report.reason
-        ? `Offline files are incomplete: ${report.reason}`
+        ? "Offline files are incomplete. Reconnect and prepare them again before relying on offline use."
         : "The connected app still works, but one or more offline files need to be prepared again.",
       cacheVersion: report.cacheVersion,
     };

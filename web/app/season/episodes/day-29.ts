@@ -6,7 +6,7 @@ import { addFact, finalArcAdminSeed } from "./shared";
 const metadata = seasonEpisode("day-29");
 
 export const day29Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "farewell-coffee",
+  ...metadata, sceneId: "farewell-coffee",
   scene: { id: "farewell-coffee", episodeId: "day-29", day: "Day 29", dateLabel: "One more coffee", title: metadata.title, location: metadata.location, time: "10:45", npc: "Giulia", role: "Bartender", objective: "Order the €2 espresso and answer whether you are staying longer without inventing certainty.", firstTurn: "d29_01_order", kicker: "A familiar question can receive a short, undecided answer.", suggestions: ["Un espresso, grazie.", "Non lo so ancora.", "Con la carta."] },
   turns: {
     d29_01_order: authoredTurn("d29_01_order", "Giulia", "Un altro espresso? Costa due euro.", "Order the espresso or leave."),
@@ -51,5 +51,5 @@ export const day29Episode: EpisodeDefinition = {
     if (after.turnId === "d29_05_exit") return observation(["decline", "boundary"]);
     return noObservation();
   },
-  adminSeed: () => finalArcAdminSeed(29), buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  adminSeed: () => finalArcAdminSeed(29), buildResult: buildObservedEpisodeResult,
 };

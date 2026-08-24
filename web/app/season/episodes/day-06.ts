@@ -6,7 +6,7 @@ const metadata = seasonEpisode("day-06");
 const routeFact = "Amalfi stop: across the square, opposite Bar Gabbiano";
 
 export const day06Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "bus",
+  ...metadata, sceneId: "bus",
   scene: { id: "bus", episodeId: "day-06", day: "Day 6", dateLabel: "25 days out", title: metadata.title, location: metadata.location, time: "08:10", npc: "Luca", role: "Ticket clerk", objective: "Buy one ticket to Amalfi for €2.40 and identify the stop across the square.", firstTurn: "d06_01_destination", kicker: "The ticket type and stop arrive in two short pieces.", suggestions: ["Un biglietto per Amalfi, per favore.", "Solo andata.", "Dov’è la fermata?"] },
   turns: {
     d06_01_destination: authoredTurn("d06_01_destination", "Luca", "Buongiorno. Per dove?", "Give the destination and number of tickets."),
@@ -27,6 +27,7 @@ export const day06Episode: EpisodeDefinition = {
     }
     if (state.turnId === "d06_02_stop") {
       if (exit || any(normalized, ["non compro", "not buy", "piu tardi"])) return runtime.resolveOutcome(state, "D06-O2", { routeFact, knownFacts: [...new Set([...state.knownFacts, routeFact])] }, null, createId);
+      if (any(normalized, ["solo andata", "one way"])) return runtime.moveToTurn(state, state.turnId, {}, "One-way is confirmed. Ask where the stop is, or pay to finish.", createId);
       if (any(normalized, ["fermata", "stop", "piazza", "square", "dove", "di fronte"]) || any(normalized, PAY) || anyWholePhrase(normalized, YES)) return runtime.queueTerminal(state, "d06_03_close", "D06-O1", {
         money: state.money - 240, busTicket: true, routeFact,
         inventory: [...new Set([...state.inventory, "One-way Amalfi bus ticket"])], knownFacts: [...new Set([...state.knownFacts, routeFact])],
@@ -46,5 +47,5 @@ export const day06Episode: EpisodeDefinition = {
     return noObservation();
   },
   adminSeed: () => ({ money: 6310, hotelKey: true, apartmentKey: true, rental: "custom", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes"], relationships: { Giulia: "neutral" }, knownFacts: ["Giulia served the first espresso"], completed: ["day-00", "day-01", "day-02", "day-03", "day-04", "day-05"] }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

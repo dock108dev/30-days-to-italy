@@ -5,7 +5,7 @@ import { authoredTurn, buildObservedEpisodeResult, isAcceptedTransition, noObser
 const metadata = seasonEpisode("day-05");
 
 export const day05Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "produce",
+  ...metadata, sceneId: "produce",
   scene: { id: "produce", episodeId: "day-05", day: "Day 5", dateLabel: "26 days out", title: metadata.title, location: metadata.location, time: "09:15", npc: "Paola", role: "Produce vendor", objective: "Buy half a kilo of tomatoes for €4.50 and stop the quantity there.", firstTurn: "d05_01_quantity", kicker: "Paola reaches for a larger bag unless you make the amount clear.", suggestions: ["Mezzo chilo di pomodori.", "Basta così, grazie.", "Quanto costa?"] },
   turns: {
     d05_01_quantity: authoredTurn("d05_01_quantity", "Paola", "Buongiorno. Quanti pomodori vuole?", "Ask for half a kilo."),
@@ -40,5 +40,5 @@ export const day05Episode: EpisodeDefinition = {
     return noObservation();
   },
   adminSeed: () => ({ money: 6760, hotelKey: true, apartmentKey: true, rental: "custom", inventory: ["Bread", "Cheese", "Water"], relationships: { Giulia: "neutral" }, knownFacts: ["Giulia served the first espresso"], completed: ["day-00", "day-01", "day-02", "day-03", "day-04"] }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

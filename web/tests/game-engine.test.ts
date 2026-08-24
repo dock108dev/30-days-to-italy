@@ -9,15 +9,11 @@ import {
   recordPhrasePractice,
   recordEpisodeRefresher,
   restartEpisodeState,
-  seedLegacyAnchorState,
   seedEpisodeState,
   type HistoryIdFactory,
 } from "../app/game/engine";
 import {
-  OUTCOMES,
   PHRASE_LESSONS,
-  SCENES,
-  TURNS,
   initialState,
   money,
   phraseExampleFor,
@@ -26,9 +22,9 @@ import {
 import { STORAGE_KEY } from "../app/game/model";
 import { clearSavedGame, hydrateGameState, loadGame, parseSavedGame, saveGame, type LocalGameStorage } from "../app/game/persistence";
 import { createSeasonEpisodeHandoff } from "../app/season/pocket-deck-handoff";
-import { IMPLEMENTED_EPISODES, SEASON_01 } from "../app/season/manifest";
-import { IMPLEMENTED_EPISODE_DEFINITIONS, sceneForEpisode } from "../app/season/registry";
-import { isEpisodeUnlocked, recommendedEpisode, scheduleSeason } from "../app/season/schedule";
+import { SEASON_01 } from "../app/season/manifest";
+import { IMPLEMENTED_EPISODE_DEFINITIONS, OUTCOMES, SCENES, TURNS, sceneForEpisode } from "../app/season/registry";
+import { scheduleSeason } from "../app/season/schedule";
 import { createDefaultTripProfile } from "../app/trip/model";
 
 function idFactory(): HistoryIdFactory { let next = 0; return () => `test-history-${++next}`; }
@@ -39,13 +35,13 @@ function respond(state: GameState, response: string, createId = idFactory()): Ga
 }
 function finish(state: GameState, ids: HistoryIdFactory): GameState { return finishPendingOutcome(state, ids); }
 
-test("registers a stable 31-slot season with every episode implemented", async () => {
+test("registers the exact 31-session current season", async () => {
   assert.equal(SEASON_01.length, 31);
   assert.equal(SEASON_01[0].id, "day-00");
   assert.equal(SEASON_01[30].id, "day-30");
-  assert.deepEqual(IMPLEMENTED_EPISODES.map((episode) => episode.id), Array.from({ length: 31 }, (_, day) => `day-${String(day).padStart(2, "0")}`));
-  assert.deepEqual(SCENES.map((scene) => scene.episodeId), IMPLEMENTED_EPISODES.map((episode) => episode.id));
-  assert.deepEqual(IMPLEMENTED_EPISODE_DEFINITIONS.map((definition) => definition.id), IMPLEMENTED_EPISODES.map((episode) => episode.id));
+  assert.deepEqual(SEASON_01.map((episode) => episode.id), Array.from({ length: 31 }, (_, day) => `day-${String(day).padStart(2, "0")}`));
+  assert.deepEqual(SCENES.map((scene) => scene.episodeId), SEASON_01.map((episode) => episode.id));
+  assert.deepEqual(IMPLEMENTED_EPISODE_DEFINITIONS.map((definition) => definition.id), SEASON_01.map((episode) => episode.id));
   for (const episode of SEASON_01) {
     assert.ok(episode.location);
     assert.ok(episode.characterIds.length);
@@ -65,14 +61,14 @@ test("registers a stable 31-slot season with every episode implemented", async (
 
 test("daily scheduling unlocks Day 0 immediately, then one durable session per countdown day", () => {
   const profile = { ...createDefaultTripProfile(new Date(2026, 7, 3, 12)), departureDate: "2026-09-02" };
-  assert.equal(isEpisodeUnlocked(SEASON_01[0], profile, "2026-07-01"), true);
-  assert.equal(isEpisodeUnlocked(SEASON_01[1], profile, "2026-08-03"), true);
-  assert.equal(isEpisodeUnlocked(SEASON_01[2], profile, "2026-08-03"), false);
-  assert.equal(isEpisodeUnlocked(SEASON_01[2], profile, "2026-08-04"), true);
+  assert.equal(scheduleSeason(profile, [], "2026-07-01")[0].unlocked, true);
+  assert.equal(scheduleSeason(profile, [], "2026-08-03")[1].unlocked, true);
+  assert.equal(scheduleSeason(profile, [], "2026-08-03")[2].unlocked, false);
+  assert.equal(scheduleSeason(profile, [], "2026-08-04")[2].unlocked, true);
   const missed = scheduleSeason(profile, [], "2026-08-10");
   assert.equal(missed.find((episode) => episode.id === "day-01")?.unlocked, true);
   assert.equal(missed.find((episode) => episode.id === "day-07")?.unlocked, true);
-  assert.equal(recommendedEpisode(profile, ["day-00", "day-01"], "2026-08-04")?.id, "day-02");
+  assert.equal(scheduleSeason(profile, ["day-00", "day-01"], "2026-08-04").find((episode) => episode.playable && !episode.completed)?.id, "day-02");
   assert.equal(scheduleSeason(profile, [], "2026-07-01", true).every((episode) => episode.unlocked), true);
 });
 
@@ -149,26 +145,6 @@ test("Days 1 through 7 form a deterministic practical run ending at €51.10", (
   assert.deepEqual(game.completed, ["day-00", "day-01", "day-02", "day-03", "day-04", "day-05", "day-06", "day-07"]);
   assert.equal(game.inventory.includes("Mosquito-bite cream"), true);
   assert.equal(game.routeFact?.includes("across the square"), true);
-});
-
-test("the original four-anchor deterministic route remains €73.50", () => {
-  const ids = idFactory();
-  let game = seedLegacyAnchorState(0);
-  game = respond(game, "Ho una prenotazione a nome Fuscoletti", ids);
-  game = respond(game, "Grazie. Camera dodici.", ids); game = finish(game, ids);
-  game = seedLegacyAnchorState(1);
-  game = respond(game, "Mi servono un lettino e un ombrellone", ids);
-  game = respond(game, "Un lettino, non due", ids);
-  game = respond(game, "Sì, con la carta", ids); game = finish(game, ids);
-  game = seedLegacyAnchorState(2);
-  game = respond(game, "Ho ordinato un cappuccino. Non ho ordinato la spremuta.", ids);
-  game = respond(game, "Va bene, grazie.", ids);
-  game = respond(game, "Pago con la carta.", ids);
-  game = seedLegacyAnchorState(3);
-  game = respond(game, "Sì, il solito. Grazie.", ids);
-  game = respond(game, "Con la carta.", ids); game = finish(game, ids);
-  assert.equal(game.status, "resolved");
-  assert.equal(game.money, 7350);
 });
 
 test("v1 saves migrate by turn identity and v2 uses episode ID as authority", () => {

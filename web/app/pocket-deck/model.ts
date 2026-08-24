@@ -1,7 +1,7 @@
 import { isEpisodeId, type EpisodeId } from "../season/manifest";
 import type { ObservedMove } from "../season/types";
 
-export const POCKET_DECK_SCHEMA_VERSION = 3 as const;
+export const POCKET_DECK_SCHEMA_VERSION = 4 as const;
 export const POCKET_DECK_RECENT_LIMIT = 6;
 export const POCKET_DECK_PRACTICE_HISTORY_LIMIT = 8;
 export const GUIDED_BEACH_CARD_ID = "beach-one-chair-umbrella";
@@ -29,6 +29,7 @@ export type PocketDeckPracticeEvidence = {
   refresherMethod: "inserted" | "rebuilt" | null;
   quantityClarified: boolean;
   priceConfirmed: boolean;
+  preferenceSelected: string | null;
   normalReplayCount: number;
   carefulReplayCount: number;
   transcriptRevealCount: number;
@@ -86,7 +87,11 @@ function normalizePracticeEvidence(value: unknown, validCardIds: ReadonlySet<str
   return {
     id: expectedId, cardId: value.cardId, source: value.source, episodeId, attempt, outcomeId: value.outcomeId,
     practicedMoves, refresherApplied, refresherMethod, quantityClarified: value.quantityClarified === true,
-    priceConfirmed: value.priceConfirmed === true, normalReplayCount, carefulReplayCount, transcriptRevealCount,
+    priceConfirmed: value.priceConfirmed === true,
+    preferenceSelected: typeof value.preferenceSelected === "string" && value.preferenceSelected.trim()
+      ? value.preferenceSelected.trim().slice(0, 80)
+      : null,
+    normalReplayCount, carefulReplayCount, transcriptRevealCount,
   };
 }
 
@@ -112,7 +117,7 @@ export function normalizePocketDeckState(value: unknown, validCardIds: ReadonlyS
   const defaults = createDefaultPocketDeckState();
   if (!isRecord(value)) return defaults;
   if (value.schemaVersion === 1) return { ...defaults, pinnedCardIds: normalizeCardIds(value.pinnedCardIds, validCardIds), recentCardIds: normalizeCardIds(value.recentCardIds, validCardIds, POCKET_DECK_RECENT_LIMIT) };
-  if (value.schemaVersion !== 2 && value.schemaVersion !== 3) return defaults;
+  if (value.schemaVersion !== 2 && value.schemaVersion !== 3 && value.schemaVersion !== 4) return defaults;
   return {
     schemaVersion: POCKET_DECK_SCHEMA_VERSION,
     pinnedCardIds: normalizeCardIds(value.pinnedCardIds, validCardIds),
@@ -139,5 +144,5 @@ export function applyPocketDeckPracticeEvidence(state: PocketDeckState, evidence
   const normalized = normalizePracticeEvidence(evidence, validCardIds);
   if (!normalized || hasPocketDeckEvidence(state, normalized.id)) return state;
   const existing = pocketDeckEvidenceForCard(state, normalized.cardId);
-  return { ...state, schemaVersion: 3, practiceEvidenceByCardId: { ...state.practiceEvidenceByCardId, [normalized.cardId]: [normalized, ...existing].slice(0, POCKET_DECK_PRACTICE_HISTORY_LIMIT) } };
+  return { ...state, schemaVersion: POCKET_DECK_SCHEMA_VERSION, practiceEvidenceByCardId: { ...state.practiceEvidenceByCardId, [normalized.cardId]: [normalized, ...existing].slice(0, POCKET_DECK_PRACTICE_HISTORY_LIMIT) } };
 }

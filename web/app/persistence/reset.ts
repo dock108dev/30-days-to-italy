@@ -6,14 +6,16 @@ import { clearTripProfile } from "../trip/persistence";
 
 export type AppLocalStorage = LocalGameStorage;
 
-export function clearAllLocalState(storage: AppLocalStorage): void {
-  try {
-    clearSavedGame(storage);
-  } catch {
-    // Continue clearing the other independent local domains.
-  }
-  clearTripProfile(storage);
-  clearLifecycleState(storage);
-  clearGuidedSession(storage);
-  clearPocketDeckState(storage);
+export function clearAllLocalState(storage: AppLocalStorage): boolean {
+  // Each domain reports its own failure. Attempting every independent removal
+  // avoids leaving extra data behind while the false result prevents claiming
+  // that a partial reset succeeded.
+  const results = [
+    clearSavedGame(storage),
+    clearTripProfile(storage),
+    clearLifecycleState(storage),
+    clearGuidedSession(storage),
+    clearPocketDeckState(storage),
+  ];
+  return results.every(Boolean);
 }

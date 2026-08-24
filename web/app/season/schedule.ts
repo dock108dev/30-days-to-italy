@@ -12,7 +12,7 @@ export function daysUntilDeparture(profile: Pick<TripProfile, "departureDate">, 
   return calendarDayDifference(profile.departureDate, today);
 }
 
-export function isEpisodeUnlocked(
+function isEpisodeUnlocked(
   episode: SeasonEpisode,
   profile: Pick<TripProfile, "departureDate">,
   today = localDateString(new Date()),
@@ -36,17 +36,7 @@ export function scheduleSeason(
       ...episode,
       unlocked,
       completed: completedSet.has(episode.id),
-      playable: unlocked && episode.status === "implemented",
+      playable: unlocked,
     };
   });
-}
-
-export function recommendedEpisode(
-  profile: Pick<TripProfile, "departureDate">,
-  completed: readonly EpisodeId[],
-  today = localDateString(new Date()),
-): ScheduledEpisode | null {
-  return scheduleSeason(profile, completed, today).find(
-    (episode) => episode.playable && !episode.completed,
-  ) ?? null;
 }

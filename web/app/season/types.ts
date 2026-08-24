@@ -11,6 +11,7 @@ import type {
   Turn,
 } from "../game/model";
 import type { EpisodeId, SeasonEpisode } from "./manifest";
+import type { CanonicalDemoPath } from "./canonical-demo-fixtures";
 
 export const OBSERVED_MOVES = [
   "identify",
@@ -95,8 +96,6 @@ export type EpisodeResultContext = {
 };
 
 export type EpisodeDefinition = SeasonEpisode & {
-  status: "implemented";
-  sceneId: NonNullable<SeasonEpisode["sceneId"]>;
   scene: Scene;
   turns: Readonly<Record<string, Turn>>;
   outcomes: Readonly<Record<string, Outcome>>;
@@ -108,23 +107,27 @@ export type EpisodeDefinition = SeasonEpisode & {
   observeResponse(context: EpisodeObservationContext): EpisodeObservation;
   adminSeed(): Partial<GameState>;
   buildResult(context: EpisodeResultContext): EpisodeResult;
-  /** Legacy episode-level marker; completion is governed only by completionOutcomeIds. */
-  terminalBehavior?: "resolve";
   completionOutcomeIds?: readonly string[];
+};
+
+export type DemoEpisodeDefinition = EpisodeDefinition & {
+  canonicalDemo: CanonicalDemoPath;
 };
 
 export function mergeVerifiedFacts(
   current: VerifiedEpisodeFacts,
   incoming: VerifiedEpisodeFacts = {},
 ): VerifiedEpisodeFacts {
-  return {
+  const merged: VerifiedEpisodeFacts = {
     ...current,
     ...incoming,
-    preferenceSelected:
-      typeof incoming.preferenceSelected === "string"
-        ? incoming.preferenceSelected.slice(0, 80)
-        : current.preferenceSelected,
   };
+  const preference = typeof incoming.preferenceSelected === "string"
+    ? incoming.preferenceSelected.slice(0, 80)
+    : current.preferenceSelected;
+  if (typeof preference === "string") merged.preferenceSelected = preference;
+  else delete merged.preferenceSelected;
+  return merged;
 }
 
 export function buildObservedEpisodeResult({

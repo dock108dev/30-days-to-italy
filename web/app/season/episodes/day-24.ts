@@ -6,7 +6,7 @@ import { addFact, finalArcAdminSeed } from "./shared";
 const metadata = seasonEpisode("day-24");
 
 export const day24Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "weather-beach",
+  ...metadata, sceneId: "weather-beach",
   scene: { id: "weather-beach", episodeId: "day-24", day: "Day 24", dateLabel: "A windy change", title: metadata.title, location: metadata.location, time: "14:00", npc: "Nadia", role: "Lido attendant", objective: "Respond to the fictional wind and 15:00 closure without claiming an unearned refund or credit.", firstTurn: "d24_01_wind", kicker: "Today’s wind and early closure are fictional trip conditions inside the rehearsal.", suggestions: ["Allora vado via.", "Posso avere un buono?", "Prendo il posto riparato da cinque euro."] },
   turns: {
     d24_01_wind: authoredTurn("d24_01_wind", "Nadia", "Oggi c'è molto vento e il lido chiude alle quindici. Le consiglio di andare via.", "Leave, ask about a remedy, or choose the €5 sheltered chair."),
@@ -60,5 +60,5 @@ export const day24Episode: EpisodeDefinition = {
     if (["d24_05_credit", "d24_06_refund", "d24_02_no_entitlement"].includes(after.turnId)) return observation(["request", "recovery"]);
     return noObservation();
   },
-  adminSeed: () => finalArcAdminSeed(24), buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  adminSeed: () => finalArcAdminSeed(24), buildResult: buildObservedEpisodeResult,
 };

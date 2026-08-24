@@ -6,7 +6,7 @@ import { addFact, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-10");
 
 export const day10Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "trattoria",
+  ...metadata, sceneId: "trattoria",
   scene: { id: "trattoria", episodeId: "day-10", day: "Day 10", dateLabel: "21 days out", title: metadata.title, location: metadata.location, time: "13:10", npc: "Rosa", role: "Server", objective: "Order a €12 meal and repair the wrong side dish without accepting it by accident.", firstTurn: "d10_01_order", kicker: "The read-back is quick; the side dish is the detail that matters.", suggestions: ["Vorrei la pasta con l'insalata.", "Non le patate. L'insalata, per favore.", "Sì, adesso va bene."] },
   turns: {
     d10_01_order: authoredTurn("d10_01_order", "Rosa", "Buongiorno. Cosa prende?", "Order the pasta with salad or leave."),
@@ -50,5 +50,5 @@ export const day10Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d10_03_close" ? { correctionAccepted: true, priceConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 3610, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotelKey: true, apartmentKey: true, rental: "custom", pharmacyItem: "Mosquito-bite cream", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream"], relationships: { Giulia: "neutral" }, knownFacts: ["Ferry to Amalfi: 09:30, €10.00, 35 minutes, rough sea caveat"], completed: completedBefore(10), currentLocation: metadata.location, currentTime: "13:10" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

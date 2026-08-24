@@ -6,7 +6,7 @@ import { addFact, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-21");
 
 export const day21Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "bartender",
+  ...metadata, sceneId: "bartender",
   scene: { id: "bartender", episodeId: "day-21", day: "Day 21", dateLabel: "Familiarity", title: metadata.title, location: metadata.location, time: "11:00", npc: "Giulia", role: "A familiar bartender", objective: "Order and pay for a drink. Giulia recognizes you; anything beyond the transaction is optional.", firstTurn: "e04_01_usual", kicker: "Giulia may remember a real detail from earlier in your trip.", suggestions: ["Il solito, grazie.", "Con la carta.", "Te lo racconto un’altra volta."] },
   turns: {
     e04_01_usual: authoredTurn("e04_01_usual", "Giulia", "Buongiorno. Il solito? Un espresso?", "Accept, correct the usual, or leave."),
@@ -117,5 +117,4 @@ export const day21Episode: EpisodeDefinition = {
   },
   adminSeed: () => ({ money: 1120, hotelKey: true, apartmentKey: true, rental: "custom", cafeOutcome: "Both errors corrected", laundryStatus: "clean", transportMode: "bus", transportStatus: "replacement-bus", transportTicketPrice: 240, hotWaterStatus: "temporary", repairCommitment: { window: "Friday, 10:00", status: "active" }, parcelStatus: "collected", inventory: ["Clean clothes", "Replacement bus ticket", "Parcel"], relationships: { Giulia: "efficient" }, knownFacts: ["Giulia served the first espresso", "Giulia corrected both café errors", "Cancelled ferry refunded", "Replacement bus taken", "Hot water temporary fix completed"], completed: completedBefore(21) }),
   buildResult: buildObservedEpisodeResult,
-  terminalBehavior: "resolve",
 };
