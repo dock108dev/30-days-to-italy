@@ -59,6 +59,22 @@ test("the install manifest is standalone, local, and carries complete icon metad
   }
 });
 
+test("a clean production build reserves offline routes before compiling their final content", async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ) as { scripts?: { build?: string } };
+  const build = packageJson.scripts?.build ?? "";
+  const seed = build.indexOf("build-offline.ts seed");
+  const compile = build.indexOf("vinext build");
+  const prepare = build.indexOf("build-offline.ts prepare");
+  const verify = build.indexOf("build-offline.ts verify");
+
+  assert.equal(seed >= 0, true);
+  assert.equal(seed < compile, true);
+  assert.equal(compile < prepare, true);
+  assert.equal(prepare < verify, true);
+});
+
 test("the offline inventory derives and includes every required audio file", async () => {
   const manifest = JSON.parse(
     await readFile(new URL("../dist/client/offline-manifest.json", import.meta.url), "utf8"),
