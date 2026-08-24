@@ -14,9 +14,7 @@ import {
 } from "../admin/canonical-demo";
 import {
   checkpointAuditStatus,
-  saveDemoConductor,
   updateDemoConductor,
-  type DemoConductor,
 } from "../admin/demo-conductor";
 import {
   clearDemoPreviewReturn,
@@ -38,7 +36,6 @@ import {
   type TeachingMoment,
 } from "../game/model";
 import {
-  finishPendingOutcome,
   nextEpisodeState,
   possessionsFor,
   recordPhrasePractice as recordPhrasePracticeState,
@@ -48,35 +45,24 @@ import {
   seedEpisodeState,
   submitEpisodeResponse,
 } from "../game/engine";
-import { loadGame, saveGame } from "../game/persistence";
 import {
   beginGuidedBeachSession,
   beginRebuiltGuidedRefresher,
   completeGuidedBeachSession,
   observeGuidedBeachResponse,
-  reconcileGuidedBeachSession,
   recordGuidedRefresherOpened,
   recordGuidedSupport,
 } from "../guided/engine";
 import { GuidedSessionProgress, GuidedSessionReview } from "../guided/GuidedSessionViews";
-import {
-  createDefaultGuidedBeachSession,
-  isBeachOutcomeId,
-  type GuidedBeachSession,
-} from "../guided/model";
-import { loadGuidedSession, saveGuidedSession } from "../guided/persistence";
+import { isBeachOutcomeId } from "../guided/model";
 import { createGuidedBeachHandoff } from "../guided/pocket-deck-handoff";
 import { ModeNavigation } from "../lifecycle/LifecycleViews";
 import {
   createDefaultLifecycleState,
   withLifecycleMode,
   type AppMode,
-  type LifecycleState,
 } from "../lifecycle/model";
-import {
-  loadLifecycleState,
-  saveLifecycleState,
-} from "../lifecycle/persistence";
+import { saveLifecycleState } from "../lifecycle/persistence";
 import { useOfflineReadiness } from "../offline/useOfflineReadiness";
 import {
   reportClientFailure,
@@ -87,37 +73,23 @@ import { OperationalFailureBanner } from "../observability/OperationalFailureBan
 import { clearAllLocalState } from "../persistence/reset";
 import {
   exitDemoSession,
-  isCurrentApplicationSession,
-  loadActiveDemoSession,
   ownerSession,
   resetDemoSession,
   startDemoSession,
-  type ApplicationSession,
-  type ApplicationSessionMode,
   type EnumerableSessionStorage,
-  type SessionStorage,
 } from "../persistence/session";
 import { PocketDeck } from "../pocket-deck/PocketDeckViews";
 import { CORE_POCKET_DECK_CARD_IDS } from "../pocket-deck/catalog";
 import {
   applyPocketDeckPracticeEvidence,
-  createDefaultPocketDeckState,
   hasPocketDeckEvidence,
-  type PocketDeckState,
 } from "../pocket-deck/model";
-import {
-  loadPocketDeckState,
-  savePocketDeckState,
-} from "../pocket-deck/persistence";
 import { createDefaultTripProfile, type TripProfile } from "../trip/model";
 import { createSeasonEpisodeHandoff } from "../season/pocket-deck-handoff";
 import { EPISODE_BY_ID, EPISODE_IDS, SEASON_01, type EpisodeId } from "../season/manifest";
 import { TURNS, sceneForEpisode } from "../season/registry";
 import { scheduleSeason } from "../season/schedule";
-import {
-  loadTripProfile,
-  saveTripProfile,
-} from "../trip/persistence";
+import { saveTripProfile } from "../trip/persistence";
 import { TripSetup } from "../trip/TripProfileViews";
 import {
   AdminModal,
@@ -133,21 +105,12 @@ import {
   WorldPanel,
   type InteractionPhase,
 } from "./PrototypeViews";
+import { useApplicationSession } from "./useApplicationSession";
 
 type InteractionState = {
   turnKey: string;
   phase: Exclude<InteractionPhase, "resolved">;
   audioFailed: boolean;
-};
-
-type SessionIdentity = {
-  mode: ApplicationSessionMode;
-  id: string;
-  generation: number;
-};
-
-type ActiveSessionRuntime = SessionIdentity & {
-  storage: SessionStorage;
 };
 
 function interactionTurnKey(
@@ -156,36 +119,26 @@ function interactionTurnKey(
   return `${game.episodeId}:${game.turnId}:${game.status}`;
 }
 
-function consumeHydrationSaveBlock(
-  blocks: { generation: number; domains: Set<string> },
-  generation: number,
-  domain: string,
-): boolean {
-  if (blocks.generation !== generation || !blocks.domains.has(domain)) return false;
-  blocks.domains.delete(domain);
-  return true;
-}
-
 export default function Home() {
-  const [game, setGame] = useState<GameState>(() => initialState());
-  const [tripProfile, setTripProfile] = useState<TripProfile | null>(null);
-  const [lifecycle, setLifecycle] = useState<LifecycleState>(() =>
-    createDefaultLifecycleState(),
-  );
-  const [guidedSession, setGuidedSession] = useState<GuidedBeachSession>(() =>
-    createDefaultGuidedBeachSession(),
-  );
-  const [pocketDeck, setPocketDeck] = useState<PocketDeckState>(() =>
-    createDefaultPocketDeckState(),
-  );
+  const {
+    activeStorage,
+    activateApplicationSession,
+    conductor,
+    game,
+    guidedSession,
+    hydrated,
+    lifecycle,
+    pocketDeck,
+    sessionIdentity,
+    setConductor,
+    setGame,
+    setGuidedSession,
+    setLifecycle,
+    setPocketDeck,
+    setTripProfile,
+    tripProfile,
+  } = useApplicationSession();
   const [tripDeckCardId, setTripDeckCardId] = useState<string | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-  const [sessionIdentity, setSessionIdentity] = useState<SessionIdentity>({
-    mode: "owner",
-    id: "owner",
-    generation: 0,
-  });
-  const [conductor, setConductor] = useState<DemoConductor | null>(null);
   const [input, setInput] = useState("");
   const [interaction, setInteraction] = useState<InteractionState>(() => {
     const game = initialState();
@@ -211,11 +164,6 @@ export default function Home() {
   const seasonOverviewTriggerRef = useRef<HTMLElement | null>(null);
   const submissionInFlightRef = useRef(false);
   const pendingRebuiltEpisodeRef = useRef<GameState["episodeId"] | null>(null);
-  const activeSessionRef = useRef<ActiveSessionRuntime | null>(null);
-  const saveBlocksRef = useRef<{ generation: number; domains: Set<string> }>({
-    generation: 0,
-    domains: new Set(),
-  });
   const offlineReadiness = useOfflineReadiness();
 
   useEffect(() => subscribeToClientFailures(setClientFailure), []);
@@ -229,111 +177,6 @@ export default function Home() {
     : interaction.turnKey === currentTurnKey
       ? interaction.phase
       : "awaiting_line";
-
-  function activateApplicationSession(session: ApplicationSession) {
-    const generation = (activeSessionRef.current?.generation ?? 0) + 1;
-    const runtime: ActiveSessionRuntime = {
-      mode: session.mode,
-      id: session.id,
-      generation,
-      storage: session.storage,
-    };
-    activeSessionRef.current = runtime;
-    saveBlocksRef.current = {
-      generation,
-      domains: new Set(["game", "guided", "deck", "conductor"]),
-    };
-    setHydrated(false);
-
-    const loadedGame = finishPendingOutcome(loadGame(runtime.storage));
-    const loadedProfile = loadTripProfile(runtime.storage);
-    const loadedLifecycle = loadLifecycleState(runtime.storage);
-    let loadedGuidedSession = loadGuidedSession(runtime.storage);
-    const loadedPocketDeck = loadPocketDeckState(runtime.storage);
-    loadedGuidedSession = reconcileGuidedBeachSession(loadedGuidedSession, loadedGame);
-
-    setSessionIdentity({ mode: runtime.mode, id: runtime.id, generation });
-    setConductor(session.mode === "demo" ? session.conductor : null);
-    setGame(loadedGame);
-    setTripProfile(loadedProfile);
-    setLifecycle(loadedLifecycle);
-    setGuidedSession(loadedGuidedSession);
-    setPocketDeck(loadedPocketDeck);
-    setHydrated(true);
-  }
-
-  function activeStorage(): SessionStorage | null {
-    const runtime = activeSessionRef.current;
-    return isCurrentApplicationSession(runtime, sessionIdentity) ? runtime!.storage : null;
-  }
-
-  useEffect(() => {
-    let active = true;
-    queueMicrotask(() => {
-      if (!active) return;
-      const storage = window.localStorage as EnumerableSessionStorage;
-      const demo = loadActiveDemoSession(storage);
-      activateApplicationSession(demo ?? ownerSession(storage));
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity)) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "game")) return;
-    saveGame(runtime!.storage, game);
-  }, [game, hydrated, sessionIdentity]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity)) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "guided")) return;
-    saveGuidedSession(runtime!.storage, guidedSession);
-  }, [guidedSession, hydrated, sessionIdentity]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity)) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "deck")) return;
-    savePocketDeckState(runtime!.storage, pocketDeck);
-  }, [pocketDeck, hydrated, sessionIdentity]);
-
-  useEffect(() => {
-    if (!hydrated || !conductor || sessionIdentity.mode !== "demo") return;
-    const runtime = activeSessionRef.current;
-    if (!isCurrentApplicationSession(runtime, sessionIdentity) || runtime!.id !== conductor.sessionId) return;
-    if (consumeHydrationSaveBlock(saveBlocksRef.current, sessionIdentity.generation, "conductor")) return;
-    saveDemoConductor(runtime!.storage, conductor);
-  }, [conductor, hydrated, sessionIdentity]);
-
-  useEffect(() => {
-    if (
-      !hydrated ||
-      sessionIdentity.mode !== "demo" ||
-      !conductor ||
-      conductor.previewId ||
-      conductor.activeCheckpointId === "trip" ||
-      conductor.activeCheckpointId !== game.episodeId ||
-      conductor.checkpointStatus !== "active" ||
-      game.status === "active"
-    ) return;
-    queueMicrotask(() => {
-      setConductor((current) => current && current.sessionId === conductor.sessionId
-        ? updateDemoConductor(current, {
-            checkpointStatus: "resolved",
-            playedNormally: current.playedNormally.includes(game.episodeId)
-              ? current.playedNormally
-              : [...current.playedNormally, game.episodeId],
-          })
-        : current);
-    });
-  }, [conductor, game.episodeId, game.status, hydrated, sessionIdentity.mode]);
 
   useEffect(() => {
     if (audioRef.current) {
