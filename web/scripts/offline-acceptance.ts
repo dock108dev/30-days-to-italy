@@ -19,7 +19,8 @@ import {
   type PocketDeckPracticeEvidence,
 } from "../app/pocket-deck/model";
 import { POCKET_DECK_STORAGE_KEY } from "../app/pocket-deck/persistence";
-import { OFFLINE_CACHE_PREFIX, REQUIRED_AUDIO_COUNT, REQUIRED_POCKET_DECK_AUDIO_COUNT } from "../build/offline-assets";
+import { OFFLINE_CACHE_PREFIX } from "../build/offline-assets";
+import { REQUIRED_AUDIO_COUNT, REQUIRED_POCKET_DECK_AUDIO_COUNT } from "../build/offline-catalog";
 
 const root = process.cwd();
 const chromeCandidates = [

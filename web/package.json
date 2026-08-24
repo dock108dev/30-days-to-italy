@@ -8,7 +8,7 @@
   "scripts": {
     "audio:generate": "node --import tsx scripts/generate-local-audio.ts",
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
-    "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build && node --import tsx scripts/build-offline.ts prepare && node --import tsx scripts/build-offline.ts verify",
+    "build": "node --import tsx scripts/build-offline.ts seed && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build && node --import tsx scripts/build-offline.ts prepare && node --import tsx scripts/build-offline.ts verify",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test:interaction": "npm run build && node --import tsx scripts/interaction-acceptance.ts",
     "test:admin-demo": "npm run build && node --import tsx scripts/admin-demo-acceptance.ts",

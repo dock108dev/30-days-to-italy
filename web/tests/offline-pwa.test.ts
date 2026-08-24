@@ -6,14 +6,16 @@ import test from "node:test";
 
 import {
   OFFLINE_CACHE_PREFIX,
-  REQUIRED_AUDIO_COUNT,
-  REQUIRED_POCKET_DECK_AUDIO_COUNT,
   cacheVersionForFiles,
   createOfflineBuildManifest,
   offlineUrlsForRelativePaths,
   renderServiceWorker,
   shouldIncludeOfflineAsset,
 } from "../build/offline-assets";
+import {
+  REQUIRED_AUDIO_COUNT,
+  REQUIRED_POCKET_DECK_AUDIO_COUNT,
+} from "../build/offline-catalog";
 import {
   OFFLINE_UNAVAILABLE,
   readinessFromWorkerReport,
