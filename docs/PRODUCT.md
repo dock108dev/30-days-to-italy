@@ -6,10 +6,12 @@
 
 1. The traveler enters a departure date and a small trip profile.
 2. Prepare Mode schedules 31 sessions from Day 0 through Day 30. Unlocked missed sessions remain available without streak penalties.
-3. Each session presents authored Italian audio, accepts a bounded typed response, and applies deterministic consequences.
+3. Each session presents authored Italian audio, accepts a bounded typed response, and applies deterministic consequences. Day 4 also records a guided beach-rehearsal path and review.
 4. English fallback can pause the scene for a contextual refresher and then return to the same conversation.
 5. Eligible observed practice can strengthen a reviewed Pocket Deck card. Authored targets or successful outcomes alone never count as evidence.
 6. Trip Mode provides searchable, pinnable, offline cards with normal and careful local audio. It does not teach, score, or change rehearsal state.
+
+Trip Mode unlocks only after a valid Day 30 completion. Prepare Mode remains available for replay, and historical valid season completion is retained when a later replay exits or fails to qualify.
 
 Leaving, short answers, mixed language, replay, slower audio, and transcript use are valid. The app must report factual outcomes and must not invent purchases, attendance, commitments, refunds, or successful communication.
 

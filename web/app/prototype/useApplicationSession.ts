@@ -106,6 +106,15 @@ export function useApplicationSession() {
     return isCurrentApplicationSession(runtime, sessionIdentity) ? runtime!.storage : null;
   }, [sessionIdentity]);
 
+  const guardOwnerSession = useCallback((storage: SessionStorage) => {
+    activeSessionRef.current = {
+      mode: "owner",
+      id: "owner",
+      generation: (activeSessionRef.current?.generation ?? 0) + 1,
+      storage,
+    };
+  }, []);
+
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -178,6 +187,7 @@ export function useApplicationSession() {
     activateApplicationSession,
     conductor,
     game,
+    guardOwnerSession,
     guidedSession,
     hydrated,
     lifecycle,

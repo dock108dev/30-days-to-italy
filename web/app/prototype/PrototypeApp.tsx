@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 
 import {
   adminFastTrackCheckpoint,
@@ -28,7 +28,6 @@ import {
 import {
   PHRASE_BY_ID,
   fallbackPhraseForContext,
-  initialState,
   phraseExampleFor,
   type GameState,
   type PhraseId,
@@ -64,11 +63,7 @@ import {
 } from "../lifecycle/model";
 import { saveLifecycleState } from "../lifecycle/persistence";
 import { useOfflineReadiness } from "../offline/useOfflineReadiness";
-import {
-  reportClientFailure,
-  subscribeToClientFailures,
-  type ClientFailure,
-} from "../observability/client-failures";
+import { reportClientFailure } from "../observability/client-failures";
 import { OperationalFailureBanner } from "../observability/OperationalFailureBanner";
 import { clearAllLocalState } from "../persistence/reset";
 import {
@@ -103,21 +98,12 @@ import {
   SeasonOverview,
   TeachingCard,
   WorldPanel,
-  type InteractionPhase,
 } from "./PrototypeViews";
 import { useApplicationSession } from "./useApplicationSession";
-
-type InteractionState = {
-  turnKey: string;
-  phase: Exclude<InteractionPhase, "resolved">;
-  audioFailed: boolean;
-};
-
-function interactionTurnKey(
-  game: Pick<GameState, "episodeId" | "turnId" | "status">,
-): string {
-  return `${game.episodeId}:${game.turnId}:${game.status}`;
-}
+import {
+  interactionTurnKey,
+  usePrototypePresentation,
+} from "./usePrototypePresentation";
 
 export default function Home() {
   const {
@@ -125,6 +111,7 @@ export default function Home() {
     activateApplicationSession,
     conductor,
     game,
+    guardOwnerSession,
     guidedSession,
     hydrated,
     lifecycle,
@@ -139,113 +126,43 @@ export default function Home() {
     tripProfile,
   } = useApplicationSession();
   const [tripDeckCardId, setTripDeckCardId] = useState<string | null>(null);
-  const [input, setInput] = useState("");
-  const [interaction, setInteraction] = useState<InteractionState>(() => {
-    const game = initialState();
-    return {
-      turnKey: interactionTurnKey(game),
-      phase: "awaiting_line",
-      audioFailed: false,
-    };
-  });
-  const [transcriptVisible, setTranscriptVisible] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
-  const [tripEditorOpen, setTripEditorOpen] = useState(false);
-  const [showNatural, setShowNatural] = useState(false);
-  const [teachingMoment, setTeachingMoment] = useState<TeachingMoment | null>(null);
-  const [seasonOverviewOpen, setSeasonOverviewOpen] = useState(false);
-  const [clientFailure, setClientFailure] = useState<ClientFailure | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const responseRef = useRef<HTMLTextAreaElement>(null);
-  const teachingCloseRef = useRef<HTMLButtonElement>(null);
-  const teachingTriggerRef = useRef<HTMLElement | null>(null);
-  const seasonOverviewCloseRef = useRef<HTMLButtonElement>(null);
-  const seasonOverviewTriggerRef = useRef<HTMLElement | null>(null);
-  const submissionInFlightRef = useRef(false);
-  const pendingRebuiltEpisodeRef = useRef<GameState["episodeId"] | null>(null);
+  const {
+    adminOpen,
+    audioRef,
+    clientFailure,
+    currentTurnKey,
+    input,
+    interaction,
+    interactionPhase,
+    isPlaying,
+    pendingRebuiltEpisodeRef,
+    responseRef,
+    seasonOverviewCloseRef,
+    seasonOverviewOpen,
+    seasonOverviewTriggerRef,
+    setAdminOpen,
+    setClientFailure,
+    setInput,
+    setInteraction,
+    setIsPlaying,
+    setSeasonOverviewOpen,
+    setShowNatural,
+    setTeachingMoment,
+    setTranscriptVisible,
+    setTripEditorOpen,
+    showNatural,
+    submissionInFlightRef,
+    teachingCloseRef,
+    teachingMoment,
+    teachingTriggerRef,
+    transcriptVisible,
+    tripEditorOpen,
+  } = usePrototypePresentation(game);
   const offlineReadiness = useOfflineReadiness();
-
-  useEffect(() => subscribeToClientFailures(setClientFailure), []);
 
   const scene = sceneForEpisode(game.episodeId)!;
   const turn = TURNS[game.turnId];
   const support = game.support[scene.id];
-  const currentTurnKey = interactionTurnKey(game);
-  const interactionPhase: InteractionPhase = game.status !== "active"
-    ? "resolved"
-    : interaction.turnKey === currentTurnKey
-      ? interaction.phase
-      : "awaiting_line";
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    let active = true;
-    queueMicrotask(() => {
-      if (!active) return;
-      setInteraction({
-        turnKey: currentTurnKey,
-        phase: "awaiting_line",
-        audioFailed: false,
-      });
-      setTranscriptVisible(false);
-      setIsPlaying(false);
-      setShowNatural(false);
-      setTeachingMoment(null);
-      pendingRebuiltEpisodeRef.current = null;
-    });
-    return () => {
-      active = false;
-    };
-  }, [currentTurnKey]);
-
-  useEffect(() => {
-    if (interactionPhase !== "ready_to_respond") return;
-    let active = true;
-    queueMicrotask(() => {
-      if (!active || !responseRef.current) return;
-      responseRef.current.focus({ preventScroll: true });
-      const form = responseRef.current.closest("form");
-      requestAnimationFrame(() => {
-        if (!form) return;
-        const rect = form.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight) {
-          window.scrollBy({ top: rect.bottom - window.innerHeight + 12 });
-        }
-      });
-    });
-    return () => {
-      active = false;
-    };
-  }, [interactionPhase]);
-
-  useEffect(() => {
-    if (teachingMoment) teachingCloseRef.current?.focus();
-  }, [teachingMoment]);
-
-  useEffect(() => {
-    if (seasonOverviewOpen) seasonOverviewCloseRef.current?.focus();
-  }, [seasonOverviewOpen]);
-
-  useEffect(() => {
-    if (!teachingMoment && !seasonOverviewOpen) return;
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      if (seasonOverviewOpen) {
-        setSeasonOverviewOpen(false);
-        queueMicrotask(() => seasonOverviewTriggerRef.current?.focus());
-        return;
-      }
-      setTeachingMoment(null);
-      queueMicrotask(() => teachingTriggerRef.current?.focus());
-    }
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [seasonOverviewOpen, teachingMoment]);
 
   const possessions = useMemo(() => possessionsFor(game), [game]);
   const guidedHandoff = useMemo(
@@ -456,12 +373,7 @@ export default function Home() {
     const storage = window.localStorage as EnumerableSessionStorage;
     stopTransientUi();
     setAdminOpen(false);
-    activeSessionRef.current = {
-      mode: "owner",
-      id: "owner",
-      generation: sessionIdentity.generation + 1,
-      storage,
-    };
+    guardOwnerSession(storage);
     exitDemoSession(storage, sessionIdentity.id);
     activateApplicationSession(ownerSession(storage));
     queueMicrotask(() => {

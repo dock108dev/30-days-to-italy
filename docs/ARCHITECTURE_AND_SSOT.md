@@ -4,11 +4,18 @@ Application paths in this document are relative to `web/`. Run validation comman
 
 This document records the supported production paths for the current owner-only PWA. A module is authoritative when the production entry point calls it directly or when it owns persisted data that the entry point hydrates. Historical implementation stages are not supported modes.
 
+## Runtime shape
+
+The repository contains one browser application and one HTTP Worker. A request reaches `worker/index.ts`, which rejects unsupported methods and the unused image-transform path, delegates ordinary rendering to Vinext, and adds security headers. The single `/` route mounts `PrototypeApp`; client modules then hydrate independent browser-storage domains and run all rehearsal, Admin, lifecycle, and Pocket Deck behavior locally.
+
+There is no application API, server-side traveler data, migration runner, scheduler, queue consumer, cron task, webhook, upload, or third-party runtime integration. Repository-authored build scripts do not call an external application service; generated offline content is assembled from build output and checked-in media.
+
 ## Authority map
 
 ### Application routing and rendering
 
 - **SSOT:** `app/page.tsx` routes `/` directly to `app/prototype/PrototypeApp.tsx`.
+- `app/prototype/useApplicationSession.ts` owns domain hydration, save suppression during session changes, and owner/demo storage activation. `usePrototypePresentation.ts` owns transient interaction and focus state; neither defines episode behavior.
 - **Why:** this is the only application page and the only mounted client state coordinator.
 - **Known callers:** the Vinext app-router entry, rendered-shell tests, and browser acceptance campaigns.
 
@@ -50,6 +57,18 @@ This document records the supported production paths for the current owner-only 
 - **Session authority:** `app/persistence/session.ts` owns owner-versus-demo storage selection and demo namespacing. `app/persistence/reset.ts` coordinates the five domain-owned clear operations.
 - **Why:** domain parsers fail closed while session generation prevents stale owner/demo writes.
 - **Known callers:** `PrototypeApp`, reset UI, Admin demo operations, browser acceptance, and persistence tests.
+
+The owner session uses these stable keys:
+
+| Domain | Storage key | Current schema authority |
+| --- | --- | --- |
+| Rehearsal world and completion | `un-mese-prototype-v1` | `app/game/model.ts` schema 6; migrations live only in `app/game/persistence.ts`. |
+| Trip profile | `thirty-days-to-italy-trip-profile-v1` | `app/trip/model.ts` schema 1. |
+| Prepare/Trip mode | `thirty-days-to-italy-lifecycle-v1` | `app/lifecycle/model.ts` schema 1. |
+| Guided beach rehearsal | `thirty-days-to-italy-guided-sessions-v1` | `app/guided/model.ts` schema 1. |
+| Pocket Deck activity | `thirty-days-to-italy-pocket-deck-v1` | `app/pocket-deck/model.ts` schema 4, with normalization for schemas 1–3. |
+
+`thirty-days-to-italy-active-demo-v1` selects an isolated demo session. Its domain records and conductor are stored below a generated `thirty-days-to-italy-demo-v1:<session-id>:` prefix. Storage names are compatibility contracts; changing one requires an explicit migration and owner-data validation.
 
 ### Admin review
 

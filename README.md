@@ -1,6 +1,6 @@
 # 30 Days to Italy
 
-30 Days to Italy is a private, mobile-friendly rehearsal app for an Italian coastal trip. It provides 31 playable preparation sessions, a device-local trip profile, persistent Prepare and Trip modes, and an offline Pocket Deck with 30 reviewed cards.
+30 Days to Italy is an owner-only, mobile-friendly rehearsal app for an Italian coastal trip. It provides 31 playable preparation sessions, a guided beach rehearsal, a device-local trip profile, persistent Prepare and Trip modes, and an offline Pocket Deck with 30 reviewed cards.
 
 The player listens and types; the app never requests microphone access. Progress and trip details stay in the current browser. There is no account, analytics service, application API, or cross-device sync.
 
@@ -63,4 +63,4 @@ See [Development](docs/DEVELOPMENT.md) for the complete command map and change b
 
 ## Release boundary
 
-The supported release is owner-only. Admin controls are local review tools, not authentication. Public or shared access requires a separate security and privacy decision; deployment access and response headers must be verified outside this repository.
+The supported release is owner-only. Admin controls are local review tools, not authentication. Public or shared access requires a separate security and privacy decision; deployment access and response headers must be verified outside this repository. See [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md#build-and-deployment-boundary) for the release boundary.

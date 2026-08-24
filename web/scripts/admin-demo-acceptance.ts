@@ -31,7 +31,7 @@ const port = 3103;
 const baseUrl = `http://127.0.0.1:${port}`;
 const evidenceRoot = process.env.ITALY_EVIDENCE_ROOT
   ? resolve(process.env.ITALY_EVIDENCE_ROOT, "admin-review")
-  : resolve(root, "../../italian-pilot-evidence/candidate-20260823/admin-review");
+  : resolve(root, "../../italian-pilot-evidence/local/admin-review");
 const chromeCandidates = [
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",

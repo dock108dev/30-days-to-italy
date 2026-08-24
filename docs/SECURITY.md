@@ -4,6 +4,14 @@ Application paths in this document are relative to `web/`. Run validation comman
 
 This document describes the current repository security boundary. It does not certify the live deployment configuration. The application remains an owner-only vacation-rehearsal PWA and is not approved for public or shared access.
 
+## Live verification — 2026-08-23
+
+Read-only Sites inspection confirmed that the existing production site is active with custom access, one owner account, zero workspace or tenant groups, and zero external visitors. Signed-out navigation stops at the ChatGPT authentication gate.
+
+Production remains saved version 1 and does not yet match this repository candidate. An authenticated response returned `200` with `Cache-Control: no-store, must-revalidate`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and disabled microphone/camera/geolocation permissions. CSP, HSTS, COOP, CORP, and `X-Robots-Tag` were absent; `POST /` correctly returned `405` with `Allow: GET, HEAD`, while `/_vinext/image` returned the older `400` behavior rather than the candidate's `404`.
+
+This is verification evidence, not deployment approval. The repository hardening becomes live only after the cumulative candidate is committed, frozen, fully validated, saved as a new Sites version, privately deployed, and rechecked.
+
 ## Security understanding
 
 ### Surfaces and trust boundaries
@@ -140,7 +148,8 @@ Before any owner run or deployment, verify against the exact frozen candidate:
 1. **Required before owner use:** review and commit the cumulative diff, freeze a new candidate, rerun all engineering gates, and verify live owner-only hosting and headers.
 2. **Required before shared access:** remove Admin from that build or implement server-side authentication and authorization; define privacy, deletion, abuse, and rate-limit policy.
 3. **Defense in depth:** replace inline-script CSP allowance with framework-supported nonces/hashes.
-4. **Supply chain:** add CI that runs the lockfile install, lint, TypeScript, full tests, `test:security`, production audit, and a repository secret scanner. The current local audit is necessary but not a substitute for continuous checks.
+
+Supply-chain checks are now configured in `.github/workflows/ci.yml`: locked installation, lint, TypeScript, full build/tests, browser acceptance, a high-severity production audit, and a full-history secret scan. Repository settings and GitHub-managed CodeQL remain external controls and must be inspected separately.
 
 ## Validation commands
 
@@ -154,6 +163,6 @@ npm run test:interaction
 npm run test:admin-demo
 npm run test:checkpoint-hardening
 npm run test:offline
-npm audit --omit=dev --audit-level=low
+npm audit --omit=dev --audit-level=high
 git diff --check
 ```

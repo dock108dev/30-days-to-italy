@@ -32,7 +32,7 @@ const port = 3105;
 const baseUrl = `http://127.0.0.1:${port}`;
 const evidenceRoot = process.env.ITALY_EVIDENCE_ROOT
   ? resolve(process.env.ITALY_EVIDENCE_ROOT, "checkpoints")
-  : resolve(root, "../../italian-pilot-evidence/candidate-20260823/checkpoints");
+  : resolve(root, "../../italian-pilot-evidence/local/checkpoints");
 const machineOutputPath = join(evidenceRoot, "checkpoint-results.json");
 const chromeCandidates = [
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
@@ -44,6 +44,9 @@ const EXIT_RESPONSE = "Devo andare.";
 const PERSISTENCE_DAYS = new Set([0, 8, 14, 21, 27]);
 const PHASE_REVIEW_DAYS = new Set([0, 4, 5, 8, 14, 21, 27]);
 const requestedCheckpoint = process.env.CHECKPOINT_HARDENING_ONLY;
+if (requestedCheckpoint && !EPISODE_IDS.includes(requestedCheckpoint as EpisodeId)) {
+  throw new Error(`CHECKPOINT_HARDENING_ONLY must be one of: ${EPISODE_IDS.join(", ")}`);
+}
 const checkpointIds: readonly EpisodeId[] = requestedCheckpoint && EPISODE_IDS.includes(requestedCheckpoint as EpisodeId)
   ? [requestedCheckpoint as EpisodeId]
   : EPISODE_IDS;

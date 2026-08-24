@@ -26,6 +26,17 @@ const selected = requestedIds.size === 0
   ? specs
   : specs.filter((spec) => [...requestedIds].some((id) => spec.path.endsWith(`/${id}.m4a`)));
 const pending = selected.filter((spec) => force || !existsSync(join(root, "public", spec.path)));
+
+if (pending.length > 0) {
+  if (process.platform !== "darwin" || !existsSync("/usr/bin/say")) {
+    throw new Error("Audio generation requires macOS and the built-in /usr/bin/say command.");
+  }
+  const ffmpeg = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" });
+  if (ffmpeg.status !== 0) {
+    throw new Error("Audio generation requires ffmpeg on PATH.");
+  }
+}
+
 const working = mkdtempSync(join(tmpdir(), "italy-audio-"));
 
 try {
@@ -39,7 +50,7 @@ try {
     ], { encoding: "utf8" });
     if (spoken.status !== 0) throw new Error(spoken.stderr || `say failed for ${spec.path}`);
 
-    const encoded = spawnSync("/opt/homebrew/bin/ffmpeg", [
+    const encoded = spawnSync("ffmpeg", [
       "-y", "-loglevel", "error", "-i", source,
       "-c:a", "aac", "-b:a", "96k", target,
     ], { encoding: "utf8" });

@@ -6,6 +6,7 @@ This directory contains the production application for 30 Days to Italy. The sta
 
 - Node.js 22.13 or newer
 - npm using the committed lockfile
+- A Chromium-compatible browser for browser acceptance campaigns
 
 No application environment variables or credentials are required for local work.
 
@@ -39,8 +40,8 @@ Browser acceptance commands are documented in [Development](../docs/DEVELOPMENT.
 ## Local artifacts
 
 - `npm run build` generates and verifies the production offline inventory and service worker.
-- `npm run audio:generate` regenerates bundled audio. Run it only when reviewed transcripts change; generated files are committed product assets.
-- Browser evidence defaults to `../italian-pilot-evidence/candidate-20260823/` and can be redirected with `ITALY_EVIDENCE_ROOT`.
+- `npm run audio:generate` fills missing bundled audio. Use `npm run audio:generate -- --force` only when reviewed transcripts change. Generation requires macOS, the built-in `say` command, and `ffmpeg` on `PATH`; generated files are committed product assets.
+- Browser evidence defaults to `../italian-pilot-evidence/local/` and can be redirected with `ITALY_EVIDENCE_ROOT`.
 
 ## Boundaries
 

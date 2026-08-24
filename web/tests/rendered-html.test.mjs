@@ -97,15 +97,17 @@ test("rejects unsafe forwarded hosts when deriving social metadata", async () =>
 });
 
 test("ships the player-facing save, support, teaching, and admin controls", async () => {
-  const [page, views, styles, hosting] = await Promise.all([
+  const [page, views, sessionHook, presentationHook, styles, hosting] = await Promise.all([
     readFile(new URL("../app/prototype/PrototypeApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/prototype/PrototypeViews.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/prototype/useApplicationSession.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/prototype/usePrototypePresentation.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /saveGame\(runtime!\.storage, game\)/);
-  assert.match(page, /loadActiveDemoSession/);
+  assert.match(sessionHook, /saveGame\(runtime!\.storage, game\)/);
+  assert.match(sessionHook, /loadActiveDemoSession/);
   assert.match(page, /startDemoSession/);
   assert.match(page, /exitDemoSession/);
   assert.match(page, /PrototypeHeader/);
@@ -123,7 +125,7 @@ test("ships the player-facing save, support, teaching, and admin controls", asyn
   assert.match(page, /PocketDeck/);
   assert.match(page, /clearAllLocalState\(storage\)/);
   assert.match(page, /OperationalFailureBanner/);
-  assert.match(page, /subscribeToClientFailures/);
+  assert.match(presentationHook, /subscribeToClientFailures/);
   assert.match(styles, /\.operational-failure-banner/);
   assert.match(views, /Start demo walkthrough/);
   assert.match(views, /Reset demo only/);

@@ -50,3 +50,17 @@ The main codes are:
 ## Release validation
 
 After any error-handling change, run the gates in [Development](DEVELOPMENT.md), including lint, the full unit/build gate, interaction, Admin demo, checkpoint hardening, and offline acceptance. Browser gates require zero unexpected console warnings/errors. Tests that deliberately inject a failure must assert the expected code and must not place private values in evidence.
+
+## Build and deployment boundary
+
+`npm run build` creates the production Worker/client output, generates and verifies the offline manifest and service worker, and copies the checked-in Sites metadata to `dist/.openai/hosting.json`. There is no repository deploy script, release workflow, database migration, or credential-bearing publishing step. Saving and deploying a Sites version is an external hosting operation and must remain separate from pull-request CI.
+
+For an owner release:
+
+1. Freeze an exact source revision and require the validation gates in [Development](DEVELOPMENT.md) to pass against that revision.
+2. Build from the frozen revision. Do not substitute an older `dist/` directory; build output is intentionally ignored.
+3. Save and privately deploy a new Sites version through the authorized hosting surface. Do not change `.openai/hosting.json`, access policy, or hosted resources as part of an unrelated code change.
+4. Perform the external access and response checks in [Security](SECURITY.md#manual-verification-outside-the-repository). A local build cannot prove hosted access control or edge-header behavior.
+5. Record the exact source revision, Sites version, access result, and header result. Automated browser traversal is engineering evidence, not owner acceptance.
+
+Public or shared deployment is intentionally unsupported. The repository has no server-side authentication or authorization, and Admin is not a security boundary.

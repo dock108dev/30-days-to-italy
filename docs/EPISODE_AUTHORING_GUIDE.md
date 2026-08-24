@@ -1,15 +1,17 @@
 # Episode authoring guide
 
+Application paths in this document are relative to `web/`.
+
 The Season 01 runtime has one rule: episode-specific behavior belongs in an episode module, never in the generic game coordinator.
 
 ## Authorities
 
-- `web/app/season/manifest.ts` owns the 31 stable slots (`day-00` through `day-30`) and their planning metadata.
-- `web/app/season/types.ts` owns the typed `EpisodeDefinition`, observed-move, verified-fact, runtime, and review-result contracts.
-- `web/app/season/episodes/day-NN.ts` owns one implemented episode's scene, turns, outcomes, response rules, mutations, evidence extraction, Admin seed, version, and review builder.
-- `web/app/season/registry.ts` registers the current modules and derives the authoritative scenes, turns, outcomes, turn ownership, outcome ownership, and terminal-validation indexes.
-- `web/app/game/engine.ts` coordinates any registered definition. It must not gain day-specific handlers, ID-prefix inference, positional progression, or a multi-day conditional.
-- `web/app/game/persistence.ts` validates current state through the registry. Legacy scene positions are accepted only at this migration boundary and are discarded immediately.
+- `app/season/manifest.ts` owns the 31 stable slots (`day-00` through `day-30`) and their planning metadata.
+- `app/season/types.ts` owns the typed `EpisodeDefinition`, observed-move, verified-fact, runtime, and review-result contracts.
+- `app/season/episodes/day-NN.ts` owns one implemented episode's scene, turns, outcomes, response rules, mutations, evidence extraction, Admin seed, version, and review builder.
+- `app/season/registry.ts` registers the current modules and derives the authoritative scenes, turns, outcomes, turn ownership, outcome ownership, and terminal-validation indexes.
+- `app/game/engine.ts` coordinates any registered definition. It must not gain day-specific handlers, ID-prefix inference, positional progression, or a multi-day conditional.
+- `app/game/persistence.ts` validates current state through the registry. Legacy scene positions are accepted only at this migration boundary and are discarded immediately.
 
 ## Revising season metadata
 
