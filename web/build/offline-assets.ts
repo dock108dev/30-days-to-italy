@@ -15,7 +15,7 @@ const INCLUDED_ROOT_FILES = new Set([
   "favicon.svg",
   "manifest.webmanifest",
 ]);
-const INCLUDED_DIRECTORIES = ["assets/", "audio/", "icons/"];
+const INCLUDED_DIRECTORIES = ["_next/static/", "assets/", "audio/", "icons/"];
 
 export type OfflineBuildManifest = {
   schemaVersion: typeof OFFLINE_MANIFEST_SCHEMA_VERSION;

@@ -52,15 +52,19 @@ const manifestSource = `${JSON.stringify(manifest, null, 2)}\n`;
 const workerSource = renderServiceWorker(manifest);
 
 if (mode === "prepare") {
-  await writeFile(resolve(publicRoot, "offline-manifest.json"), manifestSource, "utf8");
-  await writeFile(resolve(publicRoot, "sw.js"), workerSource, "utf8");
+  await Promise.all([
+    writeFile(resolve(publicRoot, "offline-manifest.json"), manifestSource, "utf8"),
+    writeFile(resolve(publicRoot, "sw.js"), workerSource, "utf8"),
+    writeFile(resolve(clientRoot, "offline-manifest.json"), manifestSource, "utf8"),
+    writeFile(resolve(clientRoot, "sw.js"), workerSource, "utf8"),
+  ]);
 } else {
   const [builtManifest, builtWorker] = await Promise.all([
     readFile(resolve(clientRoot, "offline-manifest.json"), "utf8"),
     readFile(resolve(clientRoot, "sw.js"), "utf8"),
   ]);
   if (builtManifest !== manifestSource) {
-    throw new Error("The second build changed the offline asset inventory.");
+    throw new Error("The built offline asset inventory does not match its manifest.");
   }
   if (builtWorker !== workerSource) {
     throw new Error("The production service worker does not match its verified inventory.");

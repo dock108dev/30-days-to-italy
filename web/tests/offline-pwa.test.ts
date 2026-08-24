@@ -70,14 +70,15 @@ test("the offline inventory derives and includes every required audio file", asy
   assert.equal(manifest.urls[0], "/");
   assert.equal(manifest.urls.includes("/manifest.webmanifest"), true);
   assert.equal(manifest.urls.includes("/icons/icon-maskable-512.png"), true);
-  assert.equal(manifest.urls.some((url) => /^\/assets\/.*\.js$/.test(url)), true);
-  assert.equal(manifest.urls.some((url) => /^\/assets\/.*\.css$/.test(url)), true);
+  assert.equal(manifest.urls.some((url) => /^\/_next\/static\/.*\.js$/.test(url)), true);
+  assert.equal(manifest.urls.some((url) => /^\/_next\/static\/.*\.css$/.test(url)), true);
   assert.equal(manifest.urls.includes("/og.png"), false);
   assert.equal(new Set(manifest.urls).size, manifest.urls.length);
 });
 
 test("offline asset selection excludes deployment metadata and generated worker files", () => {
   assert.equal(shouldIncludeOfflineAsset("assets/app-123.js"), true);
+  assert.equal(shouldIncludeOfflineAsset("_next/static/chunks/app-123.js"), true);
   assert.equal(shouldIncludeOfflineAsset("audio/normal/line.m4a"), true);
   assert.equal(shouldIncludeOfflineAsset("icons/icon-192.png"), true);
   assert.equal(shouldIncludeOfflineAsset("manifest.webmanifest"), true);
