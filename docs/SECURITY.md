@@ -1,5 +1,7 @@
 # Security model and hardening record
 
+Application paths in this document are relative to `web/`. Run validation commands from that directory.
+
 This document describes the current repository security boundary. It does not certify the live deployment configuration. The application remains an owner-only vacation-rehearsal PWA and is not approved for public or shared access.
 
 ## Security understanding

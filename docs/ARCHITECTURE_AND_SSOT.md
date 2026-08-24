@@ -1,5 +1,7 @@
 # Architecture and single sources of truth
 
+Application paths in this document are relative to `web/`. Run validation commands from that directory.
+
 This document records the supported production paths for the current owner-only PWA. A module is authoritative when the production entry point calls it directly or when it owns persisted data that the entry point hydrates. Historical implementation stages are not supported modes.
 
 ## Authority map
@@ -90,4 +92,3 @@ This document records the supported production paths for the current owner-only 
 ## Guardrails
 
 Run `npm run test:ssot` after architecture, season, build-config, Admin, or persistence changes. Its static assertions prevent removed flags, legacy symbols, registry facades, and inactive hosting adapters from returning. The full `npm test` remains the behavioral authority.
-

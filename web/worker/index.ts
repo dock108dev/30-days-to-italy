@@ -1,4 +1,4 @@
-/** Cloudflare Worker entry point for the Un mese sulla costa web prototype. */
+/** Cloudflare Worker entry point for the 30 Days to Italy application. */
 import handler from "vinext/server/app-router-entry";
 
 type Env = Record<string, unknown>;

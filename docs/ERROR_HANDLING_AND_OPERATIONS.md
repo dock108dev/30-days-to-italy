@@ -49,4 +49,4 @@ The main codes are:
 
 ## Release validation
 
-After any error-handling change, run the repository gates in `README.md`, including lint, the full unit/build gate, interaction, Admin demo, checkpoint hardening, and offline acceptance. Browser gates require zero unexpected console warnings/errors. Tests that deliberately inject a failure must assert the expected code and must not place private values in evidence.
+After any error-handling change, run the gates in [Development](DEVELOPMENT.md), including lint, the full unit/build gate, interaction, Admin demo, checkpoint hardening, and offline acceptance. Browser gates require zero unexpected console warnings/errors. Tests that deliberately inject a failure must assert the expected code and must not place private values in evidence.

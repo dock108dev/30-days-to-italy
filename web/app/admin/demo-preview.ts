@@ -58,7 +58,7 @@ export function clearDemoPreviewReturn(storage: DemoPreviewStorage): void {
     storage.removeItem(DEMO_PREVIEW_RETURN_STORAGE_KEY);
   } catch (error) {
     // Preview state is demo-namespaced, so cleanup failure cannot corrupt the
-    // owner journey, but it still needs to be visible to the facilitator.
+    // owner journey, but it still needs to be visible to the reviewer.
     reportClientFailure({ code: "PERSISTENCE_CLEAR_FAILED", domain: "demo", operation: "clear-preview-return", severity: "warning", userMessage: "An isolated demo preview record could not be cleared. Owner progress was not affected." }, error);
   }
 }

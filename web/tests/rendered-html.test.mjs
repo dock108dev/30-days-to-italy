@@ -28,7 +28,7 @@ async function render(pathname = "/", origin = "http://localhost", forwardedHost
   );
 }
 
-test("server-renders the finished prototype shell and social metadata", async () => {
+test("server-renders the application shell and social metadata", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);

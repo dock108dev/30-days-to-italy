@@ -60,7 +60,7 @@ export function PrototypeHeader({
         </div>
       </div>
       <div className="topbar-actions">
-        <span className="prototype-badge"><i /> Private</span>
+        <span className="private-badge"><i /> Private</span>
         {onOpenAdmin && (
           <button className="quiet-button" type="button" onClick={onOpenAdmin}>
             <span aria-hidden="true">•••</span> Admin
