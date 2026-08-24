@@ -503,10 +503,11 @@ test("a pending Day 28 purchase survives hydration without a duplicate charge", 
   assert.equal(resolved.worldEvents.filter((event) => event === "day28-vietri-fare-paid").length, 1);
 });
 
-test("v1 through v4 saves migrate to bounded v5 defaults", () => {
-  for (const schemaVersion of [1, 2, 3, 4]) {
+test("v1 through v5 saves migrate to bounded v6 defaults", () => {
+  for (const schemaVersion of [1, 2, 3, 4, 5]) {
     const migrated = hydrateGameState({ schemaVersion, episodeId: "day-21", turnId: "e04_01_usual", status: "active" });
-    assert.equal(migrated.schemaVersion, 5);
+    assert.equal(migrated.schemaVersion, 6);
+    assert.equal(migrated.guidance, null);
     assert.equal(migrated.seasonCompletion, null);
     assert.equal(migrated.secondParcelStatus, "none");
     assert.equal(migrated.eventAttendance, "unknown");

@@ -6,9 +6,11 @@ import { completedBefore } from "./shared";
 const metadata = seasonEpisode("day-13");
 
 function cafeIssues(normalized: string) {
+  const bill = any(normalized, ["spremuta", "juice", "arancia", "conto", "bill", "extra", "sette", "7", "troppo", "charge"]);
   return {
-    drink: any(normalized, ["cappuccino", "latte", "bevanda", "drink", "ordinato", "ordered", "non questo", "wrong"]),
-    bill: any(normalized, ["spremuta", "juice", "arancia", "conto", "bill", "extra", "sette", "7", "troppo", "charge"]),
+    drink: any(normalized, ["cappuccino", "latte", "bevanda", "drink", "non questo", "wrong"])
+      || (!bill && any(normalized, ["ordinato", "ordered"])),
+    bill,
   };
 }
 
@@ -54,9 +56,11 @@ export const day13Episode: EpisodeDefinition = {
       return runtime.moveToTurn(state, "e03_02_clarify", {}, undefined, createId);
     }
     if (state.turnId === "e03_04_bill_only") {
+      const keepsLatte = any(normalized, ["tengo", "keep", "latte va bene"]);
+      if (keepsLatte) return runtime.queueTerminal(state, "e03_06_keep_latte", "E3-O2", { money: state.money - 300, cafeOutcome: "Bill corrected; latte kept" }, createId);
       if (drink || any(normalized, ["cappuccino", "non tengo", "dont keep"])) return runtime.moveToTurn(state, "e03_05_both", { feedback: createFeedback("cafe", raw, true) }, undefined, createId);
       if (reject || exit) return runtime.queueTerminal(state, "e03_07_manager", "E3-O5", {}, createId);
-      if (accept || any(normalized, ["tengo", "keep", "latte va bene"])) return runtime.queueTerminal(state, "e03_06_keep_latte", "E3-O2", { money: state.money - 300, cafeOutcome: "Bill corrected; latte kept" }, createId);
+      if (accept) return runtime.queueTerminal(state, "e03_06_keep_latte", "E3-O2", { money: state.money - 300, cafeOutcome: "Bill corrected; latte kept" }, createId);
       return runtime.moveToTurn(state, "e03_02_clarify", {}, undefined, createId);
     }
     if (state.turnId === "e03_05_both") {

@@ -28,6 +28,7 @@ export function createGuidedBeachHandoff(
     refresherMethod: session.refresherApplied ? session.refresherMethod : null,
     quantityClarified: session.quantityClarified,
     priceConfirmed: session.priceConfirmed,
+    preferenceSelected: null,
     normalReplayCount: session.normalReplayCount,
     carefulReplayCount: session.carefulReplayCount,
     transcriptRevealCount: session.transcriptRevealCount,

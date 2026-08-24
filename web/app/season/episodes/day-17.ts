@@ -38,6 +38,7 @@ export const day17Episode: EpisodeDefinition = {
     }
     if (state.turnId === "d17_02_offer") {
       if (any(normalized, EXIT)) return runtime.queueTerminal(state, "d17_04_open", "D17-O3", { repairCommitment: state.repairCommitment ? { ...state.repairCommitment, status: "breached" } : null }, createId);
+      if (any(normalized, ["problema continua", "problem continues", "acqua calda"])) return runtime.moveToTurn(state, state.turnId, {}, "The problem remains open. Confirm today at 18:00 or leave without a new time.", createId);
       if (any(normalized, ["diciotto", "18", "six", "va bene", "okay", "si"])) {
         const hadCommitment = state.repairCommitment !== null;
         return runtime.queueTerminal(state, "d17_03_close", hadCommitment ? "D17-O1" : "D17-O2", { hotWaterStatus: "reported", repairCommitment: { window: revisedWindow, status: "active" }, commitments: addFact(state.commitments.filter((item) => !item.startsWith("Hot-water repair:")), `Hot-water repair: ${revisedWindow}`), relationships: { ...state.relationships, Raffaele: hadCommitment ? "strained" : "efficient" }, knownFacts: addFact(state.knownFacts, hadCommitment ? "Raffaele corrected the missed repair commitment" : "A new hot-water repair commitment was established"), currentLocation: metadata.location, currentTime: "10:35" }, createId);

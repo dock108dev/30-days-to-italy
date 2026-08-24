@@ -59,12 +59,16 @@ export function moveToTurn(
   systemText?: string,
   createId: HistoryIdFactory = defaultHistoryId,
 ): GameState {
+  const sameTurn = turnId === state.turnId;
   return {
     ...state,
     ...updates,
     turnId,
-    attempts: turnId === state.turnId ? state.attempts + 1 : 0,
-    history: systemText ? appendHistory(state, "system", systemText, createId) : state.history,
+    attempts: sameTurn ? state.attempts + 1 : 0,
+    guidance: sameTurn ? systemText ?? state.guidance : null,
+    history: systemText && !sameTurn
+      ? appendHistory(state, "system", systemText, createId)
+      : state.history,
   };
 }
 
@@ -151,6 +155,7 @@ export function resolveOutcome(
     feedback: feedback === undefined
       ? state.feedback ?? createFeedback(definition.scene.id, state.lastResponse)
       : feedback,
+    guidance: null,
     completed,
     seasonCompletion: completesSeason ? {
       attempt: completionAttempt,
@@ -216,6 +221,24 @@ export function applyResponse(
   createId: HistoryIdFactory = defaultHistoryId,
 ): ResponseResult {
   return registeredEpisodeCoordinator.applyResponse(state, rawResponse, createId);
+}
+
+/**
+ * Submit at the shared interaction boundary. Episode definitions may queue a
+ * terminal line, but the authoritative result is committed in the same
+ * transaction instead of waiting for media playback to finish.
+ */
+export function submitEpisodeResponse(
+  state: GameState,
+  rawResponse: string,
+  createId: HistoryIdFactory = defaultHistoryId,
+): ResponseResult {
+  const result = applyResponse(state, rawResponse, createId);
+  if (result.kind === "teaching") return result;
+  return {
+    kind: "advanced",
+    state: finishPendingOutcome(result.state, createId),
+  };
 }
 
 export function createEpisodeCoordinator(
@@ -340,6 +363,7 @@ function resetInteraction(state: GameState, episodeId: EpisodeId): GameState {
     turnId: definition.initialTurn?.(state) ?? definition.scene.firstTurn,
     status: "active",
     pendingOutcome: null,
+    guidance: null,
     outcome: null,
     feedback: null,
     history: [],

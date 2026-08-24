@@ -1,1 +1,3 @@
 .DS_Store
+web/public/offline-manifest.json
+web/public/sw.js

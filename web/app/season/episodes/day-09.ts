@@ -33,10 +33,21 @@ export const day09Episode: EpisodeDefinition = {
     const exit = any(normalized, EXIT) || any(normalized, ["decide later", "non decido", "piu tardi"]);
     if (exit) return runtime.queueTerminal(state, "d09_05_exit", "D09-O3", { transportMode: "none", transportStatus: "none", transportTicketPrice: 0 }, createId);
     if (state.turnId === "d09_01_compare") {
-      if (any(normalized, ["quanto tempo", "how long", "costa", "cost", "autobus", "bus", "traghetto", "ferry"])) return runtime.moveToTurn(state, "d09_02_options", {}, undefined, createId);
+      if (any(normalized, ["quanto tempo", "quanto dura", "durata", "how long", "costa", "cost", "autobus", "bus", "traghetto", "ferry"])) return runtime.moveToTurn(state, "d09_02_options", {}, undefined, createId);
       return runtime.moveToTurn(state, "d09_01_compare", {}, "Ask about one option or how long it takes.", createId);
     }
     if (state.turnId === "d09_02_options") {
+      const asksPrice = any(normalized, ["quanto", "costa", "prezzo", "how much"])
+        && !any(normalized, ["prendo", "biglietto", "ticket", "book"]);
+      if (asksPrice) {
+        return runtime.moveToTurn(
+          state,
+          state.turnId,
+          {},
+          "The ferry is €10 and the bus is €2.40. Nothing has been booked.",
+          createId,
+        );
+      }
       const ferry = any(normalized, ["traghetto", "ferry", "nove e trenta", "9 30"]);
       const bus = any(normalized, ["autobus", "bus", "nove e dieci", "9 10"]);
       if (ferry && !bus) {

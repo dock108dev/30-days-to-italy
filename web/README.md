@@ -88,7 +88,7 @@ npm run start -- --hostname 127.0.0.1 --port 3001
 
 Open [http://127.0.0.1:3001](http://127.0.0.1:3001) while connected and wait for **Ready offline** in Trip Mode before disconnecting. A first-ever visit without a connection is intentionally unsupported.
 
-Use **Admin** in the top-right corner from either Prepare or Trip Mode to run the full lifecycle without calendar waiting. The phase-grouped checkpoints are generated from the same season registry and cover all 31 playable episodes plus Trip Mode. Its countdown dates are preview-only and never rewrite the saved departure date.
+Use **Admin** in the top-right corner from either Prepare or Trip Mode to start an isolated review walkthrough without calendar waiting. The review session snapshots and namespaces all five owner-state domains, generates its phase-grouped checkpoints from the same season registry, and covers all 31 playable episodes plus Trip Mode. Exiting or resetting the walkthrough restores the owner snapshot byte-for-byte; countdown dates are preview-only and never rewrite the saved departure date.
 
 ## Owner-only release
 
@@ -102,11 +102,15 @@ Use **Admin** in the top-right corner from either Prepare or Trip Mode to run th
 
 ```bash
 npm run lint
+npm run test:response-contracts
+npm run test:interaction
+npm run test:admin-demo
+npm run test:checkpoint-hardening
 npm test
 npm run test:offline
 ```
 
-The main test gate creates a production build and covers the 31-slot/31-playable season contract, daily unlock persistence, all registered encounters, English teach-and-resume safety, v1–v4 game migration into v5, generalized evidence, the canonical Day 0–7 run ending at €51.10, the canonical Day 8–21 run ending at €9.20, the canonical Day 22–30 run ending at €5.80, and the original four-anchor route ending at €73.50. Dedicated truth-matrix regressions protect ferry callbacks, parcel custody, attendance, one-time entitlement-gated beach remedies, repair credits, the distinct Day 28 fare, factual Day 29 exit reviews, independent historical-completion validation, replay durability, exact Day 30 issue acknowledgement, and qualifying versus non-qualifying completion. The current gate contains 113 domain checks plus 4 rendered-shell checks. It also validates every encounter audio pair, deployed-origin social metadata, the 30-card/60-clip Pocket Deck, cache inventory, and production-only worker registration.
+The main test gate creates a production build and covers the 31-slot/31-playable season contract, daily unlock persistence, all registered encounters, English teach-and-resume safety, v1–v5 game migration into v6, generalized evidence, the canonical Day 0–7 run ending at €51.10, the canonical Day 8–21 run ending at €9.20, the canonical Day 22–30 run ending at €5.80, and the original four-anchor route ending at €73.50. Dedicated truth-matrix regressions protect ferry callbacks, parcel custody, attendance, one-time entitlement-gated beach remedies, repair credits, the distinct Day 28 fare, factual Day 29 exit reviews, independent historical-completion validation, replay durability, exact Day 30 issue acknowledgement, qualifying versus non-qualifying completion, isolated Admin review storage, and the exactly-once interaction boundary. The current gate derives 126 domain/component checks plus 4 rendered-shell checks. The focused response-contract gate derives 57 checks. It also validates every encounter audio pair, deployed-origin social metadata, the 30-card/60-clip Pocket Deck, cache inventory, and production-only worker registration.
 
 `npm run test:offline` starts the production build on an isolated loopback port and drives a real Chromium session through connected preparation, deliberate cache damage and repair, a disconnected reload, all 426 cached audio responses, actual normal/careful card playback, search, categories, rehearsal personalization, pin/Recent persistence, Show-this focus restoration, mode switching, desktop, 390px portrait, and 844×390 landscape. It restores connectivity and shuts down its own server.
 
@@ -114,24 +118,25 @@ The main test gate creates a production build and covers the 31-slot/31-playable
 
 - `app/game/model.ts` owns shared state/types, phrase content, and response vocabulary; its scene/turn/outcome exports are registry-derived compatibility catalogs.
 - `app/game/engine.ts` is a generic coordinator for registered definitions. It owns shared transition mechanics and contains no episode handlers, positional progression, or day-specific seeds.
-- `app/game/persistence.ts` owns the stable local save key, strict registry validation, v1–v4-to-v5 migration, independent historical-completion validation, cross-field remedy normalization, relationship/fact separation, and fail-closed recovery. Legacy positions are interpreted only here.
+- `app/game/persistence.ts` owns the stable local save key, strict registry validation, v1–v5-to-v6 migration, independent historical-completion validation, cross-field remedy normalization, relationship/fact separation, and fail-closed recovery. Legacy positions are interpreted only here.
 - `app/season/manifest.ts` is the stable 31-slot metadata authority. `types.ts` defines the full authoring and observational-evidence contract, `episodes/` owns all 31 implemented modules, and `registry.ts` derives runtime catalogs and ownership maps. `schedule.ts` owns daily unlocking; `pocket-deck-handoff.ts` copies only the latest attempt's observed evidence.
 - [`../docs/EPISODE_AUTHORING_GUIDE.md`](../docs/EPISODE_AUTHORING_GUIDE.md) documents how to implement a planned slot without adding a central conditional.
 - `app/prototype/PrototypeApp.tsx` coordinates browser state, audio, and the game engine.
 - `app/prototype/PrototypeViews.tsx` contains the player-facing encounter, teaching, world, outcome, and Admin views.
 - `app/admin/fast-track.ts` owns the ordered Admin lifecycle checkpoints and non-persistent calendar-preview math. `app/admin/truth-previews.ts` owns bounded Admin-only Day 19/21 world-state seeds for direct conditional-path audits.
+- `app/admin/demo-conductor.ts`, `app/admin/canonical-demo.ts`, and `app/persistence/session.ts` own the isolated review walkthrough, canonical simulation labels, generation guards, and exact owner-state restoration. Automated traversal is engineering evidence only and never owner practice.
 - `app/guided/` owns guided-session evidence, strict hydration, independent persistence, the evidence-based review, and the narrow adapter that can hand an eligible beach attempt to the deck.
 - `app/trip/` owns the versioned profile, local-calendar countdown, separate persistence, onboarding, and saved-trip summary.
 - `app/lifecycle/` owns the Prepare/Trip contract, local mode persistence, and the two lifecycle surfaces.
 - `app/pocket-deck/catalog.ts` is the immutable, reviewed 30-card catalog. Each card includes its English intent, Italian variants, likely reply, listening cues, search terms, local audio paths, and the exact spoken transcript.
-- `app/pocket-deck/model.ts` owns the portable v3 state contract, v1/v2 migration, bounded multi-episode practice evidence, and deterministic pin/recent/handoff operations.
+- `app/pocket-deck/model.ts` owns the portable v4 state contract, v1–v3 migration, bounded multi-episode practice evidence, and deterministic pin/recent/handoff operations.
 - `app/pocket-deck/practice.ts` derives factual, user-facing reminders from stored evidence; generated prose is never persisted.
 - `app/pocket-deck/search.ts` owns local case-, punctuation-, apostrophe-, and diacritic-tolerant intent search.
 - `app/pocket-deck/persistence.ts` owns the independent `thirty-days-to-italy-pocket-deck-v1` key and strict recovery. The key remains stable for compatibility while v1 pins/recents migrate to the v2 state shape.
 - `app/pocket-deck/PocketDeckViews.tsx` owns Trip Mode search, categories, summaries, card details, audio, pinning, recents, and large-text display.
 - `app/offline/` owns the verified worker handshake and truthful player-facing readiness state. It never reads or writes traveler state.
 - `build/offline-assets.ts` owns deterministic asset selection, content-derived cache versions, and service-worker generation.
-- `scripts/build-offline.ts` performs the vinext-compatible two-pass build handoff: discover hashed assets, generate the public worker and inventory, rebuild, then verify exact parity.
+- `scripts/build-offline.ts` performs the vinext-compatible build handoff: discover hashed assets, generate the public and built-client worker/inventory copies, then verify exact parity.
 - `scripts/generate-local-audio.ts` deterministically fills missing normal/careful encounter and Pocket Deck audio from the authored registries using the local Italian system voice; runtime playback never calls it. Optional turn/card IDs limit regeneration to selected authored entries, and `--force` replaces their existing pair.
 - `scripts/offline-acceptance.ts` owns the production connected-to-disconnected browser acceptance.
 - `public/audio/pocket-deck/` contains separate normal and careful files for every core card. Runtime playback uses no speech or network service.
@@ -151,7 +156,7 @@ The main test gate creates a production build and covers the 31-slot/31-playable
 ## Pocket Deck state and audio rules
 
 - The static catalog and mutable state are separate. There is one reviewed 30-card catalog in source; local state contains pin IDs, recent IDs, and bounded evidence attached only to mapped reviewed cards.
-- V1 hydration preserves valid pins and recents. V2 evidence migrates into v3. V3 removes unknown, duplicate, inconsistent, or malformed evidence; caps recents at six and evidence per card at eight; and recovers to a usable deck after storage failure.
+- V1 hydration preserves valid pins and recents. V2/V3 evidence migrates into v4. V4 removes unknown, duplicate, inconsistent, or malformed evidence; caps recents at six and evidence per card at eight; and recovers to a usable deck after storage failure.
 - A handoff is eligible only after a real completed outcome whose latest authoritative attempt contains observed moves. Stable attempt IDs make repeat application idempotent, while a later attempt adds a distinct evidence record.
 - Handoffs store bounded facts such as outcome, observed moves, refresher method, explicit quantity/price evidence, and support counts. Target moves absent from accepted responses never enter the deck. Trip Mode derives the human reminder from those facts.
 - Carrying evidence does not pin or open a card. **Open in Trip Mode** switches mode, opens the existing beach card, and only then records it in Recent.
@@ -165,7 +170,7 @@ The main test gate creates a production build and covers the 31-slot/31-playable
 
 ## Offline storage and updates
 
-- The production build currently verifies 450 required resources: the root application shell, generated client chunks, local fonts, manifest and icons, 366 encounter audio files, and 60 Pocket Deck audio files. Counts are derived from the turn registry and deck catalog; the social preview is deliberately excluded.
+- The current production build derives and verifies 453 required resources: the root application shell, generated client chunks and manifests, local fonts, manifest and icons, 366 encounter audio files, and 60 Pocket Deck audio files. Counts are derived from the built output, turn registry, and deck catalog; the social preview is deliberately excluded.
 - The cache version is the first 16 characters of a SHA-256 digest over the sorted required asset paths and bytes. Generated filenames are discovered from the vinext output; none are hardcoded.
 - Installation is atomic. If any required response fails, the incomplete new cache is deleted and the previous working cache is retained.
 - A connected reload can repair a missing resource. A successful new version activates without forcing a page reload, claims future requests, and removes only older caches beginning with `thirty-days-to-italy-offline-`.

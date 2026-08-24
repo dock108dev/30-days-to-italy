@@ -28,7 +28,7 @@ export const day16Episode: EpisodeDefinition = {
   },
   evaluateResponse({ state, normalized, createId, runtime }) {
     if (state.turnId === "d16_01_document") {
-      if (any(normalized, ["redelivery", "torna domani", "come back tomorrow"])) return runtime.queueTerminal(state, "d16_04_redelivery", "D16-O2", { parcelStatus: "redelivery", repairCommitment: state.repairCommitment, commitments: addFact(state.commitments, "Parcel redelivery: tomorrow 16:00–18:00") }, createId);
+      if (any(normalized, ["redelivery", "torna domani", "tornare domani", "nuova consegna", "riconsegna", "come back tomorrow"])) return runtime.queueTerminal(state, "d16_04_redelivery", "D16-O2", { parcelStatus: "redelivery", repairCommitment: state.repairCommitment, commitments: addFact(state.commitments, "Parcel redelivery: tomorrow 16:00–18:00") }, createId);
       if (any(normalized, EXIT)) return runtime.queueTerminal(state, "d16_05_exit", "D16-O3", { parcelStatus: "pending" }, createId);
       if (any(normalized, ["non ho", "don t have", "codice", "code", "documento"])) return runtime.moveToTurn(state, "d16_02_code", { parcelStatus: "pending" }, undefined, createId);
       return runtime.moveToTurn(state, "d16_01_document", {}, "The courier needs the document, the authorized code, or a redelivery request.", createId);

@@ -311,7 +311,7 @@ function normalizeRelationships(
   for (const [character, raw] of Object.entries(value).slice(0, 20)) {
     if (typeof raw !== "string" || !raw.trim()) continue;
     const normalized = raw.trim().toLowerCase();
-    if (schemaVersion === 3 || schemaVersion === 4 || schemaVersion === 5) {
+    if (schemaVersion === 3 || schemaVersion === 4 || schemaVersion === 5 || schemaVersion === 6) {
       if (DISPOSITIONS.has(normalized as RelationshipDisposition)) {
         relationships[character] = normalized as RelationshipDisposition;
       }
@@ -495,7 +495,7 @@ export function hydrateGameState(value: unknown): GameState {
 
   return {
     ...defaults,
-    schemaVersion: 5,
+    schemaVersion: 6,
     episodeId,
     turnId,
     status,
@@ -591,6 +591,9 @@ export function hydrateGameState(value: unknown): GameState {
     completed: normalizeCompleted(value.completed),
     outcome,
     feedback,
+    guidance: status === "active" && typeof value.guidance === "string" && value.guidance.trim()
+      ? value.guidance.trim().slice(0, 500)
+      : null,
     history: normalizeHistory(value.history),
     support: normalizeSupport(value.support),
     phrasePractice: normalizePhrasePractice(value.phrasePractice),

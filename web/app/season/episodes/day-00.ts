@@ -6,13 +6,13 @@ const metadata = seasonEpisode("day-00");
 
 export const day00Episode: EpisodeDefinition = {
   ...metadata, status: "implemented", sceneId: "hotel",
-  scene: { id: "hotel", episodeId: "day-00", day: "Day 0", dateLabel: "Arrival", title: metadata.title, location: metadata.location, time: "21:40", npc: "Elena", role: "Night clerk", objective: "Get your room key and enough information to reach the room. You can end the interaction whenever you want.", firstTurn: "e01_01_name", kicker: "You have just arrived, tired and carrying your bag.", suggestions: ["Fuscoletti. Ho una prenotazione.", "Può ripetere?", "Sono stanco. Buonanotte."] },
+  scene: { id: "hotel", episodeId: "day-00", day: "Day 0", dateLabel: "Arrival", title: metadata.title, location: metadata.location, time: "21:40", npc: "Elena", role: "Night clerk", objective: "Check in and find your room.", firstTurn: "e01_01_name", kicker: "You have just arrived, tired and carrying your bag.", suggestions: ["Fuscoletti. Ho una prenotazione.", "Può ripetere?", "Grazie. Buonanotte."] },
   turns: {
-    e01_01_name: authoredTurn("e01_01_name", "Elena", "Buonasera. Ha una prenotazione? A che nome?", "Elena needs to find the booking."),
-    e01_02_clarify_name: authoredTurn("e01_02_clarify_name", "Elena", "Mi scusi, può ripetere il cognome?", "One detail is still unclear."),
-    e01_03_key: authoredTurn("e01_03_key", "Elena", "Perfetto. Camera dodici, al primo piano. Ecco la chiave.", "The key is now on the counter."),
-    e01_04_breakfast: authoredTurn("e01_04_breakfast", "Elena", "La colazione finisce alle dieci. Ha bisogno di altro?", "One useful time, then an opening to leave."),
-    e01_05_optional: authoredTurn("e01_05_optional", "Elena", "È la prima volta a Salerno?", "This question is optional. The key is already yours."),
+    e01_01_name: authoredTurn("e01_01_name", "Elena", "Buonasera. Ha una prenotazione? A che nome?", "Give the booking name."),
+    e01_02_clarify_name: authoredTurn("e01_02_clarify_name", "Elena", "Mi scusi, può ripetere il cognome?", "Repeat the surname."),
+    e01_03_key: authoredTurn("e01_03_key", "Elena", "Perfetto. Camera dodici, al primo piano. Ecco la chiave.", "Reply grazie to end, or ask about breakfast."),
+    e01_04_breakfast: authoredTurn("e01_04_breakfast", "Elena", "La colazione finisce alle dieci. Ha bisogno di altro?", "Reply grazie to end, or ask one more question."),
+    e01_05_optional: authoredTurn("e01_05_optional", "Elena", "È la prima volta a Salerno?", "Answer briefly, or say buonanotte to end."),
     e01_06_boundary: authoredTurn("e01_06_boundary", "Elena", "Certo. Buonanotte e buon riposo.", "The interaction is ending.", true),
   },
   outcomes: {
@@ -27,18 +27,18 @@ export const day00Episode: EpisodeDefinition = {
     const identity = any(normalized, ["fuscoletti", "prenot", "booking", "reservation", "conferma"]);
     if (state.turnId === "e01_01_name" || state.turnId === "e01_02_clarify_name") {
       if (exit && !identity) return runtime.resolveOutcome(state, "E1-O4", {}, null, createId);
-      if (identity) return runtime.moveToTurn(state, "e01_03_key", { hotelKey: true, attempts: 0, feedback: createFeedback("hotel", raw) }, "Booking matched. The key is issued before any optional conversation.", createId);
+      if (identity) return runtime.moveToTurn(state, "e01_03_key", { hotelKey: true, keyCustody: { ...state.keyCustody, hotel: "held" }, attempts: 0, feedback: createFeedback("hotel", raw) }, "Booking matched. Listen for the room and floor, then end the exchange or ask about breakfast.", createId);
       return runtime.moveToTurn(state, "e01_02_clarify_name", { attempts: state.attempts + 1 }, state.attempts >= 1 ? "The surname is still unclear. You can type “Show booking confirmation.”" : "Only the booking surname needs clarification.", createId);
     }
     if (state.turnId === "e01_03_key") {
-      if (exit || any(normalized, ["grazie", "thanks", "camera", "room", "dodici", "primo piano"])) return runtime.queueTerminal(state, "e01_06_boundary", state.attempts > 0 ? "E1-O2" : "E1-O3", { hotelKey: true }, createId);
+      if (exit || any(normalized, ["grazie", "thanks", "camera", "room", "dodici", "primo piano"])) return runtime.queueTerminal(state, "e01_06_boundary", state.attempts > 0 ? "E1-O2" : "E1-O3", { hotelKey: true, keyCustody: { ...state.keyCustody, hotel: "held" } }, createId);
       return runtime.moveToTurn(state, "e01_04_breakfast", { breakfastKnown: false }, undefined, createId);
     }
     if (state.turnId === "e01_04_breakfast") {
-      if (exit || any(normalized, ["grazie", "thanks", "dieci", "ten", "capito", "okay", "ok"])) return runtime.queueTerminal(state, "e01_06_boundary", "E1-O1", { hotelKey: true, breakfastKnown: true }, createId);
+      if (exit || any(normalized, ["grazie", "thanks", "dieci", "ten", "capito", "okay", "ok"])) return runtime.queueTerminal(state, "e01_06_boundary", "E1-O1", { hotelKey: true, keyCustody: { ...state.keyCustody, hotel: "held" }, breakfastKnown: true }, createId);
       return runtime.moveToTurn(state, "e01_05_optional", { breakfastKnown: true }, undefined, createId);
     }
-    if (state.turnId === "e01_05_optional") return runtime.queueTerminal(state, "e01_06_boundary", "E1-O1", { hotelKey: true, breakfastKnown: true }, createId);
+    if (state.turnId === "e01_05_optional") return runtime.queueTerminal(state, "e01_06_boundary", "E1-O1", { hotelKey: true, keyCustody: { ...state.keyCustody, hotel: "held" }, breakfastKnown: true }, createId);
     return state;
   },
   observeResponse({ before, after, normalized }) {
