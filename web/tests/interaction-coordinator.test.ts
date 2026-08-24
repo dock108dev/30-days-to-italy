@@ -6,7 +6,7 @@ import {
   submitEpisodeResponse,
   type HistoryIdFactory,
 } from "../app/game/engine";
-import { initialState, type GameState } from "../app/game/model";
+import { initialState, PLAYER_RESPONSE_MAX_LENGTH, type GameState } from "../app/game/model";
 
 function ids(): HistoryIdFactory {
   let index = 0;
@@ -55,4 +55,15 @@ test("normal key handoffs keep key booleans and authoritative custody aligned", 
   assert.equal(apartment.outcome?.id, "D01-O1");
   assert.equal(apartment.apartmentKey, true);
   assert.equal(apartment.keyCustody.apartment, "held");
+});
+
+test("the shared boundary caps bypassed response input before evaluation and persistence", () => {
+  const createId = ids();
+  const oversized = `Fuscoletti. Ho una prenotazione. ${"x".repeat(5_000)}`;
+  const game = submit(initialState(), oversized, createId);
+  const playerEntry = game.history.findLast((entry) => entry.kind === "player");
+
+  assert.equal(game.lastResponse.length, PLAYER_RESPONSE_MAX_LENGTH);
+  assert.equal(playerEntry?.text.length, PLAYER_RESPONSE_MAX_LENGTH);
+  assert.equal(game.lastResponse.startsWith("Fuscoletti. Ho una prenotazione."), true);
 });

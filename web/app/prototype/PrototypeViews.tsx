@@ -15,7 +15,7 @@ import type { ApplicationSessionMode } from "../persistence/session";
 import type { AppMode } from "../lifecycle/model";
 import type { TripProfile } from "../trip/model";
 import { scheduleSeason } from "../season/schedule";
-import { EPISODE_BY_ID, IMPLEMENTED_EPISODES, type EpisodeId } from "../season/manifest";
+import { EPISODE_BY_ID, SEASON_01, type EpisodeId } from "../season/manifest";
 import { nextImplementedEpisode, sceneForEpisode } from "../season/registry";
 import { episodeResultFor, type ObservedMove } from "../season/types";
 import type { PocketDeckPracticeEvidence } from "../pocket-deck/model";
@@ -23,6 +23,7 @@ import { CORE_POCKET_DECK_CARD_BY_ID } from "../pocket-deck/catalog";
 
 import {
   PHRASE_LESSONS,
+  PLAYER_RESPONSE_MAX_LENGTH,
   fallbackPhraseForContext,
   money,
   phraseExampleFor,
@@ -83,9 +84,7 @@ export function CompactSessionProgress({
   adminBypass?: boolean;
   onBrowse: () => void;
 }) {
-  const schedule = scheduleSeason(profile, game.completed, today, adminBypass).filter(
-    (episode) => episode.status === "implemented",
-  );
+  const schedule = scheduleSeason(profile, game.completed, today, adminBypass);
   const current = sceneForEpisode(game.episodeId)!;
 
   return (
@@ -122,9 +121,7 @@ export function SeasonOverview({
   onEditTrip: () => void;
   onSelect: (episodeId: EpisodeId) => void;
 }) {
-  const schedule = scheduleSeason(profile, game.completed, today, adminBypass).filter(
-    (episode) => episode.status === "implemented",
-  );
+  const schedule = scheduleSeason(profile, game.completed, today, adminBypass);
   return (
     <div className="season-overview-backdrop" role="presentation" onMouseDown={onClose}>
       <section
@@ -429,6 +426,7 @@ export function ResponseComposer({
           id="player-response"
           value={input}
           onChange={(event) => onInput(event.target.value)}
+          maxLength={PLAYER_RESPONSE_MAX_LENGTH}
           placeholder="Type what you would say or do…"
           disabled={submitting}
           rows={2}
@@ -452,7 +450,7 @@ export function ResponseComposer({
   );
 }
 
-export function nextSceneFor(game: Pick<GameState, "episodeId">): Scene | null {
+function nextSceneFor(game: Pick<GameState, "episodeId">): Scene | null {
   return nextImplementedEpisode(game.episodeId)?.scene ?? null;
 }
 
@@ -891,7 +889,7 @@ export function AdminModal({
   const canNext = Boolean(
     conductor &&
     conductor.activeCheckpointId !== "trip" &&
-    activeIndex < IMPLEMENTED_EPISODES.length - 1 &&
+    activeIndex < SEASON_01.length - 1 &&
     (conductor.checkpointStatus === "resolved" || conductor.checkpointStatus === "simulated"),
   );
   const showTripAction = Boolean(
@@ -938,7 +936,7 @@ export function AdminModal({
           <>
             <div className="admin-summary conductor-summary">
               <div><span>Checkpoint</span><strong>{activeIndex + 1} / {ADMIN_FAST_TRACK_CHECKPOINTS.length}</strong></div>
-              <div><span>Completed prefix</span><strong>{game.completed.length} / {IMPLEMENTED_EPISODES.length}</strong></div>
+              <div><span>Completed prefix</span><strong>{game.completed.length} / {SEASON_01.length}</strong></div>
               <div><span>Current state</span><strong>{conductor.checkpointStatus}</strong></div>
             </div>
 

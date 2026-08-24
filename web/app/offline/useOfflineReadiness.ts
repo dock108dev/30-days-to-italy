@@ -9,6 +9,7 @@ import {
   type OfflineReadiness,
   type OfflineWorkerReport,
 } from "./model";
+import { reportClientFailure } from "../observability/client-failures";
 
 const STATUS_TIMEOUT_MS = 8_000;
 
@@ -128,7 +129,19 @@ export function useOfflineReadiness(): OfflineReadiness {
         );
         if (!registration) throw new Error("Offline files were not prepared before disconnecting.");
         if (existing && navigator.onLine) {
-          await existing.update().catch(() => undefined);
+          try {
+            await existing.update();
+          } catch (error) {
+            // The activated worker can still serve a verified cache. Keep that
+            // resilience, but expose that this update check was degraded.
+            reportClientFailure({
+              code: "OFFLINE_UPDATE_FAILED",
+              domain: "offline",
+              operation: "check-for-update",
+              severity: "warning",
+              userMessage: "The app could not check for newer offline files. The currently verified offline copy remains available.",
+            }, error);
+          }
         }
         const worker = await waitForInstalledWorker(registration);
         if (!worker) throw new Error("Offline worker could not activate.");
@@ -138,7 +151,14 @@ export function useOfflineReadiness(): OfflineReadiness {
           report = await requestWorkerReport(worker, "REPAIR_OFFLINE_CACHE");
         }
         applyReport(report);
-      } catch {
+      } catch (error) {
+        reportClientFailure({
+          code: "OFFLINE_PREPARATION_FAILED",
+          domain: "offline",
+          operation: "prepare-or-repair",
+          severity: "error",
+          userMessage: "Offline files are not ready. Reconnect, keep this page open, and retry before relying on Trip Mode offline.",
+        }, error);
         if (active) setReadiness(OFFLINE_UNAVAILABLE);
       }
     }

@@ -5,7 +5,7 @@ import { authoredTurn, buildObservedEpisodeResult, isAcceptedTransition, noObser
 const metadata = seasonEpisode("day-07");
 
 export const day07Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "pharmacy",
+  ...metadata, sceneId: "pharmacy",
   scene: { id: "pharmacy", episodeId: "day-07", day: "Day 7", dateLabel: "24 days out", title: metadata.title, location: metadata.location, time: "17:45", npc: "Sara", role: "Pharmacist", objective: "Ask for something for mosquito bites, choose cream, and pay €9.60.", firstTurn: "d07_01_need", kicker: "Only the product form matters; no private medical history is needed.", suggestions: ["Mi serve qualcosa per le punture.", "La crema, grazie.", "Va bene."] },
   turns: {
     d07_01_need: authoredTurn("d07_01_need", "Sara", "Buonasera. Di cosa ha bisogno?", "State the simple need; no diagnosis is required."),
@@ -37,5 +37,5 @@ export const day07Episode: EpisodeDefinition = {
     return noObservation();
   },
   adminSeed: () => ({ money: 6070, hotelKey: true, apartmentKey: true, rental: "custom", busTicket: true, routeFact: "Amalfi stop: across the square, opposite Bar Gabbiano", pharmacyItem: null, inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "One-way Amalfi bus ticket"], relationships: { Giulia: "neutral" }, knownFacts: ["Giulia served the first espresso", "Amalfi stop: across the square, opposite Bar Gabbiano"], completed: ["day-00", "day-01", "day-02", "day-03", "day-04", "day-05", "day-06"] }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

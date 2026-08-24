@@ -96,8 +96,6 @@ export type EpisodeResultContext = {
 };
 
 export type EpisodeDefinition = SeasonEpisode & {
-  status: "implemented";
-  sceneId: NonNullable<SeasonEpisode["sceneId"]>;
   scene: Scene;
   turns: Readonly<Record<string, Turn>>;
   outcomes: Readonly<Record<string, Outcome>>;
@@ -109,8 +107,6 @@ export type EpisodeDefinition = SeasonEpisode & {
   observeResponse(context: EpisodeObservationContext): EpisodeObservation;
   adminSeed(): Partial<GameState>;
   buildResult(context: EpisodeResultContext): EpisodeResult;
-  /** Legacy episode-level marker; completion is governed only by completionOutcomeIds. */
-  terminalBehavior?: "resolve";
   completionOutcomeIds?: readonly string[];
 };
 

@@ -1,4 +1,5 @@
 import type { AppMode } from "../lifecycle/model";
+import { reportClientFailure } from "../observability/client-failures";
 import { isEpisodeId, type EpisodeId } from "../season/manifest";
 import type { AdminTruthPreviewId } from "./truth-previews";
 
@@ -128,7 +129,8 @@ export function parseDemoConductor(
       startedAt: value.startedAt,
       updatedAt: value.updatedAt,
     };
-  } catch {
+  } catch (error) {
+    reportClientFailure({ code: "PERSISTENCE_DATA_INVALID", domain: "demo", operation: "parse-conductor", severity: "error", userMessage: "The isolated demo record was invalid and cannot be resumed. Owner progress was not affected." }, error);
     return null;
   }
 }
@@ -142,7 +144,8 @@ export function loadDemoConductor(
       storage.getItem(DEMO_CONDUCTOR_STORAGE_KEY),
       expectedSessionId,
     );
-  } catch {
+  } catch (error) {
+    reportClientFailure({ code: "PERSISTENCE_READ_FAILED", domain: "demo", operation: "load-conductor", severity: "error", userMessage: "The isolated demo could not be read. Owner progress was not affected." }, error);
     return null;
   }
 }
@@ -154,7 +157,8 @@ export function saveDemoConductor(
   try {
     storage.setItem(DEMO_CONDUCTOR_STORAGE_KEY, JSON.stringify(conductor));
     return true;
-  } catch {
+  } catch (error) {
+    reportClientFailure({ code: "PERSISTENCE_WRITE_FAILED", domain: "demo", operation: "save-conductor", severity: "error", userMessage: "The demo checkpoint was not saved. Stop the demo and keep the owner journey unchanged." }, error);
     return false;
   }
 }

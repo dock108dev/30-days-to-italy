@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TURNS } from "../app/game/model";
 import { CORE_POCKET_DECK_CARDS } from "../app/pocket-deck/catalog";
+import { TURNS } from "../app/season/registry";
 
 type AudioSpec = { path: string; transcript: string; rate: number };
 

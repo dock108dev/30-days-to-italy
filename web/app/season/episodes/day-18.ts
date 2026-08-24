@@ -6,7 +6,7 @@ import { addFact, addItem, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-18");
 
 export const day18Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "pharmacy-substitute",
+  ...metadata, sceneId: "pharmacy-substitute",
   scene: { id: "pharmacy-substitute", episodeId: "day-18", day: "Day 18", dateLabel: "13 days out", title: metadata.title, location: metadata.location, time: "16:15", npc: "Sara", role: "Pharmacist", objective: "Understand that the original cream is unavailable and choose only a stated substitute.", firstTurn: "d18_01_unavailable", kicker: "The gel and spray are alternatives, not medically identical products.", suggestions: ["C'è un'alternativa?", "Qual è la differenza?", "Prendo il gel da sei euro."] },
   turns: {
     d18_01_unavailable: authoredTurn("d18_01_unavailable", "Sara", "La crema per le punture oggi non è disponibile.", "Ask for an alternative or leave."),
@@ -56,5 +56,5 @@ export const day18Episode: EpisodeDefinition = {
     return observation(moves, ["d18_03_gel", "d18_04_spray"].includes(after.turnId) ? { alternativeSelected: true, priceConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 960, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotWaterStatus: "reported", repairCommitment: { window: "Today at 18:00", status: "active" }, parcelStatus: "collected", hotelKey: true, apartmentKey: true, rental: "chair", pharmacyItem: "Mosquito-bite cream", routeFact: "Piazza Alta, opposite Farmacia Luce, five minutes away", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream", "Groceries · corrected €4 receipt", "Collected parcel"], cafeOutcome: "Both errors corrected", relationships: { Giulia: "efficient", Rosa: "efficient", Raffaele: "strained", Enzo: "efficient" }, knownFacts: ["Raffaele corrected the missed repair commitment"], commitments: ["Hot-water repair: Today at 18:00"], completed: completedBefore(18), currentLocation: metadata.location, currentTime: "16:15" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

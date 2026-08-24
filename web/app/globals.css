@@ -54,6 +54,11 @@ summary::-webkit-details-marker { display: none; }
 .loading-screen { min-height: 100vh; display: grid; place-content: center; gap: 12px; text-align: center; color: var(--ocean); }
 .loading-screen p { margin: 0; }
 .loading-mark { width: 68px; height: 68px; display: grid; place-items: center; margin: auto; border-radius: 50%; background: var(--sea-glass); font: 600 20px Georgia, serif; }
+.fatal-error-screen { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 28px; text-align: center; }
+.fatal-error-screen h1, .fatal-error-screen p { margin: 0; }
+.fatal-error-screen p { max-width: 34rem; color: var(--ink-soft); }
+.fatal-error-screen button { min-height: 44px; padding: 9px 18px; border: 0; border-radius: var(--radius-sm); color: white; background: var(--ocean); cursor: pointer; font-weight: 750; }
+.fatal-error-screen small { color: var(--ink-soft); }
 
 .app-shell { width: min(1220px, 100%); margin: 0 auto; padding: 0 34px 36px; }
 .trip-app-shell { width: min(1120px, 100%); }
@@ -75,6 +80,13 @@ summary::-webkit-details-marker { display: none; }
 .mode-navigation button { min-width: 112px; min-height: 42px; padding: 8px 17px; border: 0; border-radius: var(--radius-sm); background: transparent; cursor: pointer; }
 .mode-navigation button strong { font-size: 14px; }
 .mode-navigation button.active { color: var(--ocean-deep); background: var(--surface); box-shadow: var(--shadow-low); }
+
+.operational-failure-banner { width: min(1152px, calc(100% - 32px)); display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 14px auto 0; padding: 14px 16px; border: 1px solid rgba(170,78,61,.28); border-radius: var(--radius-md); color: var(--ink); background: #fff3ee; box-shadow: inset 4px 0 var(--danger), var(--shadow-low); }
+.app-shell > .operational-failure-banner { width: 100%; }
+.operational-failure-banner strong { display: block; font: 600 17px Georgia, serif; }
+.operational-failure-banner p { margin: 2px 0 3px; color: var(--ink); font-size: 13px; }
+.operational-failure-banner span { color: var(--ink-soft); font-size: 11px; }
+.operational-failure-banner button { min-height: 40px; flex: 0 0 auto; padding: 8px 12px; border: 0; border-radius: var(--radius-sm); color: var(--danger); background: white; cursor: pointer; font-size: 12px; font-weight: 750; }
 
 .admin-preview-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--coral-wash); box-shadow: inset 4px 0 var(--terracotta); }
 .admin-preview-banner > div:first-child { min-width: 0; }

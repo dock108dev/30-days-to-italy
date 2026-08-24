@@ -429,6 +429,7 @@ test("non-beach rehearsal evidence uses truthful episode wording", () => {
     refresherMethod: null,
     quantityClarified: false,
     priceConfirmed: false,
+    preferenceSelected: null,
     normalReplayCount: 0,
     carefulReplayCount: 0,
     transcriptRevealCount: 0,

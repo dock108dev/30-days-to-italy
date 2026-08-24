@@ -132,6 +132,9 @@ test("generated worker installs atomically, repairs gaps, and cleans only its ow
   assert.match(source, /event\.data\?\.type === "ACTIVATE_UPDATE"/);
   assert.match(source, /networkIsAvailable/);
   assert.match(source, /offline-manifest\.json\?network-probe=/);
+  assert.match(source, /reason: "CACHE_STORAGE_UNAVAILABLE"/);
+  assert.match(source, /reason = "OFFLINE_REPAIR_FAILED"/);
+  assert.doesNotMatch(source, /error\.message/);
   assert.doesNotMatch(source, /localStorage|indexedDB|https:\/\//);
 });
 

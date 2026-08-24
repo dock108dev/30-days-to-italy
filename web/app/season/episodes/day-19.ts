@@ -6,7 +6,7 @@ import { addFact, addItem, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-19");
 
 export const day19Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "ferry-cancellation",
+  ...metadata, sceneId: "ferry-cancellation",
   scene: { id: "ferry-cancellation", episodeId: "day-19", day: "Day 19", dateLabel: "12 days out", title: metadata.title, location: metadata.location, time: "09:05", npc: "Luca", role: "Marina clerk", objective: "Resolve the cancellation using only tickets and refunds you actually own.", firstTurn: "d19_01_ticket", kicker: "A €10 refund exists only when the saved world contains the €10 ferry ticket.", suggestions: ["Vorrei un rimborso.", "Prendo l'autobus sostitutivo.", "Quanto costa l'autobus?"] },
   turns: {
     d19_01_ticket: authoredTurn("d19_01_ticket", "Luca", "Il traghetto delle nove e trenta è cancellato. Con il suo biglietto può avere dieci euro di rimborso, riprenotare o prendere l'autobus.", "Choose refund, rebooking, replacement bus, or cancel the outing."),
@@ -74,5 +74,5 @@ export const day19Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d19_03_close" ? { refundConfirmed: true, alternativeSelected: true, priceConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 360, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotWaterStatus: "reported", repairCommitment: { window: "Today at 18:00", status: "active" }, parcelStatus: "collected", hotelKey: true, apartmentKey: true, rental: "chair", pharmacyItem: "Soothing bite gel", routeFact: "Piazza Alta, opposite Farmacia Luce, five minutes away", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Soothing bite gel", "Groceries · corrected €4 receipt", "Collected parcel"], cafeOutcome: "Both errors corrected", relationships: { Giulia: "efficient", Rosa: "efficient", Raffaele: "strained", Enzo: "efficient" }, knownFacts: ["Farmacia Luce: original bite cream unavailable; €6 gel selected"], commitments: ["Hot-water repair: Today at 18:00"], completed: completedBefore(19), currentLocation: metadata.location, currentTime: "09:05" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

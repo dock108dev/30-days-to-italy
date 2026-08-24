@@ -2,7 +2,7 @@ import type { EpisodeId } from "../season/manifest";
 import { SCENES, implementedEpisode, sceneForEpisode } from "../season/registry";
 import type { ObservedMove, VerifiedEpisodeFacts } from "../season/types";
 
-export { OUTCOMES, SCENES, TURNS, sceneForEpisode } from "../season/registry";
+export const PLAYER_RESPONSE_MAX_LENGTH = 500;
 
 export type Tone = "success" | "partial" | "open";
 export type Rental = "custom" | "standard" | "chair" | null;

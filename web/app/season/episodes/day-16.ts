@@ -6,7 +6,7 @@ import { addFact, addItem, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-16");
 
 export const day16Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "parcel",
+  ...metadata, sceneId: "parcel",
   scene: { id: "parcel", episodeId: "day-16", day: "Day 16", dateLabel: "15 days out", title: metadata.title, location: metadata.location, time: "12:05", npc: "Courier", role: "Parcel courier", objective: "Explain that the document is absent and use only the authorized delivery code.", firstTurn: "d16_01_document", kicker: "The allowed alternative is code 4172—not an improvised identity exception.", suggestions: ["Non ho il documento con me.", "Ho il codice di consegna.", "Quattro uno sette due."] },
   turns: {
     d16_01_document: authoredTurn("d16_01_document", "Courier", "Per il pacco mi serve un documento, per favore.", "Explain what you have or request redelivery."),
@@ -50,5 +50,5 @@ export const day16Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d16_03_close" ? { correctionAccepted: true } : undefined);
   },
   adminSeed: () => ({ money: 960, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotWaterStatus: "reported", repairCommitment: { window: "Tuesday 09:00–11:00", status: "active" }, hotelKey: true, apartmentKey: true, rental: "chair", pharmacyItem: "Mosquito-bite cream", routeFact: "Piazza Alta, opposite Farmacia Luce, five minutes away", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream", "Groceries · corrected €4 receipt"], cafeOutcome: "Both errors corrected", relationships: { Giulia: "efficient", Rosa: "efficient", Raffaele: "efficient", Enzo: "efficient" }, knownFacts: ["Enzo corrected the grocery total from €7.20 to €4.00"], commitments: ["Hot-water repair: Tuesday 09:00–11:00"], completed: completedBefore(16), currentLocation: metadata.location, currentTime: "12:05" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

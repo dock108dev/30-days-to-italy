@@ -6,7 +6,7 @@ import { addFact, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-12");
 
 export const day12Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "beach-alternative",
+  ...metadata, sceneId: "beach-alternative",
   scene: { id: "beach-alternative", episodeId: "day-12", day: "Day 12", dateLabel: "19 days out", title: metadata.title, location: metadata.location, time: "10:15", npc: "Nadia", role: "Lido attendant", objective: "Understand that umbrellas are unavailable and choose only a real alternative.", firstTurn: "d12_01_unavailable", kicker: "The important word is non: ordinary umbrellas are gone.", suggestions: ["C'è un'alternativa?", "Prendo il posto all'ombra da otto euro.", "No, grazie."] },
   turns: {
     d12_01_unavailable: authoredTurn("d12_01_unavailable", "Nadia", "Oggi non ci sono ombrelloni disponibili.", "Ask for an alternative or leave."),
@@ -57,5 +57,5 @@ export const day12Episode: EpisodeDefinition = {
     return observation(moves, ["d12_03_shade", "d12_04_cabana"].includes(after.turnId) ? { alternativeSelected: true, priceConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 2410, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotWaterStatus: "reported", repairCommitment: { window: "Tuesday 09:00–11:00", status: "active" }, hotelKey: true, apartmentKey: true, rental: "custom", pharmacyItem: "Mosquito-bite cream", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream"], relationships: { Giulia: "neutral", Rosa: "efficient", Raffaele: "efficient" }, knownFacts: ["Casa Limone hot water reported unavailable"], commitments: ["Hot-water repair: Tuesday 09:00–11:00"], completed: completedBefore(12), currentLocation: metadata.location, currentTime: "10:15" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

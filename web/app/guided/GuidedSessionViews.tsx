@@ -1,5 +1,6 @@
-import { OUTCOMES, type GameState, type Scene } from "../game/model";
+import { type GameState, type Scene } from "../game/model";
 import type { PocketDeckPracticeEvidence } from "../pocket-deck/model";
+import { OUTCOMES } from "../season/registry";
 import type { GuidedBeachSession } from "./model";
 
 export function GuidedSessionProgress({ status }: { status: GuidedBeachSession["status"] }) {

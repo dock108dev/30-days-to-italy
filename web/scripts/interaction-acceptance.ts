@@ -192,8 +192,10 @@ async function playCurrentLine(page: Page, fail = false): Promise<void> {
   assert.equal(await composer.isEnabled(), true, "composer must be enabled after playback starts or fails");
   assert.equal(await page.locator('[data-primary-action="true"]:visible').count(), 1, "ready phase must expose exactly one primary action");
   if (fail) {
-    await page.getByRole("alert").waitFor();
-    assert.match(await page.getByRole("alert").innerText(), /Audio could not play/);
+    const audioFallback = page.locator(".audio-fallback");
+    await audioFallback.waitFor();
+    assert.match(await audioFallback.innerText(), /Audio could not play/);
+    assert.match(await page.locator(".operational-failure-banner").innerText(), /AUDIO_PLAYBACK_FAILED/);
     assert.equal(await page.locator(".transcript").isVisible(), true);
   }
 }
@@ -676,7 +678,12 @@ try {
 
   deck = await storedValue<StoredDeck>(page, POCKET_DECK_STORAGE_KEY);
   assert.equal(evidenceIds(deck).length, new Set(evidenceIds(deck)).size);
-  assert.deepEqual(consoleFailures, [], `Browser console failures:\n${consoleFailures.join("\n")}`);
+  const expectedAudioWarnings = consoleFailures.filter((entry) =>
+    entry.includes("AUDIO_PLAYBACK_FAILED") && entry.includes("play-rehearsal-line")
+  );
+  const unexpectedConsoleFailures = consoleFailures.filter((entry) => !expectedAudioWarnings.includes(entry));
+  assert.equal(expectedAudioWarnings.length, 2, "Both injected audio failures must emit structured warnings.");
+  assert.deepEqual(unexpectedConsoleFailures, [], `Unexpected browser console failures:\n${unexpectedConsoleFailures.join("\n")}`);
   assert.deepEqual(responseFailures, [], `Failed browser responses:\n${responseFailures.join("\n")}`);
 
   console.log("Interaction acceptance passed:");

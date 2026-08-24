@@ -6,7 +6,7 @@ import { addFact, finalArcAdminSeed } from "./shared";
 const metadata = seasonEpisode("day-25");
 
 export const day25Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "invitation",
+  ...metadata, sceneId: "invitation",
   scene: { id: "invitation", episodeId: "day-25", day: "Day 25", dateLabel: "Tomorrow at 19:30", title: metadata.title, location: metadata.location, time: "18:15", npc: "Giulia", role: "Bartender", objective: "Understand the invitation for tomorrow at 19:30 and answer without implying future attendance.", firstTurn: "d25_01_invite", kicker: "An answer to an invitation is not evidence that the event happened.", suggestions: ["Domani alle diciannove e trenta?", "Forse. Non lo so ancora.", "No, grazie."] },
   turns: {
     d25_01_invite: authoredTurn("d25_01_invite", "Giulia", "Domani verso le diciannove e trenta facciamo un piccolo aperitivo qui. Vuoi venire?", "Accept, say maybe, decline, or ask when."),
@@ -43,5 +43,5 @@ export const day25Episode: EpisodeDefinition = {
     if (after.turnId === "d25_05_no") return observation(["decline", "boundary"]);
     return noObservation();
   },
-  adminSeed: () => finalArcAdminSeed(25), buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  adminSeed: () => finalArcAdminSeed(25), buildResult: buildObservedEpisodeResult,
 };

@@ -7,7 +7,6 @@ const metadata = seasonEpisode("day-22");
 
 export const day22Episode: EpisodeDefinition = {
   ...metadata,
-  status: "implemented",
   sceneId: "vendor-recommendation",
   scene: {
     id: "vendor-recommendation", episodeId: "day-22", day: "Day 22", dateLabel: "A familiar recommendation",
@@ -62,5 +61,4 @@ export const day22Episode: EpisodeDefinition = {
   },
   adminSeed: () => finalArcAdminSeed(22),
   buildResult: buildObservedEpisodeResult,
-  terminalBehavior: "resolve",
 };

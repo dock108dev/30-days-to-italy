@@ -27,6 +27,7 @@ import {
   lockPocketDeckDocumentScroll,
   releasePocketDeckShowViewLock,
 } from "./scroll-lock";
+import { reportClientFailure } from "../observability/client-failures";
 
 type PocketDeckProps = {
   profile: TripProfile;
@@ -352,7 +353,14 @@ export function PocketDeck({
     setPlaying({ cardId: card.id, speed });
     try {
       await audio.play();
-    } catch {
+    } catch (error) {
+      reportClientFailure({
+        code: "AUDIO_PLAYBACK_FAILED",
+        domain: "audio",
+        operation: "play-pocket-deck-card",
+        severity: "warning",
+        userMessage: "Pocket Deck audio could not play. The Italian text remains available on the card.",
+      }, error);
       setPlaying(null);
       setAudioError("Audio could not play. The Italian text is still available below.");
     }

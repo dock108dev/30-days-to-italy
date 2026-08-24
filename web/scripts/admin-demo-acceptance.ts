@@ -115,6 +115,7 @@ function ownerDeck(): PocketDeckState {
     refresherMethod: null,
     quantityClarified: false,
     priceConfirmed: false,
+    preferenceSelected: null,
     normalReplayCount: 1,
     carefulReplayCount: 0,
     transcriptRevealCount: 0,
@@ -299,7 +300,7 @@ try {
   const walkthroughStartedAt = Date.now();
   await page.getByRole("button", { name: "Start demo walkthrough" }).click();
   await page.locator('.demo-mode-banner[data-demo-checkpoint="day-00"]').waitFor();
-  assert.match(await page.locator(".demo-mode-banner").innerText(), /Demo mode.*checkpoint 1 of 32/is);
+  assert.match(await page.locator(".demo-mode-banner").innerText(), /Demo mode[\s\S]*checkpoint 1 of 32/i);
   await assertOwnerRecordsUnchanged(page, ownerBefore);
 
   await openAdmin(page);

@@ -7,7 +7,7 @@ const metadata = seasonEpisode("day-20");
 const permanentWindow = "Friday at 10:00";
 
 export const day20Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "repair-fix",
+  ...metadata, sceneId: "repair-fix",
   scene: { id: "repair-fix", episodeId: "day-20", day: "Day 20", dateLabel: "11 days out", title: metadata.title, location: metadata.location, time: "18:10", npc: "Technician", role: "Repair technician with Raffaele", objective: "Understand that the fix is temporary and confirm or reject the next commitment.", firstTurn: "d20_01_temporary", kicker: "Working now does not mean permanently fixed.", suggestions: ["È una soluzione temporanea?", "Quando arriva il pezzo?", "Venerdì alle dieci va bene."] },
   turns: {
     d20_01_temporary: authoredTurn("d20_01_temporary", "Technician", "Adesso l'acqua è calda, ma è una soluzione temporanea. Il pezzo nuovo arriva venerdì.", "Ask when the permanent repair happens, accept, or reject the temporary fix."),
@@ -57,5 +57,5 @@ export const day20Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d20_03_close" ? { problemReported: true, commitmentConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 1120, laundryStatus: "clean", transportMode: "bus", transportStatus: "replacement-bus", transportTicketPrice: 240, busTicket: true, ferryMemory: "Ferry cancelled; €10 refunded; replacement bus taken", hotWaterStatus: "reported", repairCommitment: { window: "Today at 18:00", status: "active" }, parcelStatus: "collected", hotelKey: true, apartmentKey: true, rental: "chair", pharmacyItem: "Soothing bite gel", routeFact: "Piazza Alta, opposite Farmacia Luce, five minutes away", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Soothing bite gel", "Groceries · corrected €4 receipt", "Collected parcel", "Replacement bus ticket"], cafeOutcome: "Both errors corrected", relationships: { Giulia: "efficient", Rosa: "efficient", Raffaele: "strained", Enzo: "efficient" }, knownFacts: ["09:30 ferry cancelled; €10 refunded; €2.40 replacement bus purchased"], commitments: ["Hot-water repair: Today at 18:00"], completed: completedBefore(20), currentLocation: metadata.location, currentTime: "18:10" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

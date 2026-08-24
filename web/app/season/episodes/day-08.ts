@@ -6,7 +6,7 @@ import { addFact, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-08");
 
 export const day08Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "laundry",
+  ...metadata, sceneId: "laundry",
   scene: { id: "laundry", episodeId: "day-08", day: "Day 8", dateLabel: "23 days out", title: metadata.title, location: metadata.location, time: "09:20", npc: "Carlo", role: "Laundry attendant", objective: "Learn the machine sequence, solve one small problem, or postpone cleanly.", firstTurn: "d08_01_help", kicker: "Machine 4 and coin slot 2 are deliberately easy to confuse.", suggestions: ["Come funziona?", "Macchina quattro, gettoniera due.", "Devo premere il pulsante verde?"] },
   turns: {
     d08_01_help: authoredTurn("d08_01_help", "Carlo", "Buongiorno. Le serve aiuto con la lavatrice?", "Ask how it works or postpone."),
@@ -56,5 +56,5 @@ export const day08Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d08_04_close" ? { quantityClarified: true, priceConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 5110, hotelKey: true, apartmentKey: true, rental: "custom", busTicket: true, routeFact: "Amalfi stop: across the square, opposite Bar Gabbiano", pharmacyItem: "Mosquito-bite cream", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "One-way Amalfi bus ticket", "Mosquito-bite cream"], relationships: { Giulia: "neutral" }, knownFacts: ["Giulia served the first espresso", "Amalfi stop: across the square, opposite Bar Gabbiano"], completed: completedBefore(8), currentLocation: metadata.location, currentTime: "09:20" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

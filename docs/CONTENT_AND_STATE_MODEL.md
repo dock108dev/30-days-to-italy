@@ -14,9 +14,9 @@ Flexible typed language is permitted inside a constrained encounter. Flexibility
 
 ### Current prototype registry
 
-Prompt 8A establishes `day-00` through `day-30` as stable season identifiers. The identifier, not an array position, is save and evidence authority. Each slot owns its countdown offset, implementation status, practical objective, primary communicative move, support prominence, and reviewed Pocket Deck mapping. Implemented slots additionally point to a scene, deterministic handler, turns, outcomes, and local audio. Planned slots are intentionally non-playable.
+`day-00` through `day-30` are the exact supported season identifiers. The identifier, not an array position, is save and evidence authority. Each session owns its countdown offset, practical objective, primary communicative move, support prominence, reviewed Pocket Deck mapping, scene, deterministic rules, turns, outcomes, and local audio. There is no planned-session runtime state.
 
-The current implemented set is Day 0, Days 1–7, Day 13, and Day 21. Legacy saves containing `hotel`, `beach`, `cafe`, `bartender`, or the original scene indices migrate by stable turn/episode identity. Hydration rejects cross-episode turns, outcomes, pending outcomes, and malformed episode evidence.
+All 31 sessions are current. Legacy saves containing `hotel`, `beach`, `cafe`, `bartender`, or the original scene indices migrate by stable turn/episode identity. Hydration rejects cross-episode turns, outcomes, pending outcomes, and malformed episode evidence.
 
 ### Season
 

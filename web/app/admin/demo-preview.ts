@@ -2,6 +2,7 @@ import type { GameState } from "../game/model";
 import { parseSavedGame } from "../game/persistence";
 import type { LifecycleState } from "../lifecycle/model";
 import { parseSavedLifecycleState } from "../lifecycle/persistence";
+import { reportClientFailure } from "../observability/client-failures";
 
 export const DEMO_PREVIEW_RETURN_STORAGE_KEY = "thirty-days-to-italy-demo-preview-return-v1";
 
@@ -25,7 +26,8 @@ export function saveDemoPreviewReturn(
       lifecycle,
     }));
     return true;
-  } catch {
+  } catch (error) {
+    reportClientFailure({ code: "PERSISTENCE_WRITE_FAILED", domain: "demo", operation: "save-preview-return", severity: "error", userMessage: "The demo return point was not saved, so the preview was not opened." }, error);
     return false;
   }
 }
@@ -45,7 +47,8 @@ export function loadDemoPreviewReturn(
       game: parseSavedGame(JSON.stringify(record.game)),
       lifecycle: parseSavedLifecycleState(JSON.stringify(record.lifecycle)),
     };
-  } catch {
+  } catch (error) {
+    reportClientFailure({ code: "PERSISTENCE_READ_FAILED", domain: "demo", operation: "load-preview-return", severity: "error", userMessage: "The demo return point could not be read. Return to a documented checkpoint before continuing." }, error);
     return null;
   }
 }
@@ -53,7 +56,9 @@ export function loadDemoPreviewReturn(
 export function clearDemoPreviewReturn(storage: DemoPreviewStorage): void {
   try {
     storage.removeItem(DEMO_PREVIEW_RETURN_STORAGE_KEY);
-  } catch {
-    // A failed preview cleanup cannot affect the isolated owner namespace.
+  } catch (error) {
+    // Preview state is demo-namespaced, so cleanup failure cannot corrupt the
+    // owner journey, but it still needs to be visible to the facilitator.
+    reportClientFailure({ code: "PERSISTENCE_CLEAR_FAILED", domain: "demo", operation: "clear-preview-return", severity: "warning", userMessage: "An isolated demo preview record could not be cleared. Owner progress was not affected." }, error);
   }
 }

@@ -29,11 +29,9 @@ import {
 } from "../admin/truth-previews";
 import {
   PHRASE_BY_ID,
-  TURNS,
   fallbackPhraseForContext,
   initialState,
   phraseExampleFor,
-  sceneForEpisode,
   type GameState,
   type PhraseId,
   type SupportRecord,
@@ -80,6 +78,11 @@ import {
   saveLifecycleState,
 } from "../lifecycle/persistence";
 import { useOfflineReadiness } from "../offline/useOfflineReadiness";
+import {
+  reportClientFailure,
+  subscribeToClientFailures,
+  type ClientFailure,
+} from "../observability/client-failures";
 import { clearAllLocalState } from "../persistence/reset";
 import {
   exitDemoSession,
@@ -107,7 +110,8 @@ import {
 } from "../pocket-deck/persistence";
 import { createDefaultTripProfile, type TripProfile } from "../trip/model";
 import { createSeasonEpisodeHandoff } from "../season/pocket-deck-handoff";
-import { EPISODE_BY_ID, EPISODE_IDS, IMPLEMENTED_EPISODES, type EpisodeId } from "../season/manifest";
+import { EPISODE_BY_ID, EPISODE_IDS, SEASON_01, type EpisodeId } from "../season/manifest";
+import { TURNS, sceneForEpisode } from "../season/registry";
 import { scheduleSeason } from "../season/schedule";
 import {
   loadTripProfile,
@@ -161,6 +165,28 @@ function consumeHydrationSaveBlock(
   return true;
 }
 
+function OperationalFailureBanner({
+  failure,
+  onDismiss,
+}: {
+  failure: ClientFailure;
+  onDismiss: () => void;
+}) {
+  return (
+    <aside className="operational-failure-banner" role="alert" aria-live="assertive">
+      <div>
+        <strong>Something needs attention</strong>
+        <p>{failure.userMessage}</p>
+        <span>
+          Reference {failure.code} · {failure.domain}/{failure.operation}
+          {failure.occurrence > 1 ? ` · repeated ${failure.occurrence} times` : ""}
+        </span>
+      </div>
+      <button type="button" onClick={onDismiss} aria-label="Dismiss operational warning">Dismiss</button>
+    </aside>
+  );
+}
+
 export default function Home() {
   const [game, setGame] = useState<GameState>(() => initialState());
   const [tripProfile, setTripProfile] = useState<TripProfile | null>(null);
@@ -197,6 +223,7 @@ export default function Home() {
   const [showNatural, setShowNatural] = useState(false);
   const [teachingMoment, setTeachingMoment] = useState<TeachingMoment | null>(null);
   const [seasonOverviewOpen, setSeasonOverviewOpen] = useState(false);
+  const [clientFailure, setClientFailure] = useState<ClientFailure | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const responseRef = useRef<HTMLTextAreaElement>(null);
   const teachingCloseRef = useRef<HTMLButtonElement>(null);
@@ -211,6 +238,8 @@ export default function Home() {
     domains: new Set(),
   });
   const offlineReadiness = useOfflineReadiness();
+
+  useEffect(() => subscribeToClientFailures(setClientFailure), []);
 
   const scene = sceneForEpisode(game.episodeId)!;
   const turn = TURNS[game.turnId];
@@ -237,16 +266,10 @@ export default function Home() {
     };
     setHydrated(false);
 
-    let loadedGame = initialState();
-    let loadedGuidedSession = createDefaultGuidedBeachSession();
-    try {
-      loadedGame = finishPendingOutcome(loadGame(runtime.storage));
-    } catch {
-      // Broken state stays inside its current owner or demo namespace.
-    }
+    const loadedGame = finishPendingOutcome(loadGame(runtime.storage));
     const loadedProfile = loadTripProfile(runtime.storage);
     const loadedLifecycle = loadLifecycleState(runtime.storage);
-    loadedGuidedSession = loadGuidedSession(runtime.storage);
+    let loadedGuidedSession = loadGuidedSession(runtime.storage);
     const loadedPocketDeck = loadPocketDeckState(runtime.storage);
     loadedGuidedSession = reconcileGuidedBeachSession(loadedGuidedSession, loadedGame);
 
@@ -453,7 +476,14 @@ export default function Home() {
         phase: "ready_to_respond",
         audioFailed: false,
       });
-    } catch {
+    } catch (error) {
+      reportClientFailure({
+        code: "AUDIO_PLAYBACK_FAILED",
+        domain: "audio",
+        operation: "play-rehearsal-line",
+        severity: "warning",
+        userMessage: "Audio could not play. The transcript is available, and you can continue without audio.",
+      }, error);
       setIsPlaying(false);
       setTranscriptVisible(true);
       setInteraction({
@@ -563,7 +593,7 @@ export default function Home() {
     if (sessionIdentity.mode !== "owner") return;
     const storage = window.localStorage as EnumerableSessionStorage;
     stopTransientUi();
-    clearAllLocalState(storage);
+    if (!clearAllLocalState(storage)) return;
     setAdminOpen(false);
     activateApplicationSession(ownerSession(storage));
   }
@@ -572,7 +602,18 @@ export default function Home() {
     const storage = window.localStorage as EnumerableSessionStorage;
     stopTransientUi();
     setAdminOpen(false);
-    activateApplicationSession(startDemoSession(storage));
+    try {
+      activateApplicationSession(startDemoSession(storage));
+    } catch (error) {
+      reportClientFailure({
+        code: "PERSISTENCE_WRITE_FAILED",
+        domain: "demo",
+        operation: "start-session",
+        severity: "error",
+        userMessage: "The isolated demo could not start safely. Owner progress was not changed.",
+      }, error);
+      return;
+    }
     queueMicrotask(() => {
       document.getElementById("rehearsal-surface")?.focus({ preventScroll: true });
     });
@@ -642,7 +683,7 @@ export default function Home() {
     setAdminOpen(false);
     setTripDeckCardId(null);
     const storage = activeStorage();
-    if (storage) saveLifecycleState(storage, next);
+    if (!storage || !saveLifecycleState(storage, next)) return;
     setLifecycle(next);
   }
 
@@ -995,10 +1036,15 @@ export default function Home() {
 
   if (!tripProfile) {
     return (
-      <TripSetup
-        initialProfile={createDefaultTripProfile()}
-        onSave={saveTripDetails}
-      />
+      <>
+        {clientFailure && (
+          <OperationalFailureBanner failure={clientFailure} onDismiss={() => setClientFailure(null)} />
+        )}
+        <TripSetup
+          initialProfile={createDefaultTripProfile()}
+          onSave={saveTripDetails}
+        />
+      </>
     );
   }
 
@@ -1042,6 +1088,9 @@ export default function Home() {
         mode={lifecycle.mode}
         onOpenAdmin={() => setAdminOpen(true)}
       />
+      {clientFailure && (
+        <OperationalFailureBanner failure={clientFailure} onDismiss={() => setClientFailure(null)} />
+      )}
       <ModeNavigation mode={lifecycle.mode} onChange={changeMode} />
 
       {conductor && activeDemoCheckpoint && (
@@ -1172,7 +1221,7 @@ export default function Home() {
           )}
 
           <footer>
-            <span>Prepare Mode · complete 31-session season · {IMPLEMENTED_EPISODES.length} playable</span>
+            <span>Prepare Mode · complete 31-session season · {SEASON_01.length} playable</span>
             <p>Listening first. Refreshers whenever you need them. Practical outcomes.</p>
           </footer>
         </>

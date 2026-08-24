@@ -6,7 +6,7 @@ import { addFact, completedBefore } from "./shared";
 const metadata = seasonEpisode("day-09");
 
 export const day09Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "marina",
+  ...metadata, sceneId: "marina",
   scene: { id: "marina", episodeId: "day-09", day: "Day 9", dateLabel: "22 days out", title: metadata.title, location: metadata.location, time: "08:45", npc: "Luca", role: "Marina clerk", objective: "Compare bus and ferry by time and price, then choose only one.", firstTurn: "d09_01_compare", kicker: "Two times, two prices, and one weather caveat arrive together.", suggestions: ["Quanto tempo ci vuole?", "Quanto costa il traghetto?", "Prendo il traghetto delle nove e trenta."] },
   turns: {
     d09_01_compare: authoredTurn("d09_01_compare", "Luca", "Per Amalfi c'è l'autobus alle nove e dieci o il traghetto alle nove e trenta.", "Ask about duration, price, or one option."),
@@ -71,5 +71,5 @@ export const day09Episode: EpisodeDefinition = {
     return observation(moves, ["d09_03_ferry", "d09_04_bus"].includes(after.turnId) ? { destinationEstablished: true, preferenceSelected: any(normalized, ["traghetto", "ferry"]) ? "ferry" : "bus", priceConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 4610, laundryStatus: "clean", hotelKey: true, apartmentKey: true, rental: "custom", pharmacyItem: "Mosquito-bite cream", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream"], relationships: { Giulia: "neutral" }, knownFacts: ["Laundry: machine 4, coin slot 2, green start button, 35 minutes"], completed: completedBefore(9), currentLocation: metadata.location, currentTime: "08:45" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

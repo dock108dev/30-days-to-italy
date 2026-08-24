@@ -14,7 +14,7 @@ function eligible(state: GameState): boolean {
 }
 
 export const day27Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "repair-close",
+  ...metadata, sceneId: "repair-close",
   scene: { id: "repair-close", episodeId: "day-27", day: "Day 27", dateLabel: "The repair closes", title: metadata.title, location: metadata.location, time: "10:30", npc: "Raffaele", role: "Host", objective: "Confirm the permanent hot-water repair and request the €5 credit only if the saved history supports it.", firstTurn: "d27_01_fixed", kicker: "A credit is earned by recorded repair history, never by choosing a persuasive line.", suggestions: ["Ora l'acqua calda funziona.", "Posso avere un buono?", "È tutto a posto."] },
   turns: {
     d27_01_fixed: authoredTurn("d27_01_fixed", "Raffaele", "Il pezzo nuovo è montato. Ora l'acqua calda funziona in modo permanente.", "Confirm the repair, mention a problem, or leave."),
@@ -55,5 +55,5 @@ export const day27Episode: EpisodeDefinition = {
     if (after.turnId === "d27_05_closed") return observation(["decline", "confirm"]);
     return noObservation();
   },
-  adminSeed: () => finalArcAdminSeed(27), buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  adminSeed: () => finalArcAdminSeed(27), buildResult: buildObservedEpisodeResult,
 };

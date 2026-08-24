@@ -13,7 +13,6 @@ const metadata = seasonEpisode("day-01");
 
 export const day01Episode: EpisodeDefinition = {
   ...metadata,
-  status: "implemented",
   sceneId: "apartment",
   scene: {
     id: "apartment", episodeId: "day-01", day: "Day 1", dateLabel: "30 days out",
@@ -70,5 +69,4 @@ export const day01Episode: EpisodeDefinition = {
   },
   adminSeed: () => ({ hotelKey: true, completed: ["day-00"] }),
   buildResult: buildObservedEpisodeResult,
-  terminalBehavior: "resolve",
 };

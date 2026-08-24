@@ -15,7 +15,7 @@ function cafeIssues(normalized: string) {
 }
 
 export const day13Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "cafe",
+  ...metadata, sceneId: "cafe",
   scene: { id: "cafe", episodeId: "day-13", day: "Day 13", dateLabel: "Friction", title: metadata.title, location: metadata.location, time: "09:30", npc: "Giulia", role: "Bartender", objective: "You ordered a cappuccino. A latte macchiato arrived, and the bill includes an orange juice you never ordered. Resolve what matters to you.", firstTurn: "e03_01_present", kicker: "The drink and the extra charge are separate problems.", suggestions: ["Avevo ordinato un cappuccino.", "Non ho ordinato la spremuta.", "Ci sono due problemi."] },
   turns: {
     e03_01_present: authoredTurn("e03_01_present", "Giulia", "Ecco il latte macchiato. Sono sette euro e cinquanta.", "Compare what arrived with what you ordered and the receipt."),
@@ -86,5 +86,5 @@ export const day13Episode: EpisodeDefinition = {
     return observation(moves, after.status === "resolved" && any(normalized, PAY) ? { priceConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 1610, hotelKey: true, apartmentKey: true, rental: "custom", busTicket: true, routeFact: "Amalfi stop: across the square, opposite Bar Gabbiano", pharmacyItem: "Mosquito-bite cream", laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotWaterStatus: "reported", repairCommitment: { window: "Tuesday, 09:00–11:00", status: "active" }, inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "One-way Amalfi bus ticket", "Mosquito-bite cream", "Clean clothes", "Ferry ticket"], relationships: { Giulia: "neutral" }, knownFacts: ["Giulia served the first espresso", "Amalfi stop: across the square, opposite Bar Gabbiano", "Hot water repair promised Tuesday, 09:00–11:00"], completed: completedBefore(13) }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

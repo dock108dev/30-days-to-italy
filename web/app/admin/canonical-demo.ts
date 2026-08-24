@@ -3,7 +3,7 @@ import {
   submitEpisodeResponse,
   type HistoryIdFactory,
 } from "../game/engine";
-import { initialState, type GameState } from "../game/model";
+import { type GameState } from "../game/model";
 import { parseSavedGame } from "../game/persistence";
 import { EPISODE_IDS, type EpisodeId } from "../season/manifest";
 import { implementedEpisode } from "../season/registry";
@@ -213,10 +213,9 @@ export function canOpenDemoTripMode(state: GameState): boolean {
     assertValidDemoSeasonCompletion(state);
     return true;
   } catch {
+    // This is a pure eligibility predicate over untrusted persisted state.
+    // The caller needs false, while the asserting variant remains available
+    // to tests and operator tooling that need the exact invariant failure.
     return false;
   }
-}
-
-export function canonicalStateForFreshDemo(): GameState {
-  return canonicalPreEpisodeState(initialState(), "day-00");
 }

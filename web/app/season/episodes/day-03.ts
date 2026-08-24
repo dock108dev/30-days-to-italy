@@ -5,7 +5,7 @@ import { authoredTurn, buildObservedEpisodeResult, isAcceptedTransition, noObser
 const metadata = seasonEpisode("day-03");
 
 export const day03Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "morning-bar",
+  ...metadata, sceneId: "morning-bar",
   scene: { id: "morning-bar", episodeId: "day-03", day: "Day 3", dateLabel: "28 days out", title: metadata.title, location: metadata.location, time: "08:35", npc: "Giulia", role: "Bartender", objective: "Order one €2 espresso, here or takeaway.", firstTurn: "d03_01_order", kicker: "This is your first visit; Giulia does not know your usual yet.", suggestions: ["Vorrei un espresso.", "Qui, grazie. / Da portare, grazie.", "Con la carta."] },
   turns: {
     d03_01_order: authoredTurn("d03_01_order", "Giulia", "Buongiorno. Cosa prende?", "Order one drink."),
@@ -50,5 +50,5 @@ export const day03Episode: EpisodeDefinition = {
     return noObservation();
   },
   adminSeed: () => ({ money: 9160, hotelKey: true, apartmentKey: true, inventory: ["Bread", "Cheese", "Water"], completed: ["day-00", "day-01", "day-02"] }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

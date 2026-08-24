@@ -13,6 +13,7 @@ import { POCKET_DECK_STORAGE_KEY } from "../pocket-deck/persistence";
 import { createDefaultTripProfile, type TripProfile } from "../trip/model";
 import { saveTripProfile } from "../trip/persistence";
 import { TRIP_PROFILE_STORAGE_KEY } from "../trip/persistence";
+import { reportClientFailure } from "../observability/client-failures";
 import {
   createDemoConductor,
   loadDemoConductor,
@@ -84,7 +85,7 @@ export function isCurrentApplicationSession(
   );
 }
 
-export function createNamespacedStorage(
+function createNamespacedStorage(
   storage: SessionStorage,
   namespace: string,
 ): SessionStorage {
@@ -123,7 +124,14 @@ function markerFromRaw(raw: string | null): DemoMarker | null {
       schemaVersion: DEMO_MARKER_SCHEMA_VERSION,
       sessionId: value.sessionId,
     };
-  } catch {
+  } catch (error) {
+    reportClientFailure({
+      code: "PERSISTENCE_DATA_INVALID",
+      domain: "demo",
+      operation: "parse-active-marker",
+      severity: "warning",
+      userMessage: "An invalid isolated demo marker was removed. Owner progress was not affected.",
+    }, error);
     return null;
   }
 }
@@ -135,7 +143,7 @@ function createSessionId(now: Date): string {
   return `${now.getTime().toString(36)}-${random}`.replace(/[^a-z0-9-]/gi, "-");
 }
 
-export function createSyntheticDemoTripProfile(now = new Date()): TripProfile {
+function createSyntheticDemoTripProfile(now = new Date()): TripProfile {
   return {
     ...createDefaultTripProfile(now),
     regionLabel: "Synthetic demo · Campania / Amalfi Coast",

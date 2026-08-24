@@ -14,7 +14,7 @@ import { hydrateGameState, loadGame, saveGame, type LocalGameStorage } from "../
 import { createDefaultLifecycleState, withLifecycleMode } from "../app/lifecycle/model";
 import { clearAllLocalState } from "../app/persistence/reset";
 import { CORE_POCKET_DECK_CARD_BY_ID, CORE_POCKET_DECK_CARDS } from "../app/pocket-deck/catalog";
-import { IMPLEMENTED_EPISODES, SEASON_01 } from "../app/season/manifest";
+import { SEASON_01 } from "../app/season/manifest";
 
 function ids(): HistoryIdFactory {
   let index = 0;
@@ -52,10 +52,8 @@ function memoryStorage(): { values: Map<string, string>; storage: LocalGameStora
   };
 }
 
-test("the full registry has 31 playable sessions and no planned placeholders", () => {
+test("the current season contains exactly 31 supported sessions", () => {
   assert.equal(SEASON_01.length, 31);
-  assert.equal(IMPLEMENTED_EPISODES.length, 31);
-  assert.equal(SEASON_01.every((episode) => episode.status === "implemented"), true);
 });
 
 test("every final-arc episode has a clean early exit", () => {

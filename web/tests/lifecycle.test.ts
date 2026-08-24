@@ -100,13 +100,34 @@ test("full reset clears rehearsal, profile, lifecycle, guidance, and deck domain
   values.set(GUIDED_SESSION_STORAGE_KEY, "guided");
   values.set(POCKET_DECK_STORAGE_KEY, "deck");
 
-  clearAllLocalState(storage);
+  assert.equal(clearAllLocalState(storage), true);
 
   assert.equal(values.has(STORAGE_KEY), false);
   assert.equal(values.has(TRIP_PROFILE_STORAGE_KEY), false);
   assert.equal(values.has(LIFECYCLE_STORAGE_KEY), false);
   assert.equal(values.has(GUIDED_SESSION_STORAGE_KEY), false);
   assert.equal(values.has(POCKET_DECK_STORAGE_KEY), false);
+});
+
+test("full reset attempts every domain and reports partial failure", () => {
+  const removed: string[] = [];
+  const storage: LifecycleStorage = {
+    getItem: () => null,
+    setItem: () => undefined,
+    removeItem(key) {
+      removed.push(key);
+      if (key === STORAGE_KEY) throw new Error("blocked");
+    },
+  };
+
+  assert.equal(clearAllLocalState(storage), false);
+  assert.deepEqual(removed, [
+    STORAGE_KEY,
+    TRIP_PROFILE_STORAGE_KEY,
+    LIFECYCLE_STORAGE_KEY,
+    GUIDED_SESSION_STORAGE_KEY,
+    POCKET_DECK_STORAGE_KEY,
+  ]);
 });
 
 test("switching modes changes lifecycle presentation only", () => {

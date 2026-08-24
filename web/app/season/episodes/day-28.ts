@@ -8,7 +8,7 @@ const planId = "day-28-vietri-stand-3";
 const fareEvent = "day28-vietri-fare-paid";
 
 export const day28Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "day-trip",
+  ...metadata, sceneId: "day-trip",
   scene: { id: "day-trip", episodeId: "day-28", day: "Day 28", dateLabel: "A two-leg route", title: metadata.title, location: metadata.location, time: "08:10", npc: "Luca", role: "Transport agent", objective: "Confirm the 08:40 bus, change at Vietri, and take the 09:35 connection from stand 3—not stand 2.", firstTurn: "d28_01_route", kicker: "This is a new €2.40 fare; no Day 19 ticket can silently pay for it.", suggestions: ["Dove devo cambiare?", "A Vietri, poi alle nove e trentacinque dal binario tre.", "Pago due euro e quaranta."] },
   turns: {
     d28_01_route: authoredTurn("d28_01_route", "Luca", "Prenda l'autobus delle otto e quaranta. Deve cambiare a Vietri verso le nove e un quarto.", "Ask where or when the connection leaves."),
@@ -62,5 +62,5 @@ export const day28Episode: EpisodeDefinition = {
     if (after.turnId === "d28_05_exit") return observation(["decline", "boundary"]);
     return noObservation();
   },
-  adminSeed: () => finalArcAdminSeed(28), buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  adminSeed: () => finalArcAdminSeed(28), buildResult: buildObservedEpisodeResult,
 };

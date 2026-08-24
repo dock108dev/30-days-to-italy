@@ -92,6 +92,10 @@ Use **Admin** in the top-right corner from either Prepare or Trip Mode to start 
 
 ## Owner-only release
 
+The supported module authorities, removed compatibility paths, and retained save migrations are documented in [`docs/ARCHITECTURE_AND_SSOT.md`](docs/ARCHITECTURE_AND_SSOT.md). The current product has one 31-session season; there is no planned-session runtime mode or alternate episode engine.
+
+The repository trust model, fixed findings, accepted risks, deployment checks, and security roadmap are documented in [`docs/SECURITY.md`](docs/SECURITY.md). Owner-only access is enforced by the hosting configuration, not by client-side Admin controls; verify the live access list and response headers against the exact frozen candidate before every release.
+
 - The supported hosted release is an owner-only OpenAI Sites deployment. Public or shared access requires a separate, explicit launch decision.
 - The app has no account, server database, analytics, microphone access, or cross-device sync. Trip details and progress stay in this browser's `localStorage`; clearing site data or opening another browser/device starts fresh.
 - Search engines are denied by both page metadata and `robots.txt`. The worker adds `nosniff`, no-referrer, disabled microphone/camera/geolocation, and frame-denial headers to document and PWA metadata responses without delaying the offline audio cache.
@@ -100,8 +104,13 @@ Use **Admin** in the top-right corner from either Prepare or Trip Mode to start 
 
 ## Validation
 
+Production failure behavior, safe local diagnostics, and incident rules are documented in [`docs/ERROR_HANDLING_AND_OPERATIONS.md`](docs/ERROR_HANDLING_AND_OPERATIONS.md). The app keeps deliberate text/offline recovery paths, but storage failures, invalid saved JSON, cache failures, audio failures, and unexpected render failures are explicit and locally observable without logging traveler data.
+
 ```bash
 npm run lint
+npx tsc --noEmit
+npm run test:ssot
+npm run test:security
 npm run test:response-contracts
 npm run test:interaction
 npm run test:admin-demo
@@ -110,17 +119,17 @@ npm test
 npm run test:offline
 ```
 
-The main test gate creates a production build and covers the 31-slot/31-playable season contract, daily unlock persistence, all registered encounters, English teach-and-resume safety, v1–v5 game migration into v6, generalized evidence, the canonical Day 0–7 run ending at €51.10, the canonical Day 8–21 run ending at €9.20, the canonical Day 22–30 run ending at €5.80, and the original four-anchor route ending at €73.50. Dedicated truth-matrix regressions protect ferry callbacks, parcel custody, attendance, one-time entitlement-gated beach remedies, repair credits, the distinct Day 28 fare, factual Day 29 exit reviews, independent historical-completion validation, replay durability, exact Day 30 issue acknowledgement, qualifying versus non-qualifying completion, isolated Admin review storage, and the exactly-once interaction boundary. The current gate derives 126 domain/component checks plus 4 rendered-shell checks. The focused response-contract gate derives 57 checks. It also validates every encounter audio pair, deployed-origin social metadata, the 30-card/60-clip Pocket Deck, cache inventory, and production-only worker registration.
+The main test gate creates a production build and covers the single 31-session season contract, daily unlock persistence, all registered encounters, English teach-and-resume safety, v1–v5 game migration into v6, generalized evidence, the canonical Day 0–7 run ending at €51.10, the canonical Day 8–21 run ending at €9.20, and the canonical Day 22–30 run ending at €5.80. Dedicated truth-matrix regressions protect ferry callbacks, parcel custody, attendance, one-time entitlement-gated beach remedies, repair credits, the distinct Day 28 fare, factual Day 29 exit reviews, independent historical-completion validation, replay durability, exact Day 30 issue acknowledgement, qualifying versus non-qualifying completion, isolated Admin review storage, and the exactly-once interaction boundary. The focused response-contract gate derives 57 checks. It also validates every encounter audio pair, deployed-origin social metadata, the 30-card/60-clip Pocket Deck, cache inventory, and production-only worker registration.
 
 `npm run test:offline` starts the production build on an isolated loopback port and drives a real Chromium session through connected preparation, deliberate cache damage and repair, a disconnected reload, all 426 cached audio responses, actual normal/careful card playback, search, categories, rehearsal personalization, pin/Recent persistence, Show-this focus restoration, mode switching, desktop, 390px portrait, and 844×390 landscape. It restores connectivity and shuts down its own server.
 
 ## Code boundaries
 
-- `app/game/model.ts` owns shared state/types, phrase content, and response vocabulary; its scene/turn/outcome exports are registry-derived compatibility catalogs.
+- `app/game/model.ts` owns shared state/types, phrase content, and response vocabulary. Scene, turn, and outcome callers import their derived catalogs directly from `app/season/registry.ts`.
 - `app/game/engine.ts` is a generic coordinator for registered definitions. It owns shared transition mechanics and contains no episode handlers, positional progression, or day-specific seeds.
 - `app/game/persistence.ts` owns the stable local save key, strict registry validation, v1–v5-to-v6 migration, independent historical-completion validation, cross-field remedy normalization, relationship/fact separation, and fail-closed recovery. Legacy positions are interpreted only here.
 - `app/season/manifest.ts` is the stable 31-slot metadata authority. `types.ts` defines the full authoring and observational-evidence contract, `episodes/` owns all 31 implemented modules, and `registry.ts` derives runtime catalogs and ownership maps. `schedule.ts` owns daily unlocking; `pocket-deck-handoff.ts` copies only the latest attempt's observed evidence.
-- [`../docs/EPISODE_AUTHORING_GUIDE.md`](../docs/EPISODE_AUTHORING_GUIDE.md) documents how to implement a planned slot without adding a central conditional.
+- [`../docs/EPISODE_AUTHORING_GUIDE.md`](../docs/EPISODE_AUTHORING_GUIDE.md) documents how to revise or replace a current episode without adding a central conditional.
 - `app/prototype/PrototypeApp.tsx` coordinates browser state, audio, and the game engine.
 - `app/prototype/PrototypeViews.tsx` contains the player-facing encounter, teaching, world, outcome, and Admin views.
 - `app/admin/fast-track.ts` owns the ordered Admin lifecycle checkpoints and non-persistent calendar-preview math. `app/admin/truth-previews.ts` owns bounded Admin-only Day 19/21 world-state seeds for direct conditional-path audits.

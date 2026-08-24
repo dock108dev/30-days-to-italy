@@ -107,13 +107,13 @@ export const PENDING_TERMINAL_TURNS = new Map(
   ),
 );
 
-export function implementedEpisode(id: EpisodeId): EpisodeDefinition | null {
+export function implementedEpisode(id: EpisodeId): DemoEpisodeDefinition | null {
   return EPISODE_DEFINITION_BY_ID.get(id) ?? null;
 }
 
-export function nextImplementedEpisode(id: EpisodeId): EpisodeDefinition | null {
-  const currentDay = SEASON_01.find((episode) => episode.id === id)?.day ?? -1;
-  return IMPLEMENTED_EPISODE_DEFINITIONS.find((definition) => definition.day > currentDay) ?? null;
+export function nextImplementedEpisode(id: EpisodeId): DemoEpisodeDefinition | null {
+  const currentIndex = IMPLEMENTED_EPISODE_DEFINITIONS.findIndex((definition) => definition.id === id);
+  return currentIndex < 0 ? null : IMPLEMENTED_EPISODE_DEFINITIONS[currentIndex + 1] ?? null;
 }
 
 export function sceneForEpisode(id: EpisodeId) {

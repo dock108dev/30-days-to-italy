@@ -7,7 +7,7 @@ const metadata = seasonEpisode("day-11");
 const repairWindow = "Tuesday 09:00–11:00";
 
 export const day11Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "repair",
+  ...metadata, sceneId: "repair",
   scene: { id: "repair", episodeId: "day-11", day: "Day 11", dateLabel: "20 days out", title: metadata.title, location: metadata.location, time: "18:20", npc: "Raffaele", role: "Apartment caretaker", objective: "Report only the hot-water problem and leave with an exact repair window.", firstTurn: "d11_01_report", kicker: "The consequential detail is Tuesday morning, not an inferred cause.", suggestions: ["Non c'è acqua calda.", "Da stamattina.", "Martedì dalle nove alle undici va bene."] },
   turns: {
     d11_01_report: authoredTurn("d11_01_report", "Raffaele", "Buonasera. Che problema c'è nell'appartamento?", "Report the hot-water problem or postpone."),
@@ -55,5 +55,5 @@ export const day11Episode: EpisodeDefinition = {
     return observation(moves, after.turnId === "d11_04_close" ? { problemReported: true, commitmentConfirmed: true } : undefined);
   },
   adminSeed: () => ({ money: 2410, laundryStatus: "clean", transportMode: "ferry", transportStatus: "booked", transportTicketPrice: 1000, hotelKey: true, apartmentKey: true, rental: "custom", pharmacyItem: "Mosquito-bite cream", inventory: ["Bread", "Cheese", "Water", "½ kg tomatoes", "Mosquito-bite cream"], relationships: { Giulia: "neutral", Rosa: "efficient" }, knownFacts: ["Rosa corrected the side dish before serving the €12 meal"], completed: completedBefore(11), currentLocation: metadata.location, currentTime: "18:20" }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

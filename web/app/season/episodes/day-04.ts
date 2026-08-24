@@ -5,7 +5,7 @@ import { authoredTurn, buildObservedEpisodeResult, isAcceptedTransition, noObser
 const metadata = seasonEpisode("day-04");
 
 export const day04Episode: EpisodeDefinition = {
-  ...metadata, status: "implemented", sceneId: "beach",
+  ...metadata, sceneId: "beach",
   scene: { id: "beach", episodeId: "day-04", day: "Day 4", dateLabel: "Settling in", title: metadata.title, location: metadata.location, time: "10:00", npc: "Nadia", role: "Lido attendant", objective: "Rent one beach chair and one umbrella for today without accidentally buying a two-chair package.", firstTurn: "e02_01_need", kicker: "The standard offer is designed for two people. You are here alone.", suggestions: ["Un lettino e un ombrellone.", "Solo un lettino.", "No, grazie."] },
   turns: {
     e02_01_need: authoredTurn("e02_01_need", "Nadia", "Buongiorno. Cosa le serve?", "Ask for what you need. English nouns are okay."),
@@ -72,5 +72,5 @@ export const day04Episode: EpisodeDefinition = {
     return noObservation();
   },
   adminSeed: () => ({ money: 8960, hotelKey: true, apartmentKey: true, inventory: ["Bread", "Cheese", "Water"], relationships: { Giulia: "neutral" }, knownFacts: ["Giulia served the first espresso"], completed: ["day-00", "day-01", "day-02", "day-03"] }),
-  buildResult: buildObservedEpisodeResult, terminalBehavior: "resolve",
+  buildResult: buildObservedEpisodeResult,
 };

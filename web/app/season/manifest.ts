@@ -6,9 +6,8 @@ export const EPISODE_IDS = [
 ] as const;
 
 export type EpisodeId = (typeof EPISODE_IDS)[number];
-export type EpisodeStatus = "implemented" | "planned";
 export type SupportProminence = "prominent" | "available" | "recovery";
-export type EpisodeAuthoringStatus = "mapped" | "reviewed";
+export type EpisodeAuthoringStatus = "reviewed";
 
 export type SeasonEpisode = {
   id: EpisodeId;
@@ -16,8 +15,7 @@ export type SeasonEpisode = {
   title: string;
   practicalObjective: string;
   primaryMove: string;
-  status: EpisodeStatus;
-  sceneId: string | null;
+  sceneId: string;
   unlockDaysBeforeDeparture: number | null;
   supportProminence: SupportProminence;
   pocketCardId: string | null;
@@ -30,7 +28,7 @@ export type SeasonEpisode = {
   authoringStatus: EpisodeAuthoringStatus;
 };
 
-const PLANNED_TITLES = [
+const EPISODE_TITLES = [
   "Use the self-service laundry",
   "Choose bus or ferry for Amalfi",
   "Receive and correct a simple order",
@@ -56,7 +54,7 @@ const PLANNED_TITLES = [
   "Prepare to leave the apartment",
 ] as const;
 
-const IMPLEMENTED: Partial<Record<EpisodeId, Omit<SeasonEpisode, "id" | "day" | "status" | "unlockDaysBeforeDeparture">>> = {
+const EARLY_EPISODE_METADATA: Partial<Record<EpisodeId, Omit<SeasonEpisode, "id" | "day" | "unlockDaysBeforeDeparture">>> = {
   "day-00": {
     title: "A room for the night",
     practicalObjective: "Get your hotel key and enough information to reach the room.",
@@ -189,9 +187,9 @@ const IMPLEMENTED: Partial<Record<EpisodeId, Omit<SeasonEpisode, "id" | "day" | 
   },
 };
 
-type PlannedContext = Pick<SeasonEpisode, "location" | "characterIds" | "recurringLanguageTargets" | "listeningChallenge" | "prerequisites">;
+type EpisodeContext = Pick<SeasonEpisode, "location" | "characterIds" | "recurringLanguageTargets" | "listeningChallenge" | "prerequisites">;
 
-const PLANNED_CONTEXT: Partial<Record<EpisodeId, PlannedContext>> = {
+const EPISODE_CONTEXT: Partial<Record<EpisodeId, EpisodeContext>> = {
   "day-08": { location: "Lavanderia Blu · Marina di Lume", characterIds: ["carlo"], recurringLanguageTargets: ["ask how", "confirm a sequence", "state a problem"], listeningChallenge: "Follow a multi-step machine instruction where the machine and coin-slot numbers differ.", prerequisites: [] },
   "day-09": { location: "Marina desk · Marina di Lume", characterIds: ["luca"], recurringLanguageTargets: ["compare options", "state preference", "ask duration"], listeningChallenge: "Separate two departure times, two prices, and a weather caveat.", prerequisites: ["day-06"] },
   "day-10": { location: "Trattoria del Porto · Marina di Lume", characterIds: ["rosa"], recurringLanguageTargets: ["order", "identify mismatch", "accept or reject correction"], listeningChallenge: "Catch a rapid order read-back and notice the wrong side dish.", prerequisites: [] },
@@ -215,9 +213,9 @@ const PLANNED_CONTEXT: Partial<Record<EpisodeId, PlannedContext>> = {
   "day-30": { location: "Casa Limone · Marina di Lume", characterIds: ["raffaele"], recurringLanguageTargets: ["confirm obligations", "return key", "state departure plan"], listeningChallenge: "Check a spoken deposit-and-keys summary and one callback against authoritative history.", prerequisites: ["day-01"] },
 };
 
-type MiddleRuntime = Pick<SeasonEpisode, "sceneId" | "primaryMove" | "supportProminence" | "pocketCardId">;
+type EpisodeRuntimeMetadata = Pick<SeasonEpisode, "sceneId" | "primaryMove" | "supportProminence" | "pocketCardId">;
 
-const MIDDLE_IMPLEMENTED: Partial<Record<EpisodeId, MiddleRuntime>> = {
+const MIDDLE_EPISODE_METADATA: Partial<Record<EpisodeId, EpisodeRuntimeMetadata>> = {
   "day-08": { sceneId: "laundry", primaryMove: "Ask how, confirm a sequence, and solve a machine problem", supportProminence: "available", pocketCardId: "how-does-it-work" },
   "day-09": { sceneId: "marina", primaryMove: "Compare price and duration before choosing transport", supportProminence: "available", pocketCardId: "how-long-does-it-take" },
   "day-10": { sceneId: "trattoria", primaryMove: "Identify an order mismatch and request a correction", supportProminence: "available", pocketCardId: "wrong-order" },
@@ -232,7 +230,7 @@ const MIDDLE_IMPLEMENTED: Partial<Record<EpisodeId, MiddleRuntime>> = {
   "day-20": { sceneId: "repair-fix", primaryMove: "Contrast a temporary fix with a permanent commitment", supportProminence: "recovery", pocketCardId: "you-said-this-morning" },
 };
 
-const FINAL_IMPLEMENTED: Partial<Record<EpisodeId, MiddleRuntime>> = {
+const FINAL_EPISODE_METADATA: Partial<Record<EpisodeId, EpisodeRuntimeMetadata>> = {
   "day-22": { sceneId: "vendor-recommendation", primaryMove: "Ask for and accept one familiar-vendor recommendation", supportProminence: "recovery", pocketCardId: "what-do-you-recommend" },
   "day-23": { sceneId: "neighbor-parcel", primaryMove: "Retrieve a second parcel and set a clean social boundary", supportProminence: "recovery", pocketCardId: null },
   "day-24": { sceneId: "weather-beach", primaryMove: "Change a beach plan after factual wind and closure advice", supportProminence: "recovery", pocketCardId: "can-get-credit" },
@@ -244,85 +242,61 @@ const FINAL_IMPLEMENTED: Partial<Record<EpisodeId, MiddleRuntime>> = {
   "day-30": { sceneId: "checkout", primaryMove: "Return held keys, confirm obligations, and state departure", supportProminence: "recovery", pocketCardId: "leaving-tomorrow" },
 };
 
-function plannedTitle(day: number): string {
-  if (day >= 8 && day <= 30) return PLANNED_TITLES[day - 8];
-  return `Preparation session ${day}`;
+function episodeTitle(day: number): string {
+  const title = EPISODE_TITLES[day - 8];
+  if (!title) throw new Error(`Missing current season title for day ${day}.`);
+  return title;
 }
 
 export const SEASON_01: readonly SeasonEpisode[] = EPISODE_IDS.map((id, day) => {
-  const implemented = IMPLEMENTED[id];
-  if (implemented) {
+  const earlyMetadata = EARLY_EPISODE_METADATA[id];
+  if (earlyMetadata) {
     return {
       id,
       day,
-      status: "implemented",
       unlockDaysBeforeDeparture: day === 0 ? null : 31 - day,
-      ...implemented,
+      ...earlyMetadata,
     };
   }
-  const middle = MIDDLE_IMPLEMENTED[id];
+  const middle = MIDDLE_EPISODE_METADATA[id];
   if (middle) {
     return {
       id,
       day,
-      title: plannedTitle(day),
-      practicalObjective: plannedTitle(day),
-      status: "implemented",
+      title: episodeTitle(day),
+      practicalObjective: episodeTitle(day),
       unlockDaysBeforeDeparture: 31 - day,
-      ...(PLANNED_CONTEXT[id]!),
+      ...(EPISODE_CONTEXT[id]!),
       ...middle,
       contentVersion: "1.0.0",
       authoringStatus: "reviewed",
     };
   }
-  const final = FINAL_IMPLEMENTED[id];
+  const final = FINAL_EPISODE_METADATA[id];
   if (final) {
     return {
       id,
       day,
-      title: plannedTitle(day),
-      practicalObjective: plannedTitle(day),
-      status: "implemented",
+      title: episodeTitle(day),
+      practicalObjective: episodeTitle(day),
       unlockDaysBeforeDeparture: 31 - day,
-      ...(PLANNED_CONTEXT[id]!),
+      ...(EPISODE_CONTEXT[id]!),
       ...final,
       contentVersion: "1.0.0",
       authoringStatus: "reviewed",
     };
   }
-  return {
-    id,
-    day,
-    title: plannedTitle(day),
-    practicalObjective: plannedTitle(day),
-    primaryMove: day <= 10 ? "Transact and leave" : day <= 20 ? "Repair changed circumstances" : "Use optional familiarity",
-    status: "planned",
-    sceneId: null,
-    unlockDaysBeforeDeparture: 31 - day,
-    supportProminence: day <= 10 ? "available" : day <= 20 ? "recovery" : "recovery",
-    pocketCardId: null,
-    ...(PLANNED_CONTEXT[id] ?? {
-      location: "Marina di Lume",
-      characterIds: ["local-contact"],
-      recurringLanguageTargets: ["complete a practical interaction"],
-      listeningChallenge: "Understand the authored practical detail before choosing an action.",
-      prerequisites: [],
-    }),
-    contentVersion: "0.1.0",
-    authoringStatus: "mapped",
-  };
+  throw new Error(`Missing current implemented metadata for ${id}.`);
 });
 
 export const EPISODE_BY_ID = new Map(SEASON_01.map((episode) => [episode.id, episode]));
-export const IMPLEMENTED_EPISODES = SEASON_01.filter(
-  (episode): episode is SeasonEpisode & { status: "implemented"; sceneId: string } =>
-    episode.status === "implemented" && episode.sceneId !== null,
-);
 
 export function isEpisodeId(value: unknown): value is EpisodeId {
   return typeof value === "string" && (EPISODE_IDS as readonly string[]).includes(value);
 }
 
 export function seasonEpisode(id: EpisodeId): SeasonEpisode {
-  return EPISODE_BY_ID.get(id)!;
+  const episode = EPISODE_BY_ID.get(id);
+  if (!episode) throw new Error(`Unsupported season episode: ${id}`);
+  return episode;
 }
