@@ -142,13 +142,12 @@ test("early exit and partial attempts carry only observed moves", () => {
   assert.equal(createSeasonEpisodeHandoff(exit), null);
 
   let partial = seedEpisodeState(initialState(), "day-01");
-  partial = respond(partial, "Mi serve la chiave.", createId);
-  partial = respond(partial, "Grazie.", createId);
+  partial = respond(partial, "Sono Michael. Sono qui per la chiave.", createId);
+  partial = respond(partial, "Devo andare.", createId);
   partial = finishPendingOutcome(partial, createId);
   const handoff = createSeasonEpisodeHandoff(partial);
   assert.ok(handoff);
-  assert.deepEqual(handoff.practicedMoves, ["request"]);
-  assert.equal(handoff.practicedMoves.includes("identify"), false);
+  assert.deepEqual(handoff.practicedMoves, ["identify", "request", "boundary"]);
   assert.equal(handoff.practicedMoves.includes("location"), false);
 });
 
@@ -159,8 +158,8 @@ test("latest attempt is selected explicitly and explicit facts do not leak from 
   first = respond(first, "Porta verde, primo piano.", createId);
   first = finishPendingOutcome(first, createId);
   let second = restartEpisodeState(first);
-  second = respond(second, "Mi serve la chiave.", createId);
-  second = respond(second, "Grazie.", createId);
+  second = respond(second, "Sono Michael. Sono qui per la chiave.", createId);
+  second = respond(second, "Devo andare.", createId);
   second = finishPendingOutcome(second, createId);
   second = {
     ...second,
@@ -172,7 +171,8 @@ test("latest attempt is selected explicitly and explicit facts do not leak from 
   const latest = createSeasonEpisodeHandoff(second);
   assert.ok(latest);
   assert.equal(latest.attempt, 2);
-  assert.deepEqual(latest.practicedMoves, ["request"]);
+  assert.deepEqual(latest.practicedMoves, ["identify", "request", "boundary"]);
+  assert.equal(latest.practicedMoves.includes("location"), false);
 
   let beach = seedEpisodeState(initialState(), "day-04");
   beach = respond(beach, "Mi servono un lettino e un ombrellone.", createId);

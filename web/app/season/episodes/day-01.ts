@@ -19,7 +19,7 @@ export const day01Episode: EpisodeDefinition = {
     title: metadata.title, location: metadata.location, time: "16:10", npc: "Raffaele",
     role: "Apartment manager", objective: "Find the correct entrance and floor.",
     firstTurn: "d01_01_arrival", kicker: "Raffaele is busy and expects a compact key handoff.",
-    suggestions: ["Sì, sono Michael.", "La porta verde, primo piano.", "Grazie, a dopo."],
+    suggestions: ["Sì, sono Michael. Sono qui per la chiave.", "La porta verde, primo piano.", "Grazie, a dopo."],
   },
   turns: {
     d01_01_arrival: authoredTurn("d01_01_arrival", "Raffaele", "Buonasera. Lei è Michael? È qui per la chiave?", "Confirm briefly so you can get the entrance directions."),
@@ -29,19 +29,31 @@ export const day01Episode: EpisodeDefinition = {
   outcomes: {
     "D01-O1": { id: "D01-O1", title: "Casa Limone is open", detail: "You identified yourself, received the apartment key, and confirmed the green door and first floor.", consequence: "Apartment key · green door · first floor", tone: "success" },
     "D01-O2": { id: "D01-O2", title: "Handoff deferred", detail: "You left before confirming access. Raffaele still has the key.", consequence: "No key · return later", tone: "open" },
+    "D01-O3": { id: "D01-O3", title: "Key received; directions unconfirmed", detail: "You received the apartment key and ended before confirming the green door and first floor.", consequence: "Apartment key held · entrance directions still unconfirmed", tone: "open" },
   },
   terminalOutcomeTurns: { "D01-O1": ["d01_03_close"] },
   evaluateResponse({ state, normalized, createId, runtime }) {
     const exit = any(normalized, EXIT);
     if (state.turnId === "d01_01_arrival") {
       if (exit) return runtime.resolveOutcome(state, "D01-O2", {}, null, createId);
-      if (any(normalized, ["si", "yes", "michael", "fuscoletti", "chiave", "key", "casa limone", "sono qui"])) {
+      const identified = any(normalized, ["michael", "fuscoletti"]);
+      const requestedKey = any(normalized, ["per la chiave", "vorrei la chiave", "mi serve la chiave", "ritirare la chiave"]);
+      if (identified && requestedKey) {
         return runtime.moveToTurn(state, "d01_02_door", { apartmentKey: true, keyCustody: { ...state.keyCustody, apartment: "held" } }, "Raffaele matched your name and handed over the key.", createId);
       }
-      return runtime.moveToTurn(state, "d01_01_arrival", {}, "Raffaele only needs your name or the reason you are here.", createId);
+      return runtime.moveToTurn(state, "d01_01_arrival", {}, "Confirm your name and that you are here for the key in Italian.", createId);
     }
     if (state.turnId === "d01_02_door") {
-      if (any(normalized, ["verde", "green", "primo", "first", "chiaro", "capito", "grazie"]) || exit) {
+      if (exit) {
+        return runtime.resolveOutcome(state, "D01-O3", {
+          apartmentKey: true,
+          keyCustody: { ...state.keyCustody, apartment: "held" },
+        }, null, createId);
+      }
+      const doorConfirmed = any(normalized, ["porta verde"]);
+      const floorConfirmed = any(normalized, ["primo piano"]);
+      const understandingConfirmed = any(normalized, ["ho capito", "tutto chiaro", "e chiaro"]);
+      if ((doorConfirmed && floorConfirmed) || understandingConfirmed) {
         return runtime.queueTerminal(state, "d01_03_close", "D01-O1", {
           apartmentKey: true,
           keyCustody: { ...state.keyCustody, apartment: "held" },
@@ -49,7 +61,7 @@ export const day01Episode: EpisodeDefinition = {
           relationships: { ...state.relationships, Raffaele: "efficient" },
         }, createId);
       }
-      return runtime.moveToTurn(state, "d01_02_door", {}, "Confirm the green door or ask Raffaele to repeat.", createId);
+      return runtime.moveToTurn(state, "d01_02_door", {}, "Confirm both the green door and the first floor in Italian, or ask Raffaele to repeat.", createId);
     }
     return state;
   },
@@ -65,6 +77,7 @@ export const day01Episode: EpisodeDefinition = {
       const confirmed = any(normalized, ["verde", "green", "primo", "first", "chiaro", "capito"]);
       return observation(confirmed ? ["location", "confirm"] : any(normalized, EXIT) ? ["boundary"] : []);
     }
+    if (before.turnId === "d01_02_door" && after.outcome?.id === "D01-O3") return observation(["boundary"]);
     return noObservation();
   },
   adminSeed: () => ({ hotelKey: true, completed: ["day-00"] }),

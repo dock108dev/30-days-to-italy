@@ -43,8 +43,8 @@ test("normal key handoffs keep key booleans and authoritative custody aligned", 
   const createId = ids();
   let hotel = seedEpisodeState(initialState(), "day-00");
   hotel = submit(hotel, "Fuscoletti. Ho una prenotazione.", createId);
-  hotel = submit(hotel, "Può ripetere?", createId);
-  hotel = submit(hotel, "Grazie.", createId);
+  hotel = submit(hotel, "A che ora è la colazione?", createId);
+  hotel = submit(hotel, "Finisce alle dieci, ho capito.", createId);
   assert.equal(hotel.outcome?.id, "E1-O1");
   assert.equal(hotel.hotelKey, true);
   assert.equal(hotel.keyCustody.hotel, "held");

@@ -110,6 +110,47 @@ function meaningful(before: GameState, after: GameState): boolean {
     before.guidance !== after.guidance;
 }
 
+function authoritativeSnapshot(state: GameState) {
+  return {
+    episodeId: state.episodeId,
+    turnId: state.turnId,
+    status: state.status,
+    pendingOutcome: state.pendingOutcome,
+    outcome: state.outcome,
+    money: state.money,
+    hotelKey: state.hotelKey,
+    apartmentKey: state.apartmentKey,
+    keyCustody: state.keyCustody,
+    completed: state.completed,
+    episodeResults: state.episodeResults,
+    relationships: state.relationships,
+    knownFacts: state.knownFacts,
+    verifiedFacts: state.verifiedFacts,
+    observedMoves: state.observedMoves,
+    support: state.support,
+    episodeRefreshers: state.episodeRefreshers,
+    phrasePractice: state.phrasePractice,
+    pocketDeckEvidence: createSeasonEpisodeHandoff(state),
+  };
+}
+
+function assertPendingFallback(
+  before: GameState,
+  response: string,
+  createId: HistoryIdFactory,
+): GameState {
+  const result = submitEpisodeResponse(before, response, createId);
+  const after = result.state;
+  assert.equal(after.turnId, before.turnId, `${response}: pending turn must not change`);
+  assert.equal(after.status, "active", `${response}: fallback must remain active`);
+  assert.deepEqual(
+    authoritativeSnapshot(after),
+    authoritativeSnapshot(before),
+    `${response}: fallback must not change authoritative state or Pocket Deck evidence`,
+  );
+  return after;
+}
+
 function runPath(episodeId: EpisodeId, path: ContractPath, paraphrase = false): GameState {
   const createId = ids(`${episodeId}-${path.name.replace(/\s+/g, "-")}`);
   let state = seedEpisodeState(initialState(), episodeId);
@@ -203,4 +244,129 @@ test("same-turn retry guidance replaces itself instead of posing as a world cons
   assert.equal(state.guidance, firstGuidance);
   assert.equal(state.history.filter((item) => item.kind === "system").length, beforeSystems);
   assert.equal(state.attempts, 2);
+});
+
+test("Day 0 rejects English objective-word extraction and isolated thanks without authoritative effects", () => {
+  const createId = ids("day0-negative");
+  const start = seedEpisodeState(initialState(), "day-00");
+  for (const response of [
+    "booking reservation room twelve",
+    "Fuscoletti booking room",
+    "I have a booking for room twelve",
+  ]) {
+    assertPendingFallback(start, response, createId);
+  }
+
+  let keyIssued = submitEpisodeResponse(
+    start,
+    "Fuscoletti. Ho una prenotazione.",
+    createId,
+  ).state;
+  assert.equal(keyIssued.turnId, "e01_03_key");
+  assert.equal(keyIssued.hotelKey, true);
+  assert.deepEqual(keyIssued.keyCustody, { hotel: "held", apartment: "not-held" });
+  const beforeThanks = authoritativeSnapshot(keyIssued);
+  keyIssued = assertPendingFallback(keyIssued, "grazie", createId);
+  keyIssued = assertPendingFallback(keyIssued, "grazie", createId);
+  assert.deepEqual(authoritativeSnapshot(keyIssued), beforeThanks);
+});
+
+test("Day 1 rejects English identity, key, and location keyword guesses without authoritative effects", () => {
+  const createId = ids("day1-negative");
+  const start = seedEpisodeState(initialState(), "day-01");
+  for (const response of ["Michael key", "identity key", "yes Michael key"]) {
+    assertPendingFallback(start, response, createId);
+  }
+
+  const keyIssued = submitEpisodeResponse(
+    start,
+    "Sì, sono Michael. Sono qui per la chiave.",
+    createId,
+  ).state;
+  assert.equal(keyIssued.turnId, "d01_02_door");
+  assert.equal(keyIssued.apartmentKey, true);
+  assert.equal(keyIssued.keyCustody.apartment, "held");
+  for (const response of ["green", "first", "grazie"]) {
+    assertPendingFallback(keyIssued, response, createId);
+  }
+});
+
+test("Day 0 and Day 1 preserve valid Italian and an Italian-framed mixed noun", () => {
+  const createId = ids("early-valid");
+
+  const mixed = submitEpisodeResponse(
+    seedEpisodeState(initialState(), "day-00"),
+    "Ho una reservation a nome Fuscoletti",
+    createId,
+  );
+  assert.equal(mixed.kind, "advanced");
+  assert.equal(mixed.state.turnId, "e01_03_key");
+  assert.equal(mixed.state.hotelKey, true);
+
+  const day0 = submitEpisodeResponse(
+    seedEpisodeState(initialState(), "day-00"),
+    "Fuscoletti. Ho una prenotazione.",
+    createId,
+  );
+  assert.equal(day0.state.turnId, "e01_03_key");
+
+  let day1 = submitEpisodeResponse(
+    seedEpisodeState(initialState(), "day-01"),
+    "Sì, sono Michael. Sono qui per la chiave.",
+    createId,
+  ).state;
+  day1 = submitEpisodeResponse(day1, "La porta verde, al primo piano.", createId).state;
+  assert.equal(day1.outcome?.id, "D01-O1");
+  assert.deepEqual(day1.observedMoves, ["identify", "request", "location", "confirm"]);
+});
+
+test("Day 0 and Day 1 exits are immediate and consequence-truthful before and after key issue", () => {
+  const createId = ids("early-exit");
+
+  for (const response of ["Buonanotte", "Devo andare"]) {
+    const day0 = submitEpisodeResponse(seedEpisodeState(initialState(), "day-00"), response, createId).state;
+    assert.equal(day0.outcome?.id, "E1-O4");
+    assert.equal(day0.hotelKey, false);
+    assert.equal(day0.keyCustody.hotel, "not-held");
+  }
+
+  let day0WithKey = submitEpisodeResponse(
+    seedEpisodeState(initialState(), "day-00"),
+    "Fuscoletti. Ho una prenotazione.",
+    createId,
+  ).state;
+  day0WithKey = submitEpisodeResponse(day0WithKey, "Buonanotte", createId).state;
+  assert.equal(day0WithKey.outcome?.id, "E1-O3");
+  assert.equal(day0WithKey.keyCustody.hotel, "held");
+  assert.deepEqual(day0WithKey.observedMoves, ["identify", "boundary"]);
+
+  const day1BeforeKey = submitEpisodeResponse(
+    seedEpisodeState(initialState(), "day-01"),
+    "Devo andare",
+    createId,
+  ).state;
+  assert.equal(day1BeforeKey.outcome?.id, "D01-O2");
+  assert.equal(day1BeforeKey.apartmentKey, false);
+  assert.equal(day1BeforeKey.keyCustody.apartment, "not-held");
+
+  let day1WithKey = submitEpisodeResponse(
+    seedEpisodeState(initialState(), "day-01"),
+    "Sì, sono Michael. Sono qui per la chiave.",
+    createId,
+  ).state;
+  day1WithKey = submitEpisodeResponse(day1WithKey, "Devo andare", createId).state;
+  assert.equal(day1WithKey.outcome?.id, "D01-O3");
+  assert.equal(day1WithKey.apartmentKey, true);
+  assert.equal(day1WithKey.keyCustody.apartment, "held");
+  assert.equal(day1WithKey.knownFacts.includes("Casa Limone: green door, first floor"), false);
+  assert.deepEqual(day1WithKey.observedMoves, ["identify", "request", "boundary"]);
+
+  const restored = hydrateGameState(JSON.parse(JSON.stringify(day1WithKey)));
+  assert.deepEqual(restored, day1WithKey);
+  assert.deepEqual(
+    submitEpisodeResponse(restored, "Devo andare", createId).state,
+    restored,
+    "post-terminal exit must be inert after reload",
+  );
+  assert.equal(restored.episodeResults["day-01"]?.length, 1);
 });

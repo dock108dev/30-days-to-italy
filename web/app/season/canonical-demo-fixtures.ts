@@ -7,8 +7,8 @@ export type CanonicalDemoPath = {
 
 export const CANONICAL_DEMO_PATHS: Readonly<Record<EpisodeId, CanonicalDemoPath>> = {
   "day-00": {
-    responses: ["Fuscoletti. Ho una prenotazione.", "Può ripetere?", "Grazie."],
-    expectedOutcomeId: "E1-O1",
+    responses: ["Fuscoletti. Ho una prenotazione.", "Camera dodici, primo piano. Grazie."],
+    expectedOutcomeId: "E1-O3",
   },
   "day-01": {
     responses: ["Sono Michael. Sono qui per la chiave.", "La porta verde, primo piano. Grazie."],
