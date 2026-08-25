@@ -221,6 +221,11 @@ summary::-webkit-details-marker { display: none; }
 .response-guidance { display: grid; grid-template-columns: 54px 1fr; gap: 10px; margin-top: 12px; padding: 11px 13px; border: 1px solid rgba(229,118,85,.26); border-radius: var(--radius-sm); background: rgba(255,247,233,.9); }
 .response-guidance span { color: var(--terracotta); font-size: 12px; font-weight: 760; }
 .response-guidance p { margin: 0; font-size: 13px; line-height: 1.45; }
+.teaching-feedback-result { margin-top: 12px; padding: 12px 14px; border: 1px solid rgba(23,107,120,.2); border-radius: var(--radius-sm); background: linear-gradient(135deg, #f0f9f7, #fffdf7); box-shadow: inset 4px 0 var(--ocean); }
+.teaching-feedback-result dl { display: grid; gap: 7px; margin: 0; }
+.teaching-feedback-result dl > div { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.teaching-feedback-result dt { color: var(--ocean-deep); font-size: 12px; font-weight: 800; }
+.teaching-feedback-result dd { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.4; }
 
 .teaching-card { margin-top: 18px; padding: 24px; border-radius: var(--radius-md); background: linear-gradient(135deg, #fff7e9, var(--coral-wash)); box-shadow: var(--shadow-low); }
 .teaching-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
@@ -327,6 +332,23 @@ summary::-webkit-details-marker { display: none; }
 .phrase-library-disclosure > summary { min-height: 40px; color: var(--ocean); font-size: 12px; }
 .phrase-library-disclosure > summary::after { content: "+"; margin-left: auto; font-size: 18px; font-weight: 400; }
 .phrase-library-disclosure[open] > summary::after { content: "−"; }
+.progressive-help-toggle { display: grid; width: 100%; min-height: 50px; padding: 0; border: 0; color: var(--ocean-deep); background: transparent; cursor: pointer; text-align: left; }
+.progressive-help-toggle span { font-size: 14px; font-weight: 750; }
+.progressive-help-toggle small { margin-top: 3px; color: var(--ink-soft); font-size: 12px; font-weight: 500; }
+.progressive-help-steps { display: grid; gap: 7px; margin-top: 7px; }
+.progressive-help-steps > div { padding: 9px 11px; border-radius: var(--radius-sm); background: var(--sky); }
+.progressive-help-steps > div span { color: var(--ocean); font-size: 11px; font-weight: 750; }
+.progressive-help-steps > div p { margin: 3px 0 0; color: var(--ink); font-size: 13px; line-height: 1.4; }
+.progressive-help-earlier { padding: 7px 9px; border-radius: var(--radius-sm); background: rgba(255,255,255,.6); }
+.progressive-help-earlier > summary { min-height: 32px; color: var(--ocean); cursor: pointer; font-size: 12px; font-weight: 700; }
+.progressive-help-earlier > div { margin-top: 6px; padding: 8px; border-radius: 8px; background: var(--sky); }
+.progressive-help-earlier > div span { color: var(--ocean); font-size: 11px; font-weight: 750; }
+.progressive-help-earlier > div p { margin: 3px 0 0; font-size: 12px; line-height: 1.35; }
+.help-contract, .help-complete { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.4; }
+.progressive-help-next, .progressive-help-close { min-height: 44px; border: 0; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; font-weight: 750; }
+.progressive-help-next { padding: 10px 12px; color: white; background: var(--ocean); }
+.progressive-help-close { color: var(--ocean-deep); background: rgba(255,255,255,.7); }
+.help-history span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: 13px; }
 .context-detail-grid { display: grid; gap: 8px; padding-top: 10px; }
 .context-detail-grid > div { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--sand); }
 .context-detail-grid span { color: var(--ink-soft); font-size: 12px; font-weight: 700; }
@@ -646,6 +668,8 @@ footer p { margin: 0; }
   .deck-category-grid { grid-template-columns: repeat(3, 1fr); }
   .deck-detail-grid { grid-template-columns: 1fr 1fr; }
   .guided-language-list { grid-template-columns: repeat(2, 1fr); }
+  .world-panel:has(.progressive-help-steps) { position: fixed; inset: 12px; z-index: 40; max-height: calc(100dvh - 24px); overflow: auto; background: rgba(255,255,255,.98); box-shadow: var(--shadow-medium); }
+  .progressive-help-steps { padding: 4px 0 0; }
 }
 
 @media (max-width: 680px) {

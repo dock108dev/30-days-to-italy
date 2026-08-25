@@ -116,6 +116,11 @@ export type Feedback = {
   variation: string;
   automatic: boolean;
 } | null;
+export type TeachingFeedback = {
+  understood: string;
+  natural: string;
+  tryNext?: string;
+} | null;
 export type Outcome = {
   id: string;
   title: string;
@@ -124,6 +129,19 @@ export type Outcome = {
   tone: Tone;
 };
 export type SupportRecord = { replay: number; careful: number; transcript: number };
+export type ProgressiveHelpLevel = 1 | 2 | 3 | 4 | 5 | 6;
+export type ProgressiveHelpContent = {
+  listenFor: readonly [string] | readonly [string, string];
+  meaning: string;
+  frame: string;
+  model: string;
+};
+export type ProgressiveHelpRecord = {
+  highestLevel: 0 | ProgressiveHelpLevel;
+  revealedLevels: ProgressiveHelpLevel[];
+  normalReplayCount: number;
+  carefulReplayCount: number;
+};
 export type EpisodeResult = {
   episodeId: EpisodeId;
   attempt: number;
@@ -133,6 +151,8 @@ export type EpisodeResult = {
   response: string;
   support: SupportRecord;
   refresher: EpisodeRefresherEvidence;
+  progressiveHelp: Record<string, ProgressiveHelpRecord>;
+  teachingFeedback: TeachingFeedback;
 };
 export type EpisodeRefresherEvidence = {
   opened: number;
@@ -192,12 +212,14 @@ export type GameState = {
   completed: EpisodeId[];
   outcome: Outcome | null;
   feedback: Feedback;
+  teachingFeedback: TeachingFeedback;
   guidance: string | null;
   history: HistoryItem[];
   support: Record<string, SupportRecord>;
   phrasePractice: Record<PhraseId, number>;
   episodeResults: Partial<Record<EpisodeId, EpisodeResult[]>>;
   episodeRefreshers: Partial<Record<EpisodeId, EpisodeRefresherEvidence>>;
+  progressiveHelp: Record<string, ProgressiveHelpRecord>;
   observedMoves: ObservedMove[];
   verifiedFacts: VerifiedEpisodeFacts;
   attempts: number;
@@ -211,6 +233,8 @@ export type Turn = {
   normal: string;
   careful: string;
   cue: string;
+  progressiveHelp?: ProgressiveHelpContent;
+  teachingFeedback?: Readonly<Record<string, Exclude<TeachingFeedback, null>>>;
   terminal?: boolean;
 };
 
@@ -743,12 +767,14 @@ export function initialState(): GameState {
     completed: [],
     outcome: null,
     feedback: null,
+    teachingFeedback: null,
     guidance: null,
     history: [],
     support: initialSupport(),
     phrasePractice: initialPhrasePractice(),
     episodeResults: {},
     episodeRefreshers: {},
+    progressiveHelp: {},
     observedMoves: [],
     verifiedFacts: {},
     attempts: 0,

@@ -14,9 +14,11 @@
     "test:admin-demo": "npm run build && node --import tsx scripts/admin-demo-acceptance.ts",
     "test:checkpoint-hardening": "npm run build && node --import tsx scripts/checkpoint-hardening.ts",
     "test:response-contracts": "node --import tsx --test tests/response-contracts.test.ts tests/day19-day21-truth.test.ts tests/final-season.test.ts",
+    "test:progressive-help": "npm run build && node --import tsx --test tests/progressive-help.test.ts && node --import tsx scripts/progressive-help-acceptance.ts",
+    "test:teaching-feedback": "npm run build && node --import tsx --test tests/teaching-feedback.test.ts && node --import tsx scripts/teaching-feedback-acceptance.ts",
     "test:security": "npm run build && node --test tests/rendered-html.test.mjs && node --import tsx --test tests/security-hardening.test.ts tests/offline-pwa.test.ts tests/interaction-coordinator.test.ts",
     "test:ssot": "node --import tsx --test tests/ssot-enforcement.test.ts tests/season-architecture.test.ts",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs && node --import tsx --test tests/game-engine.test.ts tests/middle-season.test.ts tests/day19-day21-truth.test.ts tests/final-season.test.ts tests/season-architecture.test.ts tests/trip-profile.test.ts tests/lifecycle.test.ts tests/guided-session.test.ts tests/pocket-deck.test.ts tests/offline-pwa.test.ts tests/admin-fast-track.test.ts tests/interaction-coordinator.test.ts tests/presentation-contract.test.ts tests/demo-session.test.ts tests/canonical-demo.test.ts tests/client-failures.test.ts tests/security-hardening.test.ts tests/ssot-enforcement.test.ts",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs && node --import tsx --test tests/game-engine.test.ts tests/middle-season.test.ts tests/day19-day21-truth.test.ts tests/final-season.test.ts tests/season-architecture.test.ts tests/trip-profile.test.ts tests/lifecycle.test.ts tests/guided-session.test.ts tests/pocket-deck.test.ts tests/offline-pwa.test.ts tests/admin-fast-track.test.ts tests/interaction-coordinator.test.ts tests/presentation-contract.test.ts tests/progressive-help.test.ts tests/teaching-feedback.test.ts tests/demo-session.test.ts tests/canonical-demo.test.ts tests/client-failures.test.ts tests/security-hardening.test.ts tests/ssot-enforcement.test.ts",
     "test:offline": "npm run build && node --import tsx scripts/offline-acceptance.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },

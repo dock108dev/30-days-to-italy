@@ -12,7 +12,7 @@ import {
   recordedIntentSummary,
 } from "../app/prototype/PrototypeViews";
 
-test("completion review describes only recorded Day 0 and Day 1 intent", () => {
+test("completion review describes the final accepted Day 0 and Day 1 response", () => {
   const dayZeroIdentity = submitEpisodeResponse(
     initialState(),
     "Fuscoletti. Ho una prenotazione.",
@@ -27,9 +27,7 @@ test("completion review describes only recorded Day 0 and Day 1 intent", () => {
   assert.equal(dayZero.kind, "advanced");
   if (dayZero.kind !== "advanced") return;
   assert.equal(dayZero.state.status, "resolved");
-  assert.match(recordedIntentSummary(dayZero.state), /identifying yourself/);
-  assert.match(recordedIntentSummary(dayZero.state), /confirming the location details/);
-  assert.match(recordedIntentSummary(dayZero.state), /confirming the practical plan/);
+  assert.equal(recordedIntentSummary(dayZero.state), "You confirmed room 12 and the first floor.");
 
   const dayOneStart = nextEpisodeState(dayZero.state);
   const dayOneIdentity = submitEpisodeResponse(
@@ -46,10 +44,7 @@ test("completion review describes only recorded Day 0 and Day 1 intent", () => {
   assert.equal(dayOne.kind, "advanced");
   if (dayOne.kind !== "advanced") return;
   assert.equal(dayOne.state.status, "resolved");
-  assert.match(recordedIntentSummary(dayOne.state), /identifying yourself/);
-  assert.match(recordedIntentSummary(dayOne.state), /requesting what you needed/);
-  assert.match(recordedIntentSummary(dayOne.state), /confirming the location details/);
-  assert.match(recordedIntentSummary(dayOne.state), /confirming the practical plan/);
+  assert.equal(recordedIntentSummary(dayOne.state), "You confirmed the green door and the first floor.");
 });
 
 test("Pocket Deck review state never claims persisted evidence before carry", () => {

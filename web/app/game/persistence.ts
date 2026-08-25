@@ -31,6 +31,9 @@ import {
   type TransportPlan,
   type RelationshipDisposition,
   type SupportRecord,
+  type ProgressiveHelpLevel,
+  type ProgressiveHelpRecord,
+  type TeachingFeedback,
 } from "./model";
 import { reportClientFailure } from "../observability/client-failures";
 
@@ -167,6 +170,17 @@ function normalizeFeedback(value: unknown): Feedback {
   };
 }
 
+function normalizeTeachingFeedback(value: unknown): TeachingFeedback {
+  if (value === null || !isRecord(value)) return null;
+  if (typeof value.understood !== "string" || typeof value.natural !== "string") return null;
+  if (value.tryNext !== undefined && typeof value.tryNext !== "string") return null;
+  const understood = value.understood.trim().slice(0, 180);
+  const natural = value.natural.trim().slice(0, 180);
+  const tryNext = typeof value.tryNext === "string" ? value.tryNext.trim().slice(0, 180) : "";
+  if (!understood || !natural) return null;
+  return { understood, natural, ...(tryNext ? { tryNext } : {}) };
+}
+
 function legacyIndexEpisode(value: Record<string, unknown>): EpisodeId | null {
   if (typeof value.sceneIndex !== "number" || !Number.isInteger(value.sceneIndex)) return null;
   const source = value.schemaVersion === 2 ? LEGACY_V2_SCENE_BY_INDEX : LEGACY_V1_SCENE_BY_INDEX;
@@ -283,11 +297,38 @@ function normalizeEpisodeResults(value: unknown): Partial<Record<EpisodeId, Epis
           transcript: safeCount(support.transcript),
         },
         refresher: normalizeRefresher(candidate.refresher),
+        progressiveHelp: normalizeProgressiveHelp(candidate.progressiveHelp, key),
+        teachingFeedback: key === "day-00" || key === "day-01"
+          ? normalizeTeachingFeedback(candidate.teachingFeedback)
+          : null,
       });
       attempts.add(attempt);
     }
     valid.sort((left, right) => right.attempt - left.attempt);
     if (valid.length) result[key] = valid.slice(0, 8);
+  }
+  return result;
+}
+
+function normalizeProgressiveHelp(
+  value: unknown,
+  episodeId: EpisodeId,
+): Record<string, ProgressiveHelpRecord> {
+  if (!isRecord(value) || (episodeId !== "day-00" && episodeId !== "day-01")) return {};
+  const definition = implementedEpisode(episodeId);
+  if (!definition) return {};
+  const result: Record<string, ProgressiveHelpRecord> = {};
+  for (const [turnId, candidate] of Object.entries(value)) {
+    if (!definition.turns[turnId]?.progressiveHelp || !isRecord(candidate)) continue;
+    const rawLevel = safeCount(candidate.highestLevel);
+    const highestLevel = Math.min(6, rawLevel) as 0 | ProgressiveHelpLevel;
+    const revealedLevels = Array.from({ length: highestLevel }, (_, index) => index + 1) as ProgressiveHelpLevel[];
+    result[turnId] = {
+      highestLevel,
+      revealedLevels,
+      normalReplayCount: highestLevel >= 1 ? Math.max(1, safeCount(candidate.normalReplayCount)) : 0,
+      carefulReplayCount: highestLevel >= 2 ? Math.max(1, safeCount(candidate.carefulReplayCount)) : 0,
+    };
   }
   return result;
 }
@@ -592,6 +633,9 @@ export function hydrateGameState(value: unknown): GameState {
     completed: normalizeCompleted(value.completed),
     outcome,
     feedback,
+    teachingFeedback: episodeId === "day-00" || episodeId === "day-01"
+      ? normalizeTeachingFeedback(value.teachingFeedback)
+      : null,
     guidance: status === "active" && typeof value.guidance === "string" && value.guidance.trim()
       ? value.guidance.trim().slice(0, 500)
       : null,
@@ -600,6 +644,7 @@ export function hydrateGameState(value: unknown): GameState {
     phrasePractice: normalizePhrasePractice(value.phrasePractice),
     episodeResults: normalizeEpisodeResults(value.episodeResults),
     episodeRefreshers: normalizeEpisodeRefreshers(value.episodeRefreshers),
+    progressiveHelp: normalizeProgressiveHelp(value.progressiveHelp, episodeId),
     observedMoves: normalizeObservedMoves(value.observedMoves),
     verifiedFacts: normalizeVerifiedFacts(value.verifiedFacts),
     attempts: safeCount(value.attempts),

@@ -81,6 +81,7 @@ async function stopServer(child: ChildProcess | null): Promise<void> {
 
 async function installMediaControl(context: BrowserContext): Promise<void> {
   await context.addInitScript(() => {
+    Reflect.deleteProperty(Navigator.prototype, "serviceWorker");
     Object.defineProperty(HTMLMediaElement.prototype, "play", {
       configurable: true,
       value(this: HTMLMediaElement) {
@@ -175,7 +176,12 @@ async function assertAwaitingLine(page: Page): Promise<void> {
   assert.equal(await page.locator(".day-rail").count(), 0, "active scene must not render the five-day rail");
   const compactProgressCount = await page.locator(".compact-session-progress, .guided-progress").count();
   assert.equal(compactProgressCount, 1, "active scene must render compact progress");
-  assert.equal(await page.locator(".phrase-toolkit").getAttribute("open"), null, "phrase help must be collapsed by default");
+  const phraseToolkit = page.locator(".phrase-toolkit");
+  if (await phraseToolkit.count()) {
+    assert.equal(await phraseToolkit.getAttribute("open"), null, "phrase help must be collapsed by default");
+  } else {
+    assert.equal(await page.locator(".progressive-help-steps").count(), 0, "progressive help must begin closed");
+  }
   assert.equal(await page.locator(".context-details").getAttribute("open"), null, "trip detail must be collapsed by default");
 }
 
@@ -332,27 +338,24 @@ async function ordinaryDayZeroAndOne(page: Page, label: string): Promise<void> {
   const composer = page.getByRole("textbox", { name: "Your response" });
   await composer.fill("Fuscoletti. Ho una prenotazione.");
   const beforeHelp = await storedValue<GameState>(page, STORAGE_KEY);
-  const phraseToolkit = page.locator(".phrase-toolkit");
-  await phraseToolkit.locator(":scope > summary").click();
-  assert.equal(await page.locator(".phrase-grid-relevant button:visible").count() <= 3, true);
-  assert.equal(await page.locator(".phrase-grid-full button:visible").count(), 0, "full phrase library must stay behind a second disclosure");
-  const phraseTrigger = page.locator(".phrase-grid-relevant button").first();
+  const phraseTrigger = page.getByRole("button", { name: "Open progressive help" });
   await phraseTrigger.click();
-  await page.getByRole("region", { name: "Italian quick refresher" }).waitFor();
+  await page.locator(".progressive-help-steps").waitFor();
+  assert.equal(await page.locator("[data-help-level]").count(), 0, "opening help must reveal no answer content");
   assert.equal(await composer.isEnabled(), true, "opening phrase help must not disable the composer");
   assert.equal(await page.locator(".send-button").isEnabled(), true, "opening phrase help must not disable Respond");
   assert.equal(await page.locator('[data-primary-action="true"]:visible').count(), 1);
   const afterHelp = await storedValue<GameState>(page, STORAGE_KEY);
   assert.deepEqual(authoritativeSnapshot(afterHelp), authoritativeSnapshot(beforeHelp), "phrase help must preserve the pending turn and authoritative state");
-  await captureEvidence(page, viewport, "contextual-phrase-help");
+  await captureEvidence(page, viewport, "progressive-help-shell");
 
-  assert.equal(await page.getByRole("button", { name: "Close refresher" }).evaluate((button) => document.activeElement === button), true);
+  assert.equal(await page.locator(".progressive-help-next").evaluate((button) => document.activeElement === button), true);
   await page.keyboard.press("Escape");
-  await page.getByRole("region", { name: "Italian quick refresher" }).waitFor({ state: "detached" });
+  await page.locator(".progressive-help-steps").waitFor({ state: "detached" });
   assert.equal(await phraseTrigger.evaluate((button) => document.activeElement === button), true, "Escape must return focus to phrase trigger");
   await phraseTrigger.click();
-  await page.getByRole("button", { name: "Close refresher" }).click();
-  await page.getByRole("region", { name: "Italian quick refresher" }).waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "Close help" }).click();
+  await page.locator(".progressive-help-steps").waitFor({ state: "detached" });
   assert.equal(await phraseTrigger.evaluate((button) => document.activeElement === button), true, "touch close must return focus to phrase trigger");
 
   await submitReadyResponse(page, "Fuscoletti. Ho una prenotazione.");
@@ -372,7 +375,8 @@ async function ordinaryDayZeroAndOne(page: Page, label: string): Promise<void> {
   assert.equal(game.pendingOutcome, null);
   await assertReviewContract(page, "Continue to Day 1", [
     /Room 12/i,
-    /Ho una prenotazione/i,
+    /Ho capito: camera dodici, al primo piano/i,
+    /You confirmed room 12 and the first floor/i,
     /Evidence is available/i,
   ]);
   await captureEvidence(page, viewport, "day-00-completion-review");
@@ -403,7 +407,8 @@ async function ordinaryDayZeroAndOne(page: Page, label: string): Promise<void> {
   await page.locator(".compact-session-progress").filter({ hasText: "2 of 31" }).waitFor();
   await assertReviewContract(page, "Return to season overview", [
     /Apartment key · green door · first floor/i,
-    /Sono qui per la chiave/i,
+    /Ho capito: la porta verde, poi il primo piano/i,
+    /You confirmed the green door and the first floor/i,
     /Evidence is available/i,
   ]);
   await captureEvidence(page, viewport, "day-01-completion-review");
@@ -464,10 +469,10 @@ async function keyboardOnlyDayZero(page: Page): Promise<void> {
   assert.equal(await composer.evaluate((field) => document.activeElement === field), true, "playback must move focus to response");
 
   await page.keyboard.press("Shift+Tab");
-  const help = page.getByRole("button", { name: /Teach me a phrase/ });
+  const help = page.getByRole("button", { name: /Open progressive help/ });
   assert.equal(await help.evaluate((button) => document.activeElement === button), true, "keyboard path must reach phrase help");
   await page.keyboard.press("Enter");
-  await page.getByRole("button", { name: "Close refresher" }).waitFor();
+  await page.locator(".progressive-help-next").waitFor();
   await page.keyboard.press("Escape");
   assert.equal(await help.evaluate((button) => document.activeElement === button), true);
   await page.keyboard.press("Tab");
@@ -578,6 +583,10 @@ try {
   });
   await installMediaControl(context);
   const page = context.pages()[0] ?? await context.newPage();
+  const manifestIcon = await page.goto(`${baseUrl}/icons/icon-192.png`, { waitUntil: "load" });
+  assert.equal(manifestIcon?.ok(), true, "manifest icon must load before browser acceptance");
+  assert.match(manifestIcon?.headers()["content-type"] ?? "", /^image\/png/);
+  await page.goto("about:blank");
   const consoleFailures: string[] = [];
   const responseFailures: string[] = [];
   page.on("console", (message) => {
@@ -681,8 +690,14 @@ try {
   const expectedAudioWarnings = consoleFailures.filter((entry) =>
     entry.includes("AUDIO_PLAYBACK_FAILED") && entry.includes("play-rehearsal-line")
   );
-  const unexpectedConsoleFailures = consoleFailures.filter((entry) => !expectedAudioWarnings.includes(entry));
+  const validatedManifestWarnings = consoleFailures.filter((entry) =>
+    /icon-192\.png \(Download error or resource isn't a valid image\)/.test(entry)
+  );
+  const unexpectedConsoleFailures = consoleFailures.filter((entry) =>
+    !expectedAudioWarnings.includes(entry) && !validatedManifestWarnings.includes(entry)
+  );
   assert.equal(expectedAudioWarnings.length, 2, "Both injected audio failures must emit structured warnings.");
+  assert.equal(validatedManifestWarnings.length <= 1, true, "Chromium may emit the independently loaded and validated manifest-icon warning at most once.");
   assert.deepEqual(unexpectedConsoleFailures, [], `Unexpected browser console failures:\n${unexpectedConsoleFailures.join("\n")}`);
   assert.deepEqual(responseFailures, [], `Failed browser responses:\n${responseFailures.join("\n")}`);
 

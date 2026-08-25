@@ -31,10 +31,12 @@ import {
   phraseExampleFor,
   type GameState,
   type PhraseId,
+  type ProgressiveHelpLevel,
   type SupportRecord,
   type TeachingMoment,
 } from "../game/model";
 import {
+  advanceProgressiveHelp,
   nextEpisodeState,
   possessionsFor,
   recordPhrasePractice as recordPhrasePracticeState,
@@ -97,6 +99,7 @@ import {
   SceneIntroduction,
   SeasonOverview,
   TeachingCard,
+  TeachingFeedbackResult,
   WorldPanel,
 } from "./PrototypeViews";
 import { useApplicationSession } from "./useApplicationSession";
@@ -136,6 +139,9 @@ export default function Home() {
     interactionPhase,
     isPlaying,
     pendingRebuiltEpisodeRef,
+    progressiveHelpNextRef,
+    progressiveHelpOpen,
+    progressiveHelpTriggerRef,
     responseRef,
     seasonOverviewCloseRef,
     seasonOverviewOpen,
@@ -146,6 +152,7 @@ export default function Home() {
     setInteraction,
     setIsPlaying,
     setSeasonOverviewOpen,
+    setProgressiveHelpOpen,
     setShowNatural,
     setTeachingMoment,
     setTranscriptVisible,
@@ -190,9 +197,9 @@ export default function Home() {
     }
   }
 
-  async function playAudio(speed: "normal" | "careful" = "normal") {
+  async function playAudio(speed: "normal" | "careful" = "normal"): Promise<boolean> {
     const audio = audioRef.current;
-    if (game.status !== "active") return;
+    if (game.status !== "active") return false;
     const wasReady = interactionPhase === "ready_to_respond";
     if (!audio) {
       setTranscriptVisible(true);
@@ -201,20 +208,21 @@ export default function Home() {
         phase: "ready_to_respond",
         audioFailed: true,
       });
-      return;
+      return false;
     }
     audio.src = speed === "careful" ? turn.careful : turn.normal;
     audio.currentTime = 0;
+    const optionalSupport = speed === "careful" || wasReady;
+    if (optionalSupport) recordSupport(speed === "careful" ? "careful" : "replay");
     try {
       setIsPlaying(true);
       await audio.play();
-      if (speed === "careful") recordSupport("careful");
-      else if (wasReady) recordSupport("replay");
       setInteraction({
         turnKey: currentTurnKey,
         phase: "ready_to_respond",
         audioFailed: false,
       });
+      return true;
     } catch (error) {
       reportClientFailure({
         code: "AUDIO_PLAYBACK_FAILED",
@@ -230,6 +238,7 @@ export default function Home() {
         phase: "ready_to_respond",
         audioFailed: true,
       });
+      return true;
     }
   }
 
@@ -256,6 +265,16 @@ export default function Home() {
       : game;
     const result = submitEpisodeResponse(responseState, raw);
     if (result.kind === "teaching") {
+      if (turn.progressiveHelp) {
+        setGame(result.state);
+        setInput("");
+        if (!progressiveHelpOpen) toggleProgressiveHelp();
+        setInteraction((current) => ({ ...current, phase: "ready_to_respond" }));
+        queueMicrotask(() => {
+          submissionInFlightRef.current = false;
+        });
+        return;
+      }
       teachingTriggerRef.current = responseRef.current;
       setTeachingMoment({ phraseId: result.phraseId, original: raw, source: "english" });
       if (game.episodeId !== "day-04") setGame((current) => recordEpisodeRefresher(current, "opened"));
@@ -703,6 +722,30 @@ export default function Home() {
     queueMicrotask(() => teachingTriggerRef.current?.focus());
   }
 
+  function toggleProgressiveHelp() {
+    if (!progressiveHelpOpen) {
+      progressiveHelpTriggerRef.current = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : responseRef.current;
+      setProgressiveHelpOpen(true);
+      if (!game.progressiveHelp[game.turnId]) {
+        setGame((current) => recordEpisodeRefresher(current, "opened"));
+      }
+      return;
+    }
+    setProgressiveHelpOpen(false);
+    queueMicrotask(() => progressiveHelpTriggerRef.current?.focus());
+  }
+
+  async function useProgressiveHelp(level: ProgressiveHelpLevel) {
+    if (level === 1 || level === 2) {
+      const attempted = await playAudio(level === 1 ? "normal" : "careful");
+      if (!attempted) return;
+    }
+    setGame((current) => advanceProgressiveHelp(current, level));
+    queueMicrotask(() => progressiveHelpNextRef.current?.focus({ preventScroll: true }));
+  }
+
   function openSeasonOverview() {
     seasonOverviewTriggerRef.current = document.activeElement instanceof HTMLElement
       ? document.activeElement
@@ -758,6 +801,8 @@ export default function Home() {
   const activeExample = teachingMoment
     ? phraseExampleFor(teachingMoment.phraseId, scene.id, game.episodeId)
     : null;
+  const progressiveHelp = turn.progressiveHelp;
+  const progressiveHelpRecord = game.progressiveHelp[game.turnId];
 
   if (!hydrated) {
     return (
@@ -888,7 +933,12 @@ export default function Home() {
                       transcriptVisible={transcriptVisible}
                       onPlay={playAudio}
                       onRevealTranscript={revealTranscript}
+                      progressiveHelp={Boolean(progressiveHelp)}
                     />
+
+                    {game.teachingFeedback && (
+                      <TeachingFeedbackResult feedback={game.teachingFeedback} />
+                    )}
 
                     {(interactionPhase === "ready_to_respond" || interactionPhase === "submitting") && (
                       <ResponseComposer
@@ -898,7 +948,8 @@ export default function Home() {
                         teachingOpen={Boolean(teachingMoment)}
                         onInput={setInput}
                         onSubmit={submitResponse}
-                        onTeach={() => openTeachingMoment(defaultHelpPhrase, "help")}
+                        onTeach={progressiveHelp ? toggleProgressiveHelp : () => openTeachingMoment(defaultHelpPhrase, "help")}
+                        progressiveHelp={Boolean(progressiveHelp)}
                       />
                     )}
 
@@ -948,6 +999,12 @@ export default function Home() {
                     activePhraseId={teachingMoment?.phraseId ?? null}
                     relevantPhraseIds={relevantPhraseIds}
                     onOpenPhrase={(phraseId) => openTeachingMoment(phraseId)}
+                    progressiveHelp={progressiveHelp}
+                    progressiveHelpRecord={progressiveHelpRecord}
+                    progressiveHelpOpen={progressiveHelpOpen}
+                    progressiveHelpNextRef={progressiveHelpNextRef}
+                    onToggleProgressiveHelp={toggleProgressiveHelp}
+                    onAdvanceProgressiveHelp={useProgressiveHelp}
                   />
                 )}
               </div>

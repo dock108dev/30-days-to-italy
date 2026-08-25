@@ -9,6 +9,8 @@ import type {
   Scene,
   SupportRecord,
   Turn,
+  ProgressiveHelpContent,
+  TeachingFeedback,
 } from "../game/model";
 import type { EpisodeId, SeasonEpisode } from "./manifest";
 import type { CanonicalDemoPath } from "./canonical-demo-fixtures";
@@ -153,6 +155,13 @@ export function buildObservedEpisodeResult({
     response: state.lastResponse.slice(0, 500),
     support,
     refresher,
+    progressiveHelp: Object.fromEntries(
+      Object.entries(state.progressiveHelp).map(([turnId, record]) => [turnId, {
+        ...record,
+        revealedLevels: [...record.revealedLevels],
+      }]),
+    ),
+    teachingFeedback: state.teachingFeedback ? { ...state.teachingFeedback } : null,
   };
 }
 
@@ -173,6 +182,8 @@ export function authoredTurn(
   text: string,
   cue: string,
   terminal = false,
+  progressiveHelp?: ProgressiveHelpContent,
+  teachingFeedback?: Readonly<Record<string, Exclude<TeachingFeedback, null>>>,
 ): Turn {
   return {
     id,
@@ -181,6 +192,8 @@ export function authoredTurn(
     normal: `/audio/normal/${id}.m4a`,
     careful: `/audio/careful/${id}.m4a`,
     cue,
+    ...(progressiveHelp ? { progressiveHelp } : {}),
+    ...(teachingFeedback ? { teachingFeedback } : {}),
     ...(terminal ? { terminal: true } : {}),
   };
 }

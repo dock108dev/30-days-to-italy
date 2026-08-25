@@ -157,6 +157,7 @@ async function stopServer(child: ChildProcess | null): Promise<void> {
 
 async function installMediaControl(context: BrowserContext): Promise<void> {
   await context.addInitScript(() => {
+    Reflect.deleteProperty(Navigator.prototype, "serviceWorker");
     Object.defineProperty(HTMLMediaElement.prototype, "play", {
       configurable: true,
       value(this: HTMLMediaElement) {
@@ -366,9 +367,12 @@ async function playLine(page: Page): Promise<void> {
 
 async function exerciseHelp(page: Page, episodeId: EpisodeId, capture: boolean): Promise<void> {
   const before = await storedValue<GameState>(page, STORAGE_KEY);
-  const trigger = page.getByRole("button", { name: /Teach me a phrase/ });
+  const progressive = episodeId === "day-00" || episodeId === "day-01";
+  const trigger = page.getByRole("button", { name: progressive ? /Open progressive help/ : /Teach me a phrase/ });
   await trigger.click();
-  const refresher = page.getByRole("region", { name: "Italian quick refresher" });
+  const refresher = progressive
+    ? page.locator(".progressive-help-steps")
+    : page.getByRole("region", { name: "Italian quick refresher" });
   await refresher.waitFor();
   assert.equal(await page.getByRole("textbox", { name: "Your response" }).isEnabled(), true);
   assert.equal(await page.locator('[data-primary-action="true"]:visible').count(), 1);
@@ -380,14 +384,14 @@ async function exerciseHelp(page: Page, episodeId: EpisodeId, capture: boolean):
   );
   if (capture) await captureBoth(page, `${episodeId}-contextual-help`);
   assert.equal(
-    await page.getByRole("button", { name: "Close refresher" }).evaluate((button) => document.activeElement === button),
+    await (progressive ? page.locator(".progressive-help-next") : page.getByRole("button", { name: "Close refresher" })).evaluate((button) => document.activeElement === button),
     true,
   );
   await page.keyboard.press("Escape");
   await refresher.waitFor({ state: "detached" });
   assert.equal(await trigger.evaluate((button) => document.activeElement === button), true);
   await trigger.click();
-  await page.getByRole("button", { name: "Close refresher" }).tap();
+  await page.getByRole("button", { name: progressive ? "Close help" : "Close refresher" }).tap();
   await refresher.waitFor({ state: "detached" });
   assert.equal(await trigger.evaluate((button) => document.activeElement === button), true);
   const afterClose = await storedValue<GameState>(page, STORAGE_KEY);
@@ -725,6 +729,10 @@ try {
   });
   await installMediaControl(context);
   const page = context.pages()[0] ?? await context.newPage();
+  const manifestIcon = await page.goto(`${baseUrl}/icons/icon-192.png`, { waitUntil: "load" });
+  assert.equal(manifestIcon?.ok(), true, "manifest icon must load before checkpoint acceptance");
+  assert.match(manifestIcon?.headers()["content-type"] ?? "", /^image\/png/);
+  await page.goto("about:blank");
   const consoleFailures: string[] = [];
   const responseFailures: string[] = [];
   page.on("console", (message) => {

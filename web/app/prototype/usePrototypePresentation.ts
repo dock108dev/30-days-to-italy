@@ -33,12 +33,15 @@ export function usePrototypePresentation(game: GameState) {
   const [tripEditorOpen, setTripEditorOpen] = useState(false);
   const [showNatural, setShowNatural] = useState(false);
   const [teachingMoment, setTeachingMoment] = useState<TeachingMoment | null>(null);
+  const [progressiveHelpOpen, setProgressiveHelpOpen] = useState(false);
   const [seasonOverviewOpen, setSeasonOverviewOpen] = useState(false);
   const [clientFailure, setClientFailure] = useState<ClientFailure | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const responseRef = useRef<HTMLTextAreaElement>(null);
   const teachingCloseRef = useRef<HTMLButtonElement>(null);
   const teachingTriggerRef = useRef<HTMLElement | null>(null);
+  const progressiveHelpTriggerRef = useRef<HTMLElement | null>(null);
+  const progressiveHelpNextRef = useRef<HTMLButtonElement>(null);
   const seasonOverviewCloseRef = useRef<HTMLButtonElement>(null);
   const seasonOverviewTriggerRef = useRef<HTMLElement | null>(null);
   const submissionInFlightRef = useRef(false);
@@ -68,6 +71,7 @@ export function usePrototypePresentation(game: GameState) {
       setIsPlaying(false);
       setShowNatural(false);
       setTeachingMoment(null);
+      setProgressiveHelpOpen(false);
       pendingRebuiltEpisodeRef.current = null;
     });
     return () => {
@@ -100,11 +104,15 @@ export function usePrototypePresentation(game: GameState) {
   }, [teachingMoment]);
 
   useEffect(() => {
+    if (progressiveHelpOpen) progressiveHelpNextRef.current?.focus({ preventScroll: true });
+  }, [progressiveHelpOpen]);
+
+  useEffect(() => {
     if (seasonOverviewOpen) seasonOverviewCloseRef.current?.focus();
   }, [seasonOverviewOpen]);
 
   useEffect(() => {
-    if (!teachingMoment && !seasonOverviewOpen) return;
+    if (!teachingMoment && !seasonOverviewOpen && !progressiveHelpOpen) return;
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -113,12 +121,17 @@ export function usePrototypePresentation(game: GameState) {
         queueMicrotask(() => seasonOverviewTriggerRef.current?.focus());
         return;
       }
+      if (progressiveHelpOpen) {
+        setProgressiveHelpOpen(false);
+        queueMicrotask(() => progressiveHelpTriggerRef.current?.focus());
+        return;
+      }
       setTeachingMoment(null);
       queueMicrotask(() => teachingTriggerRef.current?.focus());
     }
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [seasonOverviewOpen, teachingMoment]);
+  }, [progressiveHelpOpen, seasonOverviewOpen, teachingMoment]);
 
   return {
     adminOpen,
@@ -130,6 +143,9 @@ export function usePrototypePresentation(game: GameState) {
     interactionPhase,
     isPlaying,
     pendingRebuiltEpisodeRef,
+    progressiveHelpNextRef,
+    progressiveHelpOpen,
+    progressiveHelpTriggerRef,
     responseRef,
     seasonOverviewCloseRef,
     seasonOverviewOpen,
@@ -140,6 +156,7 @@ export function usePrototypePresentation(game: GameState) {
     setInteraction,
     setIsPlaying,
     setSeasonOverviewOpen,
+    setProgressiveHelpOpen,
     setShowNatural,
     setTeachingMoment,
     setTranscriptVisible,

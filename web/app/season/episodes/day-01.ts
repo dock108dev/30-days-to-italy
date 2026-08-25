@@ -11,6 +11,27 @@ import {
 
 const metadata = seasonEpisode("day-01");
 
+const day01Teaching = {
+  d01_01_arrival: {
+    success: { understood: "You identified yourself as Michael and asked for the key.", natural: "Sì, sono Michael. Sono qui per la chiave.", tryNext: "Listen for porta and piano in the directions." },
+    successSurname: { understood: "You identified the handoff with the surname Fuscoletti and asked for the key.", natural: "Sono Fuscoletti. Sono qui per la chiave.", tryNext: "Listen for porta and piano in the directions." },
+    identifyOnly: { understood: "You identified yourself as Michael; the key request is still missing.", natural: "Sì, sono Michael. Sono qui per ___.", tryNext: "Add why you are here." },
+    requestOnly: { understood: "You asked for the key; your name is still missing.", natural: "Sono ___. Sono qui per la chiave.", tryNext: "Add the name Raffaele asked for." },
+    failed: { understood: "Nothing actionable was recognized yet; both your name and the key request are still missing.", natural: "Sì, sono ___. Sono qui per ___.", tryNext: "Start with one move: your name or why you are here." },
+    fallback: { understood: "Nothing actionable was recognized yet; both your name and the key request are still missing.", natural: "Sì, sono ___. Sono qui per ___.", tryNext: "Use the help ladder for one Italian cue." },
+    exit: { understood: "You chose to end the interaction before identification or key handoff.", natural: "Devo andare, torno più tardi." },
+  },
+  d01_02_door: {
+    both: { understood: "You confirmed the green door and the first floor.", natural: "Ho capito: la porta verde, poi il primo piano." },
+    doorOnly: { understood: "You confirmed the green door; the first floor is still missing.", natural: "Ho capito: la porta ___, poi il ___ piano.", tryNext: "Repeat the floor without filling in the whole response." },
+    floorOnly: { understood: "You confirmed the first floor; the green door is still missing.", natural: "Ho capito: la porta ___, poi il ___ piano.", tryNext: "Repeat the door color without filling in the whole response." },
+    clear: { understood: "You said the directions were clear; you did not repeat the door or floor facts.", natural: "Ho capito, grazie." },
+    failed: { understood: "Nothing actionable was recognized yet; neither the door nor floor was confirmed.", natural: "Ho capito: la porta ___, poi il ___ piano.", tryNext: "Repeat one Italian fact you heard." },
+    fallback: { understood: "Nothing actionable was recognized yet; neither the door nor floor was confirmed.", natural: "Ho capito: la porta ___, poi il ___ piano.", tryNext: "Use the help ladder for one Italian cue." },
+    exit: { understood: "You ended the handoff with the key held; the entrance directions remain unconfirmed.", natural: "Grazie, devo andare." },
+  },
+} as const;
+
 export const day01Episode: EpisodeDefinition = {
   ...metadata,
   sceneId: "apartment",
@@ -22,8 +43,18 @@ export const day01Episode: EpisodeDefinition = {
     suggestions: ["Sì, sono Michael. Sono qui per la chiave.", "La porta verde, primo piano.", "Grazie, a dopo."],
   },
   turns: {
-    d01_01_arrival: authoredTurn("d01_01_arrival", "Raffaele", "Buonasera. Lei è Michael? È qui per la chiave?", "Confirm briefly so you can get the entrance directions."),
-    d01_02_door: authoredTurn("d01_02_door", "Raffaele", "Ecco la chiave. La porta verde, poi il primo piano. È chiaro?", "Confirm the green door and first floor."),
+    d01_01_arrival: authoredTurn("d01_01_arrival", "Raffaele", "Buonasera. Lei è Michael? È qui per la chiave?", "Confirm briefly so you can get the entrance directions.", false, {
+      listenFor: ["Lei è Michael", "per la chiave"],
+      meaning: "Raffaele asks whether you are Michael and whether you are here for the key.",
+      frame: "Sì, sono ___. Sono qui per ___.",
+      model: "Sì, sono Michael. Sono qui per la chiave.",
+    }, day01Teaching.d01_01_arrival),
+    d01_02_door: authoredTurn("d01_02_door", "Raffaele", "Ecco la chiave. La porta verde, poi il primo piano. È chiaro?", "Confirm the green door and first floor.", false, {
+      listenFor: ["porta verde", "primo piano"],
+      meaning: "Raffaele gives you the key and says to use the green door, then go to the first floor.",
+      frame: "Ho capito: la porta ___, poi il ___ piano.",
+      model: "Ho capito: la porta verde, poi il primo piano.",
+    }, day01Teaching.d01_02_door),
     d01_03_close: authoredTurn("d01_03_close", "Raffaele", "Perfetto. Se serve qualcosa, mi scriva. A dopo.", "The key handoff is complete.", true),
   },
   outcomes: {
@@ -35,19 +66,24 @@ export const day01Episode: EpisodeDefinition = {
   evaluateResponse({ state, normalized, createId, runtime }) {
     const exit = any(normalized, EXIT);
     if (state.turnId === "d01_01_arrival") {
-      if (exit) return runtime.resolveOutcome(state, "D01-O2", {}, null, createId);
+      if (exit) return runtime.resolveOutcome(state, "D01-O2", { teachingFeedback: day01Teaching.d01_01_arrival.exit }, null, createId);
       const identified = any(normalized, ["michael", "fuscoletti"]);
+      const italianIdentity = identified && any(normalized, ["sono", "mi chiamo"]);
       const requestedKey = any(normalized, ["per la chiave", "vorrei la chiave", "mi serve la chiave", "ritirare la chiave"]);
       if (identified && requestedKey) {
-        return runtime.moveToTurn(state, "d01_02_door", { apartmentKey: true, keyCustody: { ...state.keyCustody, apartment: "held" } }, "Raffaele matched your name and handed over the key.", createId);
+        return runtime.moveToTurn(state, "d01_02_door", { apartmentKey: true, keyCustody: { ...state.keyCustody, apartment: "held" }, teachingFeedback: any(normalized, ["michael"]) ? day01Teaching.d01_01_arrival.success : day01Teaching.d01_01_arrival.successSurname }, "Raffaele matched your name and handed over the key.", createId);
       }
-      return runtime.moveToTurn(state, "d01_01_arrival", {}, "Confirm your name and that you are here for the key in Italian.", createId);
+      const teachingFeedback = italianIdentity ? day01Teaching.d01_01_arrival.identifyOnly
+        : requestedKey ? day01Teaching.d01_01_arrival.requestOnly
+          : day01Teaching.d01_01_arrival.failed;
+      return runtime.moveToTurn(state, "d01_01_arrival", { teachingFeedback }, "Confirm your name and that you are here for the key in Italian.", createId);
     }
     if (state.turnId === "d01_02_door") {
       if (exit) {
         return runtime.resolveOutcome(state, "D01-O3", {
           apartmentKey: true,
           keyCustody: { ...state.keyCustody, apartment: "held" },
+          teachingFeedback: day01Teaching.d01_02_door.exit,
         }, null, createId);
       }
       const doorConfirmed = any(normalized, ["porta verde"]);
@@ -59,9 +95,13 @@ export const day01Episode: EpisodeDefinition = {
           keyCustody: { ...state.keyCustody, apartment: "held" },
           knownFacts: [...new Set([...state.knownFacts, "Casa Limone: green door, first floor", "Raffaele completed the apartment-key handoff"])],
           relationships: { ...state.relationships, Raffaele: "efficient" },
+          teachingFeedback: doorConfirmed && floorConfirmed ? day01Teaching.d01_02_door.both : day01Teaching.d01_02_door.clear,
         }, createId);
       }
-      return runtime.moveToTurn(state, "d01_02_door", {}, "Confirm both the green door and the first floor in Italian, or ask Raffaele to repeat.", createId);
+      const teachingFeedback = doorConfirmed ? day01Teaching.d01_02_door.doorOnly
+        : floorConfirmed ? day01Teaching.d01_02_door.floorOnly
+          : day01Teaching.d01_02_door.failed;
+      return runtime.moveToTurn(state, "d01_02_door", { teachingFeedback }, "Confirm both the green door and the first floor in Italian, or ask Raffaele to repeat.", createId);
     }
     return state;
   },

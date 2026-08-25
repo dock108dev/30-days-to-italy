@@ -9,6 +9,7 @@ import {
   type GameState,
   type HistoryItem,
   type PhraseId,
+  type ProgressiveHelpLevel,
   type SceneId,
   type SupportRecord,
 } from "./model";
@@ -271,11 +272,25 @@ function coordinateEpisodeResponse(
     return { kind: "advanced", state };
   }
   const teachingPhrase = detectTeachingPhrase(raw, definition.scene.id, state.turnId, definition.id);
-  if (teachingPhrase) return { kind: "teaching", phraseId: teachingPhrase, state };
+  if (teachingPhrase) {
+    const authored = definition.turns[state.turnId]?.teachingFeedback?.fallback;
+    if (!authored) return { kind: "teaching", phraseId: teachingPhrase, state };
+    return {
+      kind: "teaching",
+      phraseId: teachingPhrase,
+      state: {
+        ...state,
+        lastResponse: raw,
+        teachingFeedback: { ...authored },
+        history: appendHistory(state, "player", raw, createId),
+      },
+    };
+  }
 
   const withResponse: GameState = {
     ...state,
     lastResponse: raw,
+    teachingFeedback: null,
     history: appendHistory(state, "player", raw, createId),
   };
   const normalized = normalize(raw);
@@ -315,6 +330,34 @@ export function recordSupport(
     support: {
       ...state.support,
       [sceneId]: { ...current, [kind]: current[kind] + 1 },
+    },
+  };
+}
+
+export function advanceProgressiveHelp(
+  state: GameState,
+  level: ProgressiveHelpLevel,
+): GameState {
+  if (state.status !== "active") return state;
+  const turn = implementedEpisode(state.episodeId)?.turns[state.turnId];
+  if (!turn?.progressiveHelp) return state;
+  const current = state.progressiveHelp[state.turnId] ?? {
+    highestLevel: 0,
+    revealedLevels: [],
+    normalReplayCount: 0,
+    carefulReplayCount: 0,
+  };
+  if (level !== current.highestLevel + 1) return state;
+  return {
+    ...state,
+    progressiveHelp: {
+      ...state.progressiveHelp,
+      [state.turnId]: {
+        highestLevel: level,
+        revealedLevels: [...current.revealedLevels, level],
+        normalReplayCount: current.normalReplayCount + (level === 1 ? 1 : 0),
+        carefulReplayCount: current.carefulReplayCount + (level === 2 ? 1 : 0),
+      },
     },
   };
 }
@@ -367,8 +410,10 @@ function resetInteraction(state: GameState, episodeId: EpisodeId): GameState {
     guidance: null,
     outcome: null,
     feedback: null,
+    teachingFeedback: null,
     history: [],
     episodeRefreshers: retainedRefreshers,
+    progressiveHelp: {},
     observedMoves: [],
     verifiedFacts: {},
     attempts: 0,

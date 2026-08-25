@@ -32,8 +32,12 @@ import {
   type PhraseExample,
   type PhraseId,
   type PhraseLesson,
+  type ProgressiveHelpContent,
+  type ProgressiveHelpLevel,
+  type ProgressiveHelpRecord,
   type Scene,
   type TeachingMoment,
+  type TeachingFeedback,
   type Turn,
 } from "../game/model";
 
@@ -42,6 +46,22 @@ export type InteractionPhase =
   | "ready_to_respond"
   | "submitting"
   | "resolved";
+
+export function TeachingFeedbackResult({
+  feedback,
+}: {
+  feedback: Exclude<TeachingFeedback, null>;
+}) {
+  return (
+    <section className="teaching-feedback-result" aria-live="polite" aria-label="Teaching feedback">
+      <dl>
+        <div><dt>We understood</dt><dd>{feedback.understood}</dd></div>
+        <div><dt>More natural</dt><dd lang="it">{feedback.natural}</dd></div>
+        {feedback.tryNext && <div><dt>Try next</dt><dd>{feedback.tryNext}</dd></div>}
+      </dl>
+    </section>
+  );
+}
 
 export function PrototypeHeader({
   mode,
@@ -224,6 +244,7 @@ export function EncounterStage({
   transcriptVisible,
   onPlay,
   onRevealTranscript,
+  progressiveHelp = false,
 }: {
   turn: Turn;
   scene: Scene;
@@ -234,6 +255,7 @@ export function EncounterStage({
   transcriptVisible: boolean;
   onPlay: (speed: "normal" | "careful") => void;
   onRevealTranscript: () => void;
+  progressiveHelp?: boolean;
 }) {
   const lineStarted = interactionPhase !== "awaiting_line";
   const latestConsequence = [...game.history].reverse().find((item) => item.kind === "system");
@@ -272,9 +294,11 @@ export function EncounterStage({
         <div className={`support-row ${lineStarted ? "available" : ""}`}>
           {lineStarted && (
             <>
-              <button type="button" onClick={() => onPlay("careful")}>
-                <span aria-hidden="true">◌</span> Slower
-              </button>
+              {!progressiveHelp && (
+                <button type="button" onClick={() => onPlay("careful")}>
+                  <span aria-hidden="true">◌</span> Slower
+                </button>
+              )}
               <button type="button" onClick={onRevealTranscript}>
                 <span aria-hidden="true">Aa</span> Transcript
               </button>
@@ -397,6 +421,7 @@ export function ResponseComposer({
   onInput,
   onSubmit,
   onTeach,
+  progressiveHelp = false,
 }: {
   responseRef: RefObject<HTMLTextAreaElement | null>;
   input: string;
@@ -405,6 +430,7 @@ export function ResponseComposer({
   onInput: (value: string) => void;
   onSubmit: (event?: FormEvent) => void;
   onTeach: () => void;
+  progressiveHelp?: boolean;
 }) {
   const submitting = interactionPhase === "submitting";
   return (
@@ -417,7 +443,7 @@ export function ResponseComposer({
           disabled={submitting}
           aria-expanded={teachingOpen}
         >
-          <span aria-hidden="true">＋</span> Teach me a phrase
+          <span aria-hidden="true">＋</span> {progressiveHelp ? "Open progressive help" : "Teach me a phrase"}
         </button>
       </div>
       <div className="response-input-row">
@@ -477,8 +503,9 @@ function naturalList(items: readonly string[]): string {
 }
 
 export function recordedIntentSummary(game: GameState): string {
-  if (game.feedback?.understood) return game.feedback.understood;
   const result = episodeResultFor(game.episodeResults, game.episodeId);
+  if (result?.teachingFeedback?.understood) return result.teachingFeedback.understood;
+  if (game.feedback?.understood) return game.feedback.understood;
   const moves = [...new Set(result?.observedMoves ?? [])].map((move) => OBSERVED_MOVE_LABELS[move]);
   if (moves.length === 0) {
     return "No additional communicative move was recorded beyond the authoritative result below.";
@@ -535,8 +562,8 @@ export function OutcomeCard({
     scene.id,
     game.episodeId,
   );
-  const usefulPhrase = game.feedback?.natural ?? pocketCard?.primaryItalian ?? fallbackPhrase.italian;
-  const variation = game.feedback?.variation
+  const usefulPhrase = result?.teachingFeedback?.natural ?? game.feedback?.natural ?? pocketCard?.primaryItalian ?? fallbackPhrase.italian;
+  const variation = result?.teachingFeedback ? undefined : game.feedback?.variation
     ?? (pocketCard?.shortItalian !== usefulPhrase ? pocketCard?.shortItalian : undefined);
   const deckState = pocketDeckReviewState(handoff, Boolean(handoffApplied));
   const deckCardName = handoff
@@ -569,6 +596,10 @@ export function OutcomeCard({
           <strong lang="it">{usefulPhrase}</strong>
         </div>
       </section>
+
+      {result?.teachingFeedback && (
+        <TeachingFeedbackResult feedback={result.teachingFeedback} />
+      )}
 
       <section className="review-section pocket-deck-effect" data-review-section="pocket-deck-effect" data-pocket-deck-state={deckState}>
         <span className="review-number">3</span>
@@ -611,6 +642,16 @@ export function OutcomeCard({
             <span>{game.outcome?.consequence}</span>
           </div>
         </section>
+        {result && Object.keys(result.progressiveHelp).length > 0 && (
+          <section className="review-section help-history" data-review-section="help-history">
+            <div>
+              <p>Progressive help used</p>
+              {Object.entries(result.progressiveHelp).map(([turnId, help]) => (
+                <span key={turnId}>{turnId}: level {help.highestLevel} · normal {help.normalReplayCount} · careful {help.carefulReplayCount}</span>
+              ))}
+            </div>
+          </section>
+        )}
         {variation && (
           <details
             className="review-variation"
@@ -699,6 +740,12 @@ export function WorldPanel({
   activePhraseId,
   relevantPhraseIds,
   onOpenPhrase,
+  progressiveHelp,
+  progressiveHelpRecord,
+  progressiveHelpOpen,
+  progressiveHelpNextRef,
+  onToggleProgressiveHelp,
+  onAdvanceProgressiveHelp,
 }: {
   game: GameState;
   scene: Scene;
@@ -709,6 +756,12 @@ export function WorldPanel({
   activePhraseId: PhraseId | null;
   relevantPhraseIds: readonly PhraseId[];
   onOpenPhrase: (phraseId: PhraseId) => void;
+  progressiveHelp?: ProgressiveHelpContent;
+  progressiveHelpRecord?: ProgressiveHelpRecord;
+  progressiveHelpOpen?: boolean;
+  progressiveHelpNextRef?: RefObject<HTMLButtonElement | null>;
+  onToggleProgressiveHelp?: () => void;
+  onAdvanceProgressiveHelp?: (level: ProgressiveHelpLevel) => void;
 }) {
   const relevantLessons = relevantPhraseIds.map((phraseId) => PHRASE_LESSONS.find((lesson) => lesson.id === phraseId)!).filter(Boolean);
   const remainingLessons = PHRASE_LESSONS.filter((lesson) => !relevantPhraseIds.includes(lesson.id));
@@ -736,7 +789,16 @@ export function WorldPanel({
         <span>{sceneTime(game.episodeId)} · {money(game.money)}</span>
       </div>
 
-      <details className="world-section phrase-toolkit">
+      {progressiveHelp ? (
+        <ProgressiveHelpPanel
+          content={progressiveHelp}
+          record={progressiveHelpRecord}
+          open={Boolean(progressiveHelpOpen)}
+          nextRef={progressiveHelpNextRef}
+          onToggle={onToggleProgressiveHelp!}
+          onAdvance={onAdvanceProgressiveHelp!}
+        />
+      ) : <details className="world-section phrase-toolkit">
         <summary>
           <span>Phrase help</span>
           <small>{relevantLessons.length} relevant patterns</small>
@@ -747,7 +809,7 @@ export function WorldPanel({
           <summary>Browse the other {remainingLessons.length} patterns</summary>
           <div className="phrase-grid phrase-grid-full">{remainingLessons.map(phraseButton)}</div>
         </details>
-      </details>
+      </details>}
 
       <details className="world-section context-details">
         <summary>Trip detail and listening history</summary>
@@ -782,6 +844,75 @@ export function WorldPanel({
 
       <p className="quiet-contract">Short answers, mixed language, and leaving are all valid.</p>
     </aside>
+  );
+}
+
+const HELP_ACTIONS: Record<ProgressiveHelpLevel, string> = {
+  1: "Replay normal audio",
+  2: "Replay careful audio",
+  3: "Show Italian listen-for cues",
+  4: "Show what the NPC line means",
+  5: "Show a partial Italian response frame",
+  6: "Reveal one complete natural model",
+};
+
+function ProgressiveHelpPanel({
+  content,
+  record,
+  open,
+  nextRef,
+  onToggle,
+  onAdvance,
+}: {
+  content: ProgressiveHelpContent;
+  record?: ProgressiveHelpRecord;
+  open: boolean;
+  nextRef?: RefObject<HTMLButtonElement | null>;
+  onToggle: () => void;
+  onAdvance: (level: ProgressiveHelpLevel) => void;
+}) {
+  const highest = record?.highestLevel ?? 0;
+  const next = highest < 6 ? (highest + 1) as ProgressiveHelpLevel : null;
+  function revealedLevel(level: ProgressiveHelpLevel) {
+    if (level === 1) return <div data-help-level="1"><span>Level 1 · Audio only</span><p>Normal replay attempted. No text answer revealed.</p></div>;
+    if (level === 2) return <div data-help-level="2"><span>Level 2 · Careful audio only</span><p>Careful replay attempted. No meaning or model revealed.</p></div>;
+    if (level === 3) return <div data-help-level="3"><span>Level 3 · Italian cues</span><p lang="it">{content.listenFor.join(" · ")}</p></div>;
+    if (level === 4) return <div data-help-level="4"><span>Level 4 · NPC meaning</span><p>{content.meaning}</p></div>;
+    if (level === 5) return <div data-help-level="5"><span>Level 5 · Partial response</span><p lang="it">{content.frame}</p></div>;
+    return <div data-help-level="6"><span>Level 6 · Complete natural model</span><p lang="it">{content.model}</p></div>;
+  }
+  return (
+    <section className="world-section progressive-help" aria-labelledby="progressive-help-title">
+      <button
+        type="button"
+        className="progressive-help-toggle"
+        aria-expanded={open}
+        aria-controls="progressive-help-steps"
+        onClick={onToggle}
+      >
+        <span id="progressive-help-title">Progressive help</span>
+        <small>{next ? `Next: ${HELP_ACTIONS[next]}` : "All six levels used"}</small>
+      </button>
+      {open && (
+        <div id="progressive-help-steps" className="progressive-help-steps" role="region" aria-live="polite">
+          <p className="help-contract">Choose each level yourself. Your response and the scene stay unchanged.</p>
+          {highest > 1 && (
+            <details className="progressive-help-earlier">
+              <summary>Review earlier help ({highest - 1} levels)</summary>
+              {Array.from({ length: highest - 1 }, (_, index) => revealedLevel((index + 1) as ProgressiveHelpLevel))}
+            </details>
+          )}
+          {highest > 0 && revealedLevel(highest as ProgressiveHelpLevel)}
+          {next && (
+            <button ref={nextRef} type="button" className="progressive-help-next" onClick={() => onAdvance(next)}>
+              Level {next}: {HELP_ACTIONS[next]}
+            </button>
+          )}
+          {!next && <p className="help-complete" role="status">You chose all six help levels. The turn is still waiting for your response.</p>}
+          <button type="button" className="progressive-help-close" onClick={onToggle}>Close help</button>
+        </div>
+      )}
+    </section>
   );
 }
 
