@@ -13,6 +13,8 @@ npm run dev
 
 No application environment file, credential, database, or external provider is required. The build uses `vite.config.ts`, the local Worker entry, and checked-in `.openai/hosting.json` metadata. Do not add secrets to repository files, logs, screenshots, or test evidence.
 
+Typechecking uses TypeScript 7.0.2 through the `@typescript/native` npm alias (`npx tsc`). The `typescript` dependency aliases `@typescript/typescript6` for ESLint and other tools that require the compiler API, following [Microsoft's compatibility guidance](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6-0). Keep both aliases when updating TypeScript until the lint tooling supports the new compiler API.
+
 Production and offline behavior require a production build:
 
 ```bash

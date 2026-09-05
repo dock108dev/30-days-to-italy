@@ -181,7 +181,7 @@ test("Prepare presents a practical focus and duration", () => {
     }),
   );
 
-  assert.match(html, /days until departure|Departure day|Trip underway/);
+  assert.match(html, /days? until departure|Departure day|Your trip is underway/);
   assert.match(html, /One place in the shade/);
   assert.match(html, /About 8 minutes/);
   assert.match(html, /one beach chair and one umbrella/);
