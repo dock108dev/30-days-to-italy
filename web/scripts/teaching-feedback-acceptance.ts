@@ -1,3 +1,4 @@
+import { traversePreparation } from "./preparation-navigation";
 import assert from "node:assert/strict";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -104,6 +105,7 @@ async function seedTurn(page: Page, episodeId: "day-00" | "day-01", turnId: stri
     profileKey: TRIP_PROFILE_STORAGE_KEY, profileValue: JSON.stringify(profile),
   });
   await page.reload({ waitUntil: "domcontentloaded" });
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   return game;
 }
@@ -113,6 +115,7 @@ async function storedGame(page: Page): Promise<GameState> {
 }
 
 async function startResponse(page: Page) {
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   await page.getByRole("textbox", { name: "Your response" }).waitFor();
 }
@@ -215,12 +218,14 @@ try {
   assert.equal(state.keyCustody.apartment, "held");
   const recordedExitFeedback = state.episodeResults["day-01"]?.[0]?.teachingFeedback;
   await page.getByRole("button", { name: "Replay this day" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   state = await storedGame(page);
   assert.equal(state.teachingFeedback, null, "replay clears immediate feedback");
   assert.deepEqual(state.episodeResults["day-01"]?.[0]?.teachingFeedback, recordedExitFeedback, "replay retains completion evidence");
 
   await seedTurn(page, "day-01", "d01_02_door");
+  await traversePreparation(page);
   const play = page.getByRole("button", { name: /^Play / });
   await play.focus();
   await page.keyboard.press("Enter");

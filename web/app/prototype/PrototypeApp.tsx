@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState, useRef, useEffect } from "react";
 
 import { PreparationView } from "./PreparationView";
-import { preparationCursor, updatePreparation } from "./preparation";
+import { preparationCursor, updatePreparation, openPreparationReview } from "./preparation";
 
 import {
   adminFastTrackCheckpoint,
@@ -87,7 +87,7 @@ import {
 import { createDefaultTripProfile, type TripProfile } from "../trip/model";
 import { createSeasonEpisodeHandoff } from "../season/pocket-deck-handoff";
 import { EPISODE_BY_ID, EPISODE_IDS, SEASON_01, type EpisodeId } from "../season/manifest";
-import { TURNS, sceneForEpisode } from "../season/registry";
+import { implementedEpisode, TURNS, sceneForEpisode } from "../season/registry";
 import { scheduleSeason } from "../season/schedule";
 import { saveTripProfile } from "../trip/persistence";
 import { TripSetup } from "../trip/TripProfileViews";
@@ -146,6 +146,7 @@ export default function Home() {
     progressiveHelpOpen,
     progressiveHelpTriggerRef,
     responseRef,
+    preparationReturnFocus,
     seasonOverviewCloseRef,
     seasonOverviewOpen,
     seasonOverviewTriggerRef,
@@ -170,6 +171,29 @@ export default function Home() {
   } = usePrototypePresentation(game);
   const offlineReadiness = useOfflineReadiness();
   const prepCursor = preparationCursor(game);
+  const liveGeneration = useRef(0);
+  const latestLive = useRef({ game, prepCursor, currentTurnKey });
+  useEffect(() => {
+    latestLive.current = { game, prepCursor, currentTurnKey };
+  }, [game, prepCursor, currentTurnKey]);
+  useEffect(() => {
+    liveGeneration.current += 1;
+    audioRef.current?.pause();
+  }, [prepCursor, currentTurnKey, sessionIdentity.generation, audioRef]);
+  const transcriptRevealed = useRef(false);
+  useEffect(() => { transcriptRevealed.current = transcriptVisible; }, [transcriptVisible, currentTurnKey]);
+  function reviewPreparation() {
+    if (!activeStorage()) return;
+    liveGeneration.current += 1;
+    audioRef.current?.pause();
+    setIsPlaying(false);
+    setGame((current) => activeStorage() && current.turnId === game.turnId && current.status === game.status ? openPreparationReview(current) : current);
+  }
+  function returnFromPreparation() {
+    if (!prepCursor || !activeStorage()) return;
+    preparationReturnFocus.current = true;
+    setGame((current) => activeStorage() ? updatePreparation(current, prepCursor, { return: true }) : current);
+  }
   const onPreparationAction = useCallback((action: Parameters<typeof updatePreparation>[2]) => {
     if (!prepCursor || !activeStorage()) return;
     setGame((current) => activeStorage() ? updatePreparation(current, prepCursor, action) : current);
@@ -206,6 +230,8 @@ export default function Home() {
   }
 
   async function playAudio(speed: "normal" | "careful" = "normal"): Promise<boolean> {
+    const token = ++liveGeneration.current;
+    const isCurrent = () => token === liveGeneration.current && Boolean(activeStorage()) && latestLive.current.currentTurnKey === currentTurnKey && !latestLive.current.prepCursor;
     const audio = audioRef.current;
     if (game.status !== "active" || prepCursor) return false;
     const wasReady = interactionPhase === "ready_to_respond";
@@ -225,6 +251,7 @@ export default function Home() {
     try {
       setIsPlaying(true);
       await audio.play();
+      if (!isCurrent()) return false;
       setInteraction({
         turnKey: currentTurnKey,
         phase: "ready_to_respond",
@@ -232,6 +259,7 @@ export default function Home() {
       });
       return true;
     } catch (error) {
+      if (!isCurrent()) return false;
       reportClientFailure({
         code: "AUDIO_PLAYBACK_FAILED",
         domain: "audio",
@@ -251,15 +279,23 @@ export default function Home() {
   }
 
   function revealTranscript() {
-    if (!transcriptVisible) recordSupport("transcript");
+    if (prepCursor || !activeStorage()) return;
+    if (!transcriptRevealed.current) recordSupport("transcript");
+    transcriptRevealed.current = true;
     setTranscriptVisible(true);
+  }
+
+  function readLiveLine() {
+    if (prepCursor || game.status !== "active" || !activeStorage()) return;
+    revealTranscript();
+    setInteraction({ turnKey: currentTurnKey, phase: "ready_to_respond", audioFailed: false });
   }
 
   function submitResponse(event?: FormEvent) {
     event?.preventDefault();
     const raw = input.trim();
     if (
-      prepCursor ||
+      prepCursor || preparationCursor(latestLive.current.game) || latestLive.current.currentTurnKey !== currentTurnKey || !activeStorage() ||
       !raw ||
       interactionPhase !== "ready_to_respond" ||
       game.status !== "active" ||
@@ -755,7 +791,8 @@ export default function Home() {
       const attempted = await playAudio(level === 1 ? "normal" : "careful");
       if (!attempted) return;
     }
-    setGame((current) => advanceProgressiveHelp(current, level));
+    if (!activeStorage() || latestLive.current.currentTurnKey !== currentTurnKey || latestLive.current.prepCursor) return;
+    setGame((current) => activeStorage() && interactionTurnKey(current) === currentTurnKey && !preparationCursor(current) ? advanceProgressiveHelp(current, level) : current);
     queueMicrotask(() => progressiveHelpNextRef.current?.focus({ preventScroll: true }));
   }
 
@@ -940,9 +977,12 @@ export default function Home() {
                     game={game}
                     onAction={onPreparationAction}
                     onOverview={openSeasonOverview}
+                    onReturn={returnFromPreparation}
                   />
                 ) : game.status === "active" ? (
                   <>
+                    <h2 id="live-encounter-heading" tabIndex={-1}>Conversation with {turn.npc}</h2>
+                    {implementedEpisode(game.episodeId)?.preparation && <button className="preparation-live-action" id="review-preparation" type="button" onClick={reviewPreparation}>Review preparation</button>}
                     <EncounterStage
                       turn={turn}
                       scene={scene}
@@ -953,6 +993,7 @@ export default function Home() {
                       transcriptVisible={transcriptVisible}
                       onPlay={playAudio}
                       onRevealTranscript={revealTranscript}
+                      onReadLine={implementedEpisode(game.episodeId)?.preparation ? readLiveLine : undefined}
                       progressiveHelp={Boolean(progressiveHelp)}
                     />
 
@@ -1003,6 +1044,7 @@ export default function Home() {
                       ? openEpisodeHandoffInTripMode
                       : undefined}
                     onOpenTripMode={() => changeMode("trip")}
+                    onPreparationReview={reviewPreparation}
                   />
                 )}
                 </section>

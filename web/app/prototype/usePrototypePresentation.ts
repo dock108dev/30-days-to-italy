@@ -40,6 +40,8 @@ export function usePrototypePresentation(game: GameState) {
   const [clientFailure, setClientFailure] = useState<ClientFailure | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const responseRef = useRef<HTMLTextAreaElement>(null);
+  const preparationReturnFocus = useRef(false);
+  const previousPreparationGate = useRef(preparationGated);
   const teachingCloseRef = useRef<HTMLButtonElement>(null);
   const teachingTriggerRef = useRef<HTMLElement | null>(null);
   const progressiveHelpTriggerRef = useRef<HTMLElement | null>(null);
@@ -82,7 +84,7 @@ export function usePrototypePresentation(game: GameState) {
   }, [currentTurnKey]);
 
   useEffect(() => {
-    if (preparationGated || interactionPhase !== "ready_to_respond") return;
+    if (preparationGated || preparationReturnFocus.current || previousPreparationGate.current || interactionPhase !== "ready_to_respond") return;
     let active = true;
     queueMicrotask(() => {
       if (!active || !responseRef.current) return;
@@ -100,6 +102,29 @@ export function usePrototypePresentation(game: GameState) {
       active = false;
     };
   }, [interactionPhase, preparationGated, currentTurnKey]);
+
+  useEffect(() => {
+    const leftPreparation = previousPreparationGate.current && !preparationGated;
+    previousPreparationGate.current = preparationGated;
+    if (!leftPreparation) return;
+    const returning = preparationReturnFocus.current;
+    preparationReturnFocus.current = false;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const target = game.status !== "active" ? document.getElementById("completion-review-title")
+        : returning ? document.getElementById("review-preparation") ?? responseRef.current ?? document.getElementById("live-encounter-heading")
+        : document.getElementById("live-encounter-heading");
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "nearest" });
+    });
+    return () => { active = false; };
+  }, [preparationGated, game.status]);
+
+  useEffect(() => {
+    if (game.status === "active" || preparationGated) return;
+    document.getElementById("completion-review-title")?.focus({ preventScroll: true });
+  }, [game.status, preparationGated]);
 
   useEffect(() => {
     if (teachingMoment) teachingCloseRef.current?.focus();
@@ -149,6 +174,7 @@ export function usePrototypePresentation(game: GameState) {
     progressiveHelpOpen,
     progressiveHelpTriggerRef,
     responseRef,
+    preparationReturnFocus,
     seasonOverviewCloseRef,
     seasonOverviewOpen,
     seasonOverviewTriggerRef,

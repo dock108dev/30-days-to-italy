@@ -1,12 +1,12 @@
 # Day 0–1 teaching content and flow
 
-T1 specification, 2026-09-07. **Design complete; T2 comprehension implemented. T3 not started.**
+T1 specification, 2026-09-07. **Design complete; T2 comprehension and T3 teaching/handoff implemented. T4 local integrated qualification PASS.**
 
 This document specifies T2 and T3. Sections 2–6 retain the complete target behavior; the implementation status below distinguishes what exists now.
 
-**T2 implementation status (2026-09-07):** episode-owned complete content, situation/listening screens, later-turn comprehension, separate audio, additive preparation normalization, guarded routing, same-day resume and responsive focus behavior are implemented. Forward controls stop disabled at listening/brief pages. No segment/example traversal is recorded. Saved future pattern/handoff pages remain gated. T3 owns pattern/example display, explicit live handoff, text-only live readiness, review detours, return-mode persistence, final traversal/duplicate guards, result snapshots and completion summaries. No abbreviated live sequence is treated as the complete repair. Focused evidence is recorded in the [T2 engineering handoff](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t2-preparation-20260907/handoff.md).
+**Implementation status (2026-09-07):** T2 supplied episode-owned content, comprehension, separate audio and additive state. T3 now renders the complete no-input pattern/example/reflection and live handoff, later briefs, text-only readiness, review detours, explicit traversal guards and factual result snapshots. The temporary T2 gate is replaced by the final derived gate and submission protection. Focused verification passed; the [T3 handoff](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t3-handoff-20260907/handoff.md) records source, checks and the historical service-worker warning; [T4 disposition and integrated evidence](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t4-integrated-20260907/handoff.md) supersede that verification limit. [T2 evidence](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t2-preparation-20260907/handoff.md) remains historical.
 
-The remaining target behavior is proposed unless explicitly labeled **Current**. It is not runtime, qualification, learning-assessment, or owner-acceptance evidence. Overall status remains **REVISE DEMO — NOT READY FOR ANOTHER DEMO**; D0-01 remains OPEN. The [active tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) owns work status.
+Sections 2–6 describe the implementation contract; T1 baseline inspection and its handoffs below remain design history. Engineering verification is not comprehension or owner acceptance. Overall **REVISE DEMO — NOT READY FOR ANOTHER DEMO; D0-01 OPEN**. The [active tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) owns current work status. T4 integrated results and warning dispositions are recorded in the active tracker; T5/T6 remain separate and unexecuted.
 
 ## Baseline and requirement
 
@@ -255,7 +255,7 @@ The older default “no English meaning before first attempt” is deliberately 
 
 ## 5. Preparation state, persistence, and compatibility
 
-### Data contract (new fields proposed, not existing interfaces)
+### Data contract (implemented additive fields)
 
 Extend `EpisodeDefinition` with optional `preparation`: a content version, an entry segment, and a map from owned nonterminal turn IDs to additional segments. Each segment owns heading, purpose, chunk/meaning pairs, cue, pattern/parts, written example/explanation, reflection and transition copy. Its audio reference is an owned turn ID. Labels shared by every page belong in presentation. Validate references through the existing registry/authoring tests; do not add engine day-ID switches or a parallel manifest.
 

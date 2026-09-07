@@ -68,10 +68,14 @@ Each turn owns exact normal and careful audio paths. The aggregate `TURNS` catal
 
 Every implemented episode needs tests for its successful path, valid exits, ambiguity/fail-closed behavior, actual observed moves, verified facts, state mutations, pending terminal reload, resolved reload, restart seed, and Admin selection. Cross-cutting gates must also cover schema migration, wrong-episode turn/outcome rejection, balances, Pocket Deck idempotency, production build, offline reload, desktop, 390×844 portrait, 844×390 landscape, and a clean browser console.
 
-## Preparation content (T2; Day 0–1 only)
+## Preparation content (Day 0–1 only)
 
 `EpisodeDefinition.preparation` is optional. Supply a version, situation heading/copy/context/action, an entry segment referring to the first owned turn, and additional segments keyed by owned nonterminal turn ID. Each segment has a stable ID, heading, purpose, Italian/meaning pairs, cue, and the complete pattern/parts/written-example/explanation/reflection/transition content used by the teaching specification. Optional purpose phrases stay structured as Italian/meaning pairs. Do not copy the full NPC line or media paths into preparation: the view resolves them through the turn registry. Do not add an evaluator, response input, outcome, or fake turn.
 
 Only Day 0/1 define preparation. Their content versions are 1.1.0, with preparation version 1. The owned optional Day 0 turn has compatibility content but no new route into it. Terminal lines do not get preparation. Existing examples are text-only; no audio is promised for them.
 
-T2 renders situation and listening/meaning content only. Pattern/example/reflection/transition fields are authored for T3. T2 navigation and audio must never mark them viewed or complete; the disabled forward controls mark the implementation boundary. Authoring tests validate every segment against owned turns and nonempty normal/careful assets. Browser checks, separately, establish actual playback.
+All authored pattern, parts, example, explanation, reflection, optional-purpose and transition fields now render in the ordinary teaching flow. Examples stay text-only and use a different situation. Segment IDs also identify their unique written-example pages; mounting is not traversal, only explicit Continue is. Never equate traversal with comprehension or feed it into response evidence.
+
+Bump preparation content version for incompatible teaching changes. Active mismatches restart relevant preparation without rolling back world state; historical summaries retain their original version and safe IDs. Current titles are used only for matching versions. Authoring tests validate owned turns and normal/careful assets; browser checks separately establish actual playback. The optional retained Day 0 segment still has no new ordinary route.
+
+Preparation changes require the ordinary preparation browser lane and the Day 0–1 extension of `npm run test:offline`, in addition to the response, help and feedback matrices. Use real preparation controls in traveler journeys; label seeded compatibility cases and canonical Admin advancement separately. Keep written examples distinct from submitted responses and preparation summaries distinct from encounter success.

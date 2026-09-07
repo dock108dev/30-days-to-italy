@@ -142,7 +142,10 @@ export type ProgressiveHelpRecord = {
   normalReplayCount: number;
   carefulReplayCount: number;
 };
+export type PreparationSummary = Pick<PreparationActivity, "contentVersion" | "traversedSegmentIds" | "visitedExampleIds" | "audioAttempts">;
+
 export type EpisodeResult = {
+  preparation?: PreparationSummary;
   episodeId: EpisodeId;
   attempt: number;
   outcomeId: string;
@@ -168,7 +171,8 @@ export type PreparationActivity = {
   traversedSegmentIds: string[];
   visitedExampleIds: string[];
   audioAttempts: Record<string, { normal: number; careful: number }>;
-  returnTo?: { mode: "preparing" | "encounter"; page: PreparationActivity["page"] };
+  revision?: number;
+  returnTo?: { turnId: string; status: GameState["status"]; mode: "encounter"; page: PreparationActivity["page"] };
 };
 
 export type GameState = {

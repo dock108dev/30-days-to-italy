@@ -83,3 +83,31 @@ test("T2 gates entry, later material and future handoff cursors without intercep
   assert.equal(preparationFor({ ...initialState(), turnId: "e01_05_optional" })?.activity.page, "turn-brief");
   assert.equal(preparationFor({ ...initialState(), turnId: "e01_06_boundary", pendingOutcome: "E1-O4" }), null);
 });
+
+test("T3 factual result summaries distinguish zero, partial, historical and absent activity", async () => {
+  const { createElement } = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { PreparationResultDetails } = await import("../app/prototype/PrototypeViews");
+  const { hydrateGameState } = await import("../app/game/persistence");
+  const { implementedEpisode } = await import("../app/season/registry");
+  const finished = submitEpisodeResponse(initialState(), "Grazie, buonanotte").state;
+  const render = (game: typeof finished) => renderToStaticMarkup(createElement(PreparationResultDetails, { game }));
+  assert.match(render(finished), /Preparation activity was not recorded for this attempt/);
+  const content = implementedEpisode("day-00")!.preparation!;
+  for (const historical of [false, true]) {
+    const game = structuredClone(finished);
+    game.episodeResults["day-00"]![0].preparation = { contentVersion: historical ? "old-version" : content.version, traversedSegmentIds: historical ? ["old-segment"] : [], visitedExampleIds: [], audioAttempts: {} };
+    const hydrated = hydrateGameState(game);
+    const before = JSON.stringify(hydrated.episodeResults);
+    const html = render(hydrated);
+    assert.match(html, /Written examples viewed: 0/);
+    assert.match(html, /normal 0, careful 0/);
+    assert.match(html, /not a comprehension result/);
+    if (historical) assert.match(html, /old-segment \(title unavailable; version old-version\)/);
+    else assert.match(html, /Preparation pages viewed: 0/);
+    render(hydrated);
+    assert.equal(JSON.stringify(hydrated.episodeResults), before);
+    hydrated.episodeResults["day-00"]![0].preparation!.traversedSegmentIds = [content.entry.id];
+    if (!historical) assert.match(render(hydrated), new RegExp(content.entry.heading));
+  }
+});

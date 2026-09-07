@@ -1,3 +1,4 @@
+import { traversePreparation } from "./preparation-navigation";
 import assert from "node:assert/strict";
 import { access, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -206,13 +207,17 @@ async function openAdmin(page: Page): Promise<void> {
 }
 
 async function playLineAndRespond(page: Page, response: string, outcome = false): Promise<void> {
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   const composer = page.getByRole("textbox", { name: "Your response" });
   await composer.waitFor();
   await composer.fill(response);
   await page.getByRole("button", { name: "Respond" }).click();
   if (outcome) await page.locator(".outcome-card").waitFor();
-  else await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
+  else {
+    await traversePreparation(page);
+    await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
+  }
 }
 
 async function advanceCurrent(page: Page, doubleDispatch = false): Promise<void> {
@@ -233,6 +238,7 @@ async function advanceCurrent(page: Page, doubleDispatch = false): Promise<void>
 async function nextCheckpoint(page: Page): Promise<void> {
   await openAdmin(page);
   await page.getByRole("button", { name: "Next checkpoint" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
 }
 
@@ -306,12 +312,15 @@ try {
   await openAdmin(page);
   await captureBoth(page, "fresh-demo-conductor");
   await page.getByRole("button", { name: "Play this checkpoint" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   await page.getByRole("textbox", { name: "Your response" }).waitFor();
   await captureBoth(page, "demo-banner-active-scene");
   await page.getByRole("textbox", { name: "Your response" }).fill("Fuscoletti. Ho una prenotazione.");
   await page.getByRole("button", { name: "Respond" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   await playLineAndRespond(page, "Camera dodici, primo piano. Grazie.", true);
   await page.getByRole("button", { name: "Carry this into my Pocket Deck" }).click();

@@ -1,3 +1,4 @@
+import { traversePreparation } from "./preparation-navigation";
 import assert from "node:assert/strict";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -100,6 +101,7 @@ let server: ChildProcess | null = null;
 let context: BrowserContext | null = null;
 let serverOutput = "";
 const records: Array<Record<string, unknown>> = [];
+const networkRecords: unknown[] = [];
 try {
   server = spawn("npm", ["start", "--", "--hostname", "127.0.0.1", "--port", String(port)], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
   server.stdout?.on("data", (chunk) => { serverOutput += String(chunk); });
@@ -120,6 +122,26 @@ try {
     } as unknown as typeof Audio;
   });
   const page = context.pages()[0];
+  // Ordinary service-worker lane: never bypass interception or clear caches.
+  const network = await context.newCDPSession(page);
+  await network.send("Network.enable");
+  await network.send("Log.enable");
+  network.on("Log.entryAdded", ({ entry }) => networkRecords.push({ kind: "browser-log", entry }));
+  network.on("Network.responseReceived", ({ type, response }) => {
+    if (type === "Document" || response.url.includes("/_next/") || response.url.endsWith("/sw.js")) {
+      networkRecords.push({ kind: "response", type, url: response.url, status: response.status,
+        fromServiceWorker: response.fromServiceWorker, fromDiskCache: response.fromDiskCache });
+    }
+  });
+  await context.addInitScript(() => {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      console.info("T4 service-worker controller", navigator.serviceWorker.controller?.scriptURL);
+    });
+  });
+  page.on("console", (message) => {
+    if (message.text().startsWith("T4 service-worker")) networkRecords.push({ kind: "control", text: message.text() });
+  });
+  records.push({ isolation: "Disposable origin/profile; ordinary service-worker interception enabled. No cache clearing or bypass." });
   const failures: string[] = [];
   page.on("pageerror", (error) => failures.push(error.message));
   page.on("console", (message) => { if (["error", "warning"].includes(message.type())) failures.push(message.text()); });
@@ -136,7 +158,7 @@ try {
   await page.keyboard.press("Enter");
   await page.getByRole("heading", { name: "Listen for the reservation and the name" }).waitFor();
   await assertLayout(page);
-  assert.equal(await page.getByRole("button", { name: "Build a response" }).isDisabled(), true);
+  assert.equal(await page.getByRole("button", { name: "Build a response" }).isDisabled(), false);
   await page.keyboard.press("Escape");
   assert.equal(await page.locator('textarea').count(), 0);
   await page.screenshot({ path: join(evidenceRoot, "desktop-day0-listen.png"), fullPage: true });
@@ -200,12 +222,145 @@ try {
     await page.setViewportSize({ width: 390, height: 844 });
   }
 
+  // Complete T3 flow at every requested viewport, with real UI traversal and text-only responses.
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(viewport);
+    for (const day of ["day-00", "day-01"] as const) {
+      await seed(page, seedEpisodeState(initialState(), day));
+      await page.getByRole("button", { name: /^Prepare for / }).click();
+      await page.getByRole("button", { name: "Build a response" }).click();
+      await page.getByRole("heading", { name: "Written example", exact: true }).waitFor();
+      await assertLayout(page);
+      assert.deepEqual((await readGame(page)).preparation?.visitedExampleIds, []);
+      await page.screenshot({ path: join(evidenceRoot, `${viewport.width}-${day}-pattern.png`), fullPage: true });
+      await page.reload();
+      await page.getByRole("heading", { name: "Written example", exact: true }).waitFor();
+      await page.getByRole("button", { name: /^Continue to / }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+      await page.getByRole("heading", { name: "Now the conversation" }).waitFor();
+      assert.equal(await page.locator("textarea").count(), 0, "duplicate Continue cannot skip handoff");
+      await assertLayout(page);
+      await page.screenshot({ path: join(evidenceRoot, `${viewport.width}-${day}-handoff.png`), fullPage: true });
+      await page.reload();
+      await page.getByRole("button", { name: "Start conversation" }).click();
+      await page.locator("#live-encounter-heading").waitFor();
+      assert.equal(await page.locator("#live-encounter-heading").evaluate((node) => document.activeElement === node), true);
+      assert.equal(await page.locator("textarea").count(), 0);
+      await page.getByRole("button", { name: "Read the line" }).evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
+      const composer = page.getByRole("textbox", { name: "Your response" });
+      await composer.waitFor();
+      assert.equal(await composer.inputValue(), "");
+      const read = await readGame(page);
+      assert.equal(read.support[day === "day-00" ? "hotel" : "apartment"].transcript, 1);
+      assert.equal(read.support[day === "day-00" ? "hotel" : "apartment"].replay, 0);
+      await composer.fill("Draft in memory");
+      await page.getByRole("button", { name: "Open progressive help" }).click();
+      await page.locator(".progressive-help-next").click();
+      await page.waitForFunction((key) => { const game = JSON.parse(localStorage.getItem(key)!); return game.progressiveHelp[game.turnId]?.highestLevel === 1; }, STORAGE_KEY);
+      await page.keyboard.press("Escape");
+      const beforeDetour = authoritative(await readGame(page));
+      await page.getByRole("button", { name: "Review preparation", exact: true }).click();
+      await page.getByRole("button", { name: /^Prepare for / }).click();
+      await page.getByRole("button", { name: "Build a response" }).click();
+      await assertLayout(page);
+      await page.screenshot({ path: join(evidenceRoot, `${viewport.width}-${day}-detour.png`), fullPage: true });
+      await page.getByRole("button", { name: "Return to my response" }).click();
+      await composer.waitFor();
+      assert.equal(await composer.inputValue(), "Draft in memory");
+      assert.equal(await page.locator("#review-preparation").evaluate((node) => document.activeElement === node), true);
+      assert.deepEqual(authoritative(await readGame(page)), beforeDetour);
+      await page.getByRole("button", { name: "Review preparation", exact: true }).click();
+      await page.getByRole("button", { name: /^Prepare for / }).click();
+      await page.reload();
+      await page.getByRole("button", { name: "Return to my response" }).click();
+      await page.locator(".audio-stage[data-interaction-phase=awaiting_line]").waitFor();
+      assert.equal(await page.locator("textarea").count(), 0);
+      await page.getByRole("button", { name: "Read the line" }).click();
+      assert.equal(await composer.inputValue(), "");
+      await page.reload();
+      await page.locator(".audio-stage[data-interaction-phase=awaiting_line]").waitFor();
+      await page.getByRole("button", { name: "Read the line" }).click();
+      if (day === "day-01") {
+        await composer.fill("Sono Michael");
+        await composer.press("Enter");
+        await page.getByRole("region", { name: "Teaching feedback" }).waitFor();
+        assert.equal(await page.locator(".preparation").count(), 0, "partial retry remains live");
+      }
+      await composer.fill(day === "day-00" ? "Fuscoletti" : "Sono Michael. Sono qui per la chiave.");
+      await page.locator("form.response-box").evaluate((form) => { form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+      await page.locator(".preparation").waitFor();
+      await page.getByRole("heading", { name: "Written example", exact: true }).waitFor();
+      await assertLayout(page);
+      const keyed = await readGame(page);
+      assert.equal(day === "day-00" ? keyed.hotelKey : keyed.apartmentKey, true);
+      assert.equal(Object.keys(keyed.episodeResults).length, 0);
+      await page.screenshot({ path: join(evidenceRoot, `${viewport.width}-${day}-later-brief.png`), fullPage: true });
+      await page.getByRole("button", { name: "Continue conversation", exact: true }).click();
+      assert.deepEqual(authoritative(await readGame(page)), authoritative(keyed));
+      await page.getByRole("button", { name: "Read the line" }).click();
+      await composer.fill("Ho capito");
+      await composer.press("Enter");
+      await page.locator("#completion-review-title").waitFor();
+      await page.getByText("Response and evidence", { exact: true }).click();
+      await page.getByRole("region", { name: "Preparation activity" }).waitFor();
+      const resolved = await readGame(page);
+      assert.equal(resolved.episodeResults[day]!.length, 1);
+      assert.equal(resolved.episodeResults[day]![0].preparation?.traversedSegmentIds.length, 2);
+      await page.screenshot({ path: join(evidenceRoot, `${viewport.width}-${day}-result.png`), fullPage: true });
+      await page.getByRole("button", { name: "Review preparation", exact: true }).click();
+      await page.getByRole("button", { name: /^Prepare for / }).click();
+      await page.getByRole("button", { name: "Play careful", exact: true }).click();
+      await page.waitForFunction(() => window.preparationClips.at(-1)!.currentTime > .1);
+      await page.reload();
+      await page.getByRole("button", { name: "Return to review", exact: true }).click();
+      await page.locator("#completion-review-title").waitFor();
+      assert.equal(await page.locator("#completion-review-title").evaluate((node) => document.activeElement === node), true);
+      assert.deepEqual((await readGame(page)).episodeResults, resolved.episodeResults);
+      await page.reload();
+      await page.locator("#completion-review-title").waitFor();
+      assert.deepEqual((await readGame(page)).episodeResults, resolved.episodeResults);
+      await page.getByRole("button", { name: "Replay this day" }).click();
+      await page.getByRole("button", { name: /^Prepare for / }).waitFor();
+      const replayed = await readGame(page);
+      assert.deepEqual(replayed.preparation?.traversedSegmentIds, []);
+      assert.deepEqual(replayed.preparation?.audioAttempts, {});
+      assert.deepEqual(replayed.episodeResults, resolved.episodeResults);
+      records.push({ day, viewport, fullFlow: "PASS", textReadiness: "PASS", duplicateNavigationAndSubmission: "PASS", draftHelpFocusDetour: "PASS", reloadBoundaries: "PASS", frozenResultAndReplay: "PASS" });
+    }
+  }
+  await seed(page, initialState());
+  await traversePreparation(page);
+  await page.evaluate(() => { HTMLMediaElement.prototype.play = () => new Promise<void>((resolve) => { window.releaseOldPlay = resolve; }); });
+  await page.getByRole("button", { name: "Play Elena", exact: true }).click();
+  await page.getByRole("button", { name: "Review preparation", exact: true }).click();
+  await page.evaluate(() => window.releaseOldPlay?.());
+  await page.getByRole("button", { name: "Return to my response" }).click();
+  await page.locator(".audio-stage[data-interaction-phase=awaiting_line]").waitFor();
+  assert.equal(await page.locator("textarea").count(), 0, "old live play cannot restore readiness after review navigation");
+  await page.getByRole("button", { name: "Read the line" }).click();
+  await page.getByRole("textbox", { name: "Your response" }).fill("Fallback focus draft");
+  await page.getByRole("button", { name: "Review preparation", exact: true }).click();
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      const trigger = document.getElementById("review-preparation");
+      if (trigger) { trigger.removeAttribute("id"); observer.disconnect(); }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+  await page.getByRole("button", { name: "Return to my response" }).click();
+  await page.getByRole("textbox", { name: "Your response" }).waitFor();
+  assert.equal(await page.getByRole("textbox", { name: "Your response" }).evaluate((node) => document.activeElement === node), true, "missing invoking-control identity falls back to composer");
+  assert.equal(await page.getByRole("textbox", { name: "Your response" }).inputValue(), "Fallback focus draft");
+  records.push({ liveStalePromise: "PASS", missingReturnControlFocusFallback: "PASS" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seed(page, d1key);
+  await page.locator("#preparation-heading").waitFor();
+
   // Separate fault lane: failed starts and stale promises, never claimed as real audio proof.
-  await page.evaluate(() => { HTMLMediaElement.prototype.play = () => Promise.reject(new Error("T2 injected failure")); });
+  await page.evaluate(() => { HTMLMediaElement.prototype.play = () => Promise.reject(new Error("T3 injected failure")); });
   const beforeFailure = authoritative(await readGame(page));
   await page.getByRole("button", { name: "Play normal", exact: true }).click();
   await page.getByText("Audio could not play. You can read the Italian and continue.", { exact: true }).waitFor();
-  assert.ok(await page.locator('.preparation-transcript[lang="it"]').isVisible());
+  assert.ok(await page.locator('.preparation-transcript[lang="it"]').first().isVisible());
   assert.deepEqual(authoritative(await readGame(page)), beforeFailure);
   await page.screenshot({ path: join(evidenceRoot, "mobile-audio-failure.png"), fullPage: true });
   await page.evaluate(() => { HTMLMediaElement.prototype.play = () => new Promise<void>((resolve) => { window.releaseOldPlay = resolve; }); });
@@ -231,7 +386,7 @@ try {
   assert.equal(await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY), ownerRaw, "old preparation callback cannot save into demo/owner session");
   assert.equal(await page.getByRole("button", { name: "Stop audio" }).isDisabled(), true);
   await page.getByRole("button", { name: "Exit demo", exact: true }).click();
-  await page.getByRole("heading", { name: "Find the door, then the floor" }).waitFor();
+  await page.getByRole("heading", { name: "Find the door, then the floor", level: 2 }).waitFor();
   assert.equal(await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY), ownerRaw, "exact owner game restoration");
   records.push({ isolation: "Synthetic owner preparation restored byte-for-byte after real Admin session switch; old play callback ignored" });
 
@@ -242,9 +397,16 @@ try {
   await page.getByRole("button", { name: /^Play / }).click();
   await page.getByRole("textbox", { name: "Your response" }).waitFor();
   records.push({ laterDay: "Day 2 retains live playback and composer" });
+  records.push({ serviceWorker: await page.evaluate(async () => ({
+    controller: navigator.serviceWorker.controller?.scriptURL ?? null,
+    registrations: (await navigator.serviceWorker.getRegistrations()).map((item) => ({
+      scope: item.scope, active: item.active?.state, waiting: item.waiting?.state,
+    })),
+    caches: await Promise.all((await caches.keys()).map(async (name) => ({ name, count: (await (await caches.open(name)).keys()).length }))),
+  })) });
   assert.deepEqual(failures, []);
   await writeFile(join(evidenceRoot, "results.json"), JSON.stringify({ status: "PASS", origin: baseUrl, profileDir, records, failures }, null, 2));
-  console.log(`T2 focused browser PASS. ${records.length} records; evidence ${evidenceRoot}`);
+  console.log(`Preparation browser PASS. ${records.length} records; evidence ${evidenceRoot}`);
 } catch (error) {
   await writeFile(join(evidenceRoot, "failure.json"), JSON.stringify({ error: String(error), records, serverOutput }, null, 2));
   await context?.pages()[0]?.screenshot({ path: join(evidenceRoot, "failed-screen.png"), fullPage: true }).catch(() => undefined);
@@ -253,6 +415,7 @@ try {
   await context?.close();
   await stopServer(server);
   await rm(profileDir, { recursive: true, force: true });
+  await writeFile(join(evidenceRoot, "network.json"), JSON.stringify(networkRecords, null, 2));
   await writeFile(join(evidenceRoot, "server.log"), serverOutput);
   await writeFile(join(evidenceRoot, "cleanup.txt"), `Closed disposable context; removed ${profileDir}; stopped attempt server on ${baseUrl}. Owner origin/profile untouched.\n`);
 }

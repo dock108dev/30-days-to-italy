@@ -850,3 +850,26 @@ footer p { margin: 0; }
 .preparation button:disabled { opacity: .5; cursor: default; }
 .preparation :focus-visible { outline: 3px solid #275f80; outline-offset: 4px; }
 @media (max-width: 480px) { .preparation-navigation { flex-direction: column; } .preparation-navigation button { width: 100%; } }
+
+/* Teaching controls share readable, touch-sized live and review affordances. */
+.preparation-live-action {
+  min-height: 44px;
+  padding: 10px 16px;
+  margin: 12px 0;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.preparation h3 {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.preparation section[aria-label="Response pattern"] {
+  margin-top: 20px;
+}
+.preparation section[aria-label="Response pattern"] > p + p {
+  margin-top: 12px;
+}

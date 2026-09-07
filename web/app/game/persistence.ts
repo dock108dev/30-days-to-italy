@@ -285,6 +285,7 @@ function normalizeEpisodeResults(value: unknown): Partial<Record<EpisodeId, Epis
       if (attempts.has(attempt)) continue;
       const support = isRecord(candidate.support) ? candidate.support : {};
       valid.push({
+        preparation: normalizePreparationSummary(candidate.preparation),
         episodeId: key,
         attempt,
         outcomeId: candidate.outcomeId,
@@ -465,6 +466,13 @@ function normalizeSeasonCompletion(value: unknown): SeasonCompletion | null {
   };
 }
 
+function normalizePreparationSummary(value: unknown): EpisodeResult["preparation"] {
+  if (!isRecord(value) || typeof value.contentVersion !== "string" || !value.contentVersion || value.contentVersion.length > 80 || !Array.isArray(value.traversedSegmentIds) || !Array.isArray(value.visitedExampleIds) || !isRecord(value.audioAttempts)) return undefined;
+  const ids = (raw: unknown[]) => [...new Set(raw.filter((id): id is string => typeof id === "string" && /^[a-zA-Z0-9_-]{1,100}$/.test(id)))].slice(0, 100);
+  const audioAttempts = Object.fromEntries(Object.entries(value.audioAttempts).slice(0, 100).filter(([id, counts]) => ids([id]).length && isRecord(counts)).map(([id, counts]) => [id, { normal: Math.min(9999, safeCount((counts as Record<string, unknown>).normal)), careful: Math.min(9999, safeCount((counts as Record<string, unknown>).careful)) }]));
+  return { contentVersion: value.contentVersion, traversedSegmentIds: ids(value.traversedSegmentIds), visitedExampleIds: ids(value.visitedExampleIds), audioAttempts };
+}
+
 function normalizePreparation(value: unknown, episodeId: EpisodeId): GameState["preparation"] {
   const content = implementedEpisode(episodeId)?.preparation;
   if (!content || !isRecord(value) || value.episodeId !== episodeId || value.contentVersion !== content.version) return undefined;
@@ -484,6 +492,9 @@ function normalizePreparation(value: unknown, episodeId: EpisodeId): GameState["
     }
   }
   return {
+    revision: safeCount(value.revision),
+    ...(isRecord(value.returnTo) && typeof value.returnTo.turnId === "string" && ownsTurn(episodeId, value.returnTo.turnId) && ["active", "resolved", "complete"].includes(String(value.returnTo.status)) && (pages as readonly unknown[]).includes(value.returnTo.page)
+      ? { returnTo: { turnId: value.returnTo.turnId, status: value.returnTo.status as GameState["status"], mode: "encounter" as const, page: value.returnTo.page as NonNullable<GameState["preparation"]>["page"] } } : {}),
     episodeId, contentVersion: content.version, segmentId: value.segmentId,
     page: value.page as NonNullable<GameState["preparation"]>["page"],
     mode: value.mode as NonNullable<GameState["preparation"]>["mode"],

@@ -1,5 +1,6 @@
+import { traversePreparation } from "./preparation-navigation";
 import assert from "node:assert/strict";
-import { access, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { access, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -102,7 +103,7 @@ async function installMediaControl(context: BrowserContext): Promise<void> {
   });
 }
 
-async function freshJourney(page: Page): Promise<void> {
+async function freshJourney(page: Page, keyboardPreparation = false): Promise<void> {
   const profile = createDefaultTripProfile(new Date());
   const game = initialState();
   if (!page.url().startsWith(baseUrl)) {
@@ -122,6 +123,8 @@ async function freshJourney(page: Page): Promise<void> {
   await page.goto("about:blank");
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   try {
+    if (keyboardPreparation) await keyboardPreparationTraversal(page);
+    else await traversePreparation(page);
     await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor({ timeout: 5_000 });
   } catch (error) {
     const diagnostic = await page.evaluate((key) => ({
@@ -166,6 +169,7 @@ async function waitForGame(
 }
 
 async function assertAwaitingLine(page: Page): Promise<void> {
+  await traversePreparation(page);
   const stage = page.locator('.audio-stage[data-interaction-phase="awaiting_line"]');
   await stage.waitFor();
   assert.equal(await page.locator(".response-box").count(), 0, "awaiting line must not render a disabled composer");
@@ -186,11 +190,13 @@ async function assertAwaitingLine(page: Page): Promise<void> {
 }
 
 async function playCurrentLine(page: Page, fail = false): Promise<void> {
+  await traversePreparation(page);
   await assertAwaitingLine(page);
   if (fail) {
     await page.evaluate(() => sessionStorage.setItem("italy-interaction-fail-audio-once", "true"));
   }
   await page.getByRole("button", { name: /^Play / }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="ready_to_respond"]').waitFor();
   const composer = page.getByRole("textbox", { name: "Your response" });
   await composer.waitFor();
@@ -452,9 +458,24 @@ async function dayThreeTakeaway(page: Page, viewport: "1440x900" | "390x844", fa
   assert.equal(game.episodeResults["day-03"]?.length, 1);
 }
 
+async function keyboardPreparationTraversal(page: Page): Promise<void> {
+  await page.locator(".preparation, .audio-stage").first().waitFor();
+  for (let step = 0; step < 5 && await page.locator(".preparation").count(); step++) {
+    const forward = page.getByRole("button", { name: /^(Prepare for check-in|Build a response|Continue to check-in|Start conversation|Continue conversation)$/ });
+    for (let tab = 0; tab < 25; tab++) {
+      if (await forward.evaluate((button) => document.activeElement === button)) break;
+      await page.keyboard.press("Tab");
+      await assertFocusedControlVisible(page, `keyboard preparation ${step}/${tab}`);
+    }
+    assert.equal(await forward.evaluate((button) => document.activeElement === button), true);
+    await page.keyboard.press("Enter");
+  }
+  await page.locator(".audio-stage").waitFor();
+}
+
 async function keyboardOnlyDayZero(page: Page): Promise<void> {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await freshJourney(page);
+  await freshJourney(page, true);
   await page.locator("body").click({ position: { x: 1, y: 1 } });
 
   for (let index = 0; index < 12; index += 1) {
@@ -481,6 +502,7 @@ async function keyboardOnlyDayZero(page: Page): Promise<void> {
   assert.equal(await page.locator(".send-button").evaluate((button) => document.activeElement === button), true, "keyboard path must reach Respond");
   await page.keyboard.press("Enter");
 
+  await keyboardPreparationTraversal(page);
   for (let index = 0; index < 12; index += 1) {
     await page.keyboard.press("Tab");
     await assertFocusedControlVisible(page, `keyboard second line ${index}`);
@@ -516,9 +538,11 @@ async function selectAdminDay(page: Page, day: number): Promise<void> {
     .filter({ hasText: `Day ${day} ·` });
   assert.equal(await checkpoint.count(), 1, `Admin checkpoint for Day ${day}`);
   await checkpoint.click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   await page.getByRole("button", { name: "Open conductor" }).click();
   await page.getByRole("button", { name: "Play this checkpoint" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   await waitForGame(page, { episodeId: episodeId as GameState["episodeId"], status: "active" });
 }
@@ -713,6 +737,10 @@ try {
   console.log("- duplicate submits, audio events, reload, and Pocket Deck carry stayed idempotent");
   console.log(`- visual evidence ${evidenceRoot}`);
   console.log(`- isolated origin ${baseUrl} with temporary profile ${profileDir}`);
+} catch (error) {
+  await writeFile(resolve(evidenceRoot, "failure.txt"), String(error));
+  await context?.pages()[0]?.screenshot({ path: resolve(evidenceRoot, "failed-screen.png"), fullPage: true }).catch(() => undefined);
+  throw error;
 } finally {
   await context?.close().catch(() => undefined);
   await stopServer(server);

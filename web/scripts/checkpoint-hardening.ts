@@ -1,3 +1,4 @@
+import { traversePreparation } from "./preparation-navigation";
 import assert from "node:assert/strict";
 import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -203,6 +204,7 @@ async function seedOwner(page: Page): Promise<StorageSnapshot> {
   }, records);
   await page.goto("about:blank");
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   return snapshotLocalStorage(page);
 }
@@ -318,6 +320,7 @@ async function selectCheckpoint(page: Page, episodeId: EpisodeId): Promise<GameS
   await page.locator(`.demo-mode-banner[data-demo-checkpoint="${episodeId}"]`).waitFor();
   await openAdmin(page);
   await page.getByRole("button", { name: "Play this checkpoint" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   const game = await storedValue<GameState>(page, STORAGE_KEY);
   assert.equal(game.episodeId, episodeId);
@@ -326,6 +329,7 @@ async function selectCheckpoint(page: Page, episodeId: EpisodeId): Promise<GameS
 }
 
 async function assertCanonicalEntry(page: Page, episodeId: EpisodeId): Promise<GameState> {
+  await traversePreparation(page);
   const definition = implementedEpisode(episodeId);
   assert.ok(definition, `${episodeId} definition must exist.`);
   const game = await storedValue<GameState>(page, STORAGE_KEY);
@@ -357,7 +361,9 @@ function escapeRegex(value: string): string {
 }
 
 async function playLine(page: Page): Promise<void> {
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="ready_to_respond"]').waitFor();
   const composer = page.getByRole("textbox", { name: "Your response" });
   await composer.waitFor();
@@ -414,6 +420,7 @@ async function submit(page: Page, response: string, duplicate = false): Promise<
 }
 
 async function ensureReadyForResponse(page: Page): Promise<void> {
+  await traversePreparation(page);
   const stage = page.locator(".audio-stage");
   await stage.waitFor();
   const phase = await stage.getAttribute("data-interaction-phase");
@@ -582,6 +589,7 @@ async function runUsefulPath(page: Page, episodeId: EpisodeId, day: number): Pro
   if (PERSISTENCE_DAYS.has(day)) {
     const awaiting = authoritativeSnapshot(await storedValue<GameState>(page, STORAGE_KEY));
     await page.reload({ waitUntil: "domcontentloaded" });
+    await traversePreparation(page);
     await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
     assert.deepEqual(authoritativeSnapshot(await storedValue<GameState>(page, STORAGE_KEY)), awaiting);
   }
@@ -595,6 +603,7 @@ async function runUsefulPath(page: Page, episodeId: EpisodeId, day: number): Pro
   if (PERSISTENCE_DAYS.has(day)) {
     const ready = authoritativeSnapshot(await storedValue<GameState>(page, STORAGE_KEY));
     await page.reload({ waitUntil: "domcontentloaded" });
+    await traversePreparation(page);
     await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
     assert.deepEqual(authoritativeSnapshot(await storedValue<GameState>(page, STORAGE_KEY)), ready);
     await playLine(page);
@@ -651,6 +660,7 @@ async function runUsefulPath(page: Page, episodeId: EpisodeId, day: number): Pro
     assert.match(await primary.innerText(), new RegExp(`Continue to Day ${day + 1}`));
     await primary.click();
     await page.locator(`.demo-mode-banner[data-demo-checkpoint="${nextId}"]`).waitFor();
+    await traversePreparation(page);
     await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
     assert.equal((await storedValue<GameState>(page, STORAGE_KEY)).episodeId, nextId);
     if (day === 20) {
@@ -771,6 +781,7 @@ try {
     await page.getByRole("button", { name: "Exit demo" }).click();
     await page.locator(".demo-mode-banner").waitFor({ state: "detached" });
     await page.reload({ waitUntil: "domcontentloaded" });
+    await traversePreparation(page);
     await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
     assert.deepEqual(await snapshotLocalStorage(page), ownerBefore, "Owner storage was not restored exactly.");
 

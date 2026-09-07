@@ -1,5 +1,6 @@
+import { verifyPreparationOffline } from "./preparation-offline";
 import assert from "node:assert/strict";
-import { access } from "node:fs/promises";
+import { access, mkdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { resolve } from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -23,6 +24,8 @@ import { OFFLINE_CACHE_PREFIX } from "../build/offline-assets";
 import { REQUIRED_AUDIO_COUNT, REQUIRED_POCKET_DECK_AUDIO_COUNT } from "../build/offline-catalog";
 
 const root = process.cwd();
+const evidenceRoot = resolve(process.env.ITALY_EVIDENCE_ROOT ?? "../../italian-pilot-evidence/local", "offline");
+await mkdir(evidenceRoot, { recursive: true });
 const chromeCandidates = [
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -391,7 +394,8 @@ try {
   await page.getByRole("button", { name: "Clear Pocket Deck filters", exact: true }).click();
 
   await page.getByRole("button", { name: "Prepare", exact: true }).click();
-  await page.getByRole("heading", { name: "A room for the night", exact: true }).first().waitFor();
+  await page.getByRole("button", { name: "Prepare for check-in", exact: true }).waitFor();
+  assert.equal(await page.locator("textarea").count(), 0, "offline Prepare returns to ordinary teaching before response");
   await page.getByRole("button", { name: "Trip", exact: true }).click();
   await page.getByRole("heading", { name: "The words you need, within reach.", exact: true }).waitFor();
   await page.reload({ waitUntil: "domcontentloaded" });
@@ -410,6 +414,13 @@ try {
     throw new Error(`Browser console was not clean:\n${logs.join("\n")}\nResponses:\n${failedResponses.join("\n")}`);
   }
 
+  // Start the ordinary teaching lane without the prior context's online worker.
+  await closeContext(context);
+  context = null;
+  await browser.close();
+  browser = await chromium.launch({ executablePath, headless: true, args: ["--autoplay-policy=no-user-gesture-required"] });
+  await verifyPreparationOffline(browser, baseUrl, resolve(evidenceRoot, "teaching"));
+
   console.log(JSON.stringify({
     cacheVersion: offlineManifest.cacheVersion,
     requiredResources: offlineManifest.urls.length,
@@ -419,9 +430,15 @@ try {
     offlineReload: "passed",
     consoleWarningsOrErrors: logs.length,
   }, null, 2));
+} catch (error) {
+  await writeFile(resolve(evidenceRoot, "failure.txt"), String(error));
+  await context?.pages()[0]?.screenshot({ path: resolve(evidenceRoot, "failed-screen.png"), fullPage: true }).catch(() => undefined);
+  throw error;
 } finally {
   await closeContext(freshContext);
   await closeContext(context);
   if (browser) await browser.close().catch(() => undefined);
   await stopServer(server);
+  await writeFile(resolve(evidenceRoot, "server.log"), serverOutput);
+  await writeFile(resolve(evidenceRoot, "cleanup.txt"), `Closed disposable contexts and browser; stopped own server ${baseUrl}. Owner origin/profile untouched.\n`);
 }

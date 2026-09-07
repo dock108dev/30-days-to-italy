@@ -1,3 +1,4 @@
+import { traversePreparation } from "./preparation-navigation";
 import assert from "node:assert/strict";
 import { access, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -105,6 +106,7 @@ async function seedTurn(page: Page, episodeId: "day-00" | "day-01", turnId: stri
     profileKey: TRIP_PROFILE_STORAGE_KEY, profileValue: JSON.stringify(profile),
   });
   await page.reload({ waitUntil: "domcontentloaded" });
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   return game;
 }
@@ -122,6 +124,7 @@ async function waitForLevel(page: Page, turnId: string, level: number) {
 
 async function exerciseTurn(page: Page, episodeId: "day-00" | "day-01", turnId: string, screenshot?: string) {
   await seedTurn(page, episodeId, turnId);
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   const composerHelp = page.getByRole("button", { name: "Open progressive help" });
   await composerHelp.waitFor();
@@ -151,6 +154,7 @@ async function exerciseTurn(page: Page, episodeId: "day-00" | "day-01", turnId: 
   assert.equal(await page.locator('[data-help-level="3"] p[lang="it"]').count(), 1);
 
   await page.reload({ waitUntil: "domcontentloaded" });
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   await page.getByRole("button", { name: "Open progressive help" }).click();
   await page.locator('[data-help-level="3"]').waitFor();
@@ -215,6 +219,7 @@ try {
   }
 
   await seedTurn(page, "day-00", "e01_01_name");
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   const keyboardHelp = page.getByRole("button", { name: "Open progressive help" });
   await keyboardHelp.focus();
@@ -224,6 +229,7 @@ try {
   assert.equal(await keyboardHelp.evaluate((button) => document.activeElement === button), true);
 
   await seedTurn(page, "day-00", "e01_01_name");
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   await page.getByRole("button", { name: "Open progressive help" }).click();
   await page.evaluate(() => sessionStorage.setItem("progressive-help-fail-audio-once", "true"));
@@ -233,6 +239,7 @@ try {
   assert.equal(await page.locator('[data-help-level="4"], [data-help-level="5"], [data-help-level="6"]').count(), 0, "audio failure must not skip help levels");
 
   await seedTurn(page, "day-00", "e01_01_name");
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   await page.getByRole("button", { name: "Open progressive help" }).click();
   await page.locator(".progressive-help-next").click();
@@ -240,17 +247,20 @@ try {
   await page.getByRole("button", { name: "Close help" }).click();
   await page.getByRole("textbox", { name: "Your response" }).fill("Fuscoletti. Ho una prenotazione.");
   await page.getByRole("button", { name: "Respond" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   let transition = await storedGame(page);
   assert.equal(transition.turnId, "e01_03_key");
   assert.equal(transition.progressiveHelp.e01_01_name?.highestLevel, 1);
   assert.equal(transition.progressiveHelp.e01_03_key, undefined, "new turn must start unrevealed");
+  await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
   await page.getByRole("textbox", { name: "Your response" }).fill("Camera dodici, primo piano.");
   await page.getByRole("button", { name: "Respond" }).click();
   await page.locator(".outcome-card").waitFor();
   assert.match(await page.locator('[data-review-section="help-history"]').textContent() ?? "", /e01_01_name: level 1/);
   await page.getByRole("button", { name: "Replay this day" }).click();
+  await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   transition = await storedGame(page);
   assert.deepEqual(transition.progressiveHelp, {}, "replay must reset revealed help");

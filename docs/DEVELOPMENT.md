@@ -88,7 +88,7 @@ The following source or test files remain over roughly 500 lines after cleanup:
 
 These are review notes, not a permanent size exemption. Split a file when a change exposes a stable seam and the relevant behavioral gate can prove the extraction.
 
-## Focused preparation verification (T2)
+## Preparation and integrated verification
 
 After `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:ssot`, and `npm run test:response-contracts`, run the focused engineering browser script against the current production build:
 
@@ -100,4 +100,14 @@ The script checks port 3114 is available, launches its own production server at 
 
 Coverage includes real onboarding, current-day overview resume, ordinary Day 1 selection, legacy later-turn keys/feedback, no-authoritative-effects checks, keyboard/focus, 390px controls/overflow, real normal/careful media for every preparation segment, explicit failed/stale media lanes, owner/demo restoration, and a later-day live-flow check. Media telemetry verifies actual decoding/time progression, and Day 0 entry reaches natural end. It does not claim human listening-quality judgment or comprehension.
 
-The T2 boundary disables forward movement into pattern/example/live handoff. Existing integrated interaction/help/feedback campaigns still assume live Day 0/1 entry and are not T2 completion gates. T3 must update them for the complete sequence; T4 runs the integrated browser/offline/security campaign. Unit response/help/feedback/deck matrices remain unchanged and run under `npm test`.
+The focused preparation script additionally traverses complete entry, pattern, handoff, later-brief and result paths at 1440×900, 390×844 and 844×390. It covers text readiness/counting, draft/help/focus detours, duplicate actions, partial retry, preparation/live/detour/result reloads, frozen summaries and replay. `scripts/preparation-navigation.ts` lets existing interaction/help/feedback/Admin/checkpoint campaigns traverse ordinary teaching controls before live actions; it never seeds traversal or submits examples.
+
+Preserve each failed attempt before repair and rerun from a fresh browser/server boundary. T3 focused evidence is recorded separately from T2; T4 records the full integrated browser/offline/security campaign and setup-warning/dependency disposition. Response/help/feedback/deck matrices run under `npm test`. No T3 result establishes a frozen candidate or owner acceptance.
+
+The ordinary preparation lane runs with service-worker interception enabled and captures controller/registration state, cache names/counts, and browser Network/Log events. Its warning gate remains strict. The historical T3 bypass run establishes only focused UI/localStorage behavior; see [T3 handoff](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t3-handoff-20260907/handoff.md). It cannot replace ordinary or offline qualification.
+
+`npm run test:offline` retains the existing seeded Pocket Deck lane (obsolete-cache cleanup, connected repair, disconnected media/navigation/reload, and connected update verification). It additionally calls `scripts/preparation-offline.ts` in a fresh browser process: actual onboarding and Ready offline precede disconnected Day 0–1 teaching, real normal/careful audio, ordinary responses and reloads at preparation/pattern/handoff/live/brief/result boundaries. Uncached network requests must fail after each teaching reload, the final badge must be Offline, and the cache inventory must remain complete; `navigator.onLine` is recorded as a hint, not used alone as network proof. Synthetic stored fixtures in the earlier lane remain separate from this ordinary journey. Neither lane establishes learning or owner acceptance.
+
+The interaction keyboard lane traverses both initial preparation and later briefs with Tab/Enter and checks visible focus. Updated interaction/offline scripts retain failure screenshots and cleanup records. Use a separate `ITALY_EVIDENCE_ROOT` for each browser command and attempt: help and feedback share viewport screenshot filenames. All-checkpoint qualification must omit `CHECKPOINT_HARDENING_ONLY`.
+
+Current T4 evidence and warning disposition: [T4 record](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t4-integrated-20260907/warnings.md). Follow the [active tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) for qualification status; T5 candidate preparation and T6 owner review are separate gates.

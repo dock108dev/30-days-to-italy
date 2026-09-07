@@ -16,7 +16,7 @@ import type { AppMode } from "../lifecycle/model";
 import type { TripProfile } from "../trip/model";
 import { scheduleSeason } from "../season/schedule";
 import { EPISODE_BY_ID, SEASON_01, type EpisodeId } from "../season/manifest";
-import { nextImplementedEpisode, sceneForEpisode } from "../season/registry";
+import { implementedEpisode, nextImplementedEpisode, sceneForEpisode } from "../season/registry";
 import { episodeResultFor, type ObservedMove } from "../season/types";
 import type { PocketDeckPracticeEvidence } from "../pocket-deck/model";
 import { CORE_POCKET_DECK_CARD_BY_ID } from "../pocket-deck/catalog";
@@ -244,6 +244,7 @@ export function EncounterStage({
   transcriptVisible,
   onPlay,
   onRevealTranscript,
+  onReadLine,
   progressiveHelp = false,
 }: {
   turn: Turn;
@@ -255,6 +256,7 @@ export function EncounterStage({
   transcriptVisible: boolean;
   onPlay: (speed: "normal" | "careful") => void;
   onRevealTranscript: () => void;
+  onReadLine?: () => void;
   progressiveHelp?: boolean;
 }) {
   const lineStarted = interactionPhase !== "awaiting_line";
@@ -291,6 +293,8 @@ export function EncounterStage({
           <span>{lineStarted ? "Replay line" : "Play the line"}</span>
         </button>
 
+        {onReadLine && <button className="preparation-live-action" type="button" onClick={onReadLine} disabled={interactionPhase === "submitting"}>Read the line</button>}
+
         <div className={`support-row ${lineStarted ? "available" : ""}`}>
           {lineStarted && (
             <>
@@ -310,7 +314,7 @@ export function EncounterStage({
         {transcriptVisible && (
           <div className="transcript" role="status">
             <span>Italian transcript</span>
-            <p>{turn.text}</p>
+            <p lang="it">{turn.text}</p>
           </div>
         )}
 
@@ -536,6 +540,7 @@ export function OutcomeCard({
   onCarryToDeck,
   onOpenInTripMode,
   onOpenTripMode,
+  onPreparationReview,
 }: {
   game: GameState;
   nextScene?: Scene | null;
@@ -549,6 +554,7 @@ export function OutcomeCard({
   onCarryToDeck?: () => void;
   onOpenInTripMode?: () => void;
   onOpenTripMode?: () => void;
+  onPreparationReview?: () => void;
 }) {
   const availableNextScene = nextScene === undefined ? nextSceneFor(game) : nextScene;
   const scene = sceneForEpisode(game.episodeId)!;
@@ -574,7 +580,7 @@ export function OutcomeCard({
       <div className="outcome-review-heading">
         <div>
           <p>Day complete</p>
-          <h3 id="completion-review-title">{game.outcome?.title}</h3>
+          <h3 id="completion-review-title" tabIndex={-1}>{game.outcome?.title}</h3>
           <span>The practical result is recorded.</span>
         </div>
         <div className="outcome-icon" aria-hidden="true">{game.outcome?.tone === "success" ? "✓" : game.outcome?.tone === "partial" ? "~" : "↗"}</div>
@@ -626,6 +632,7 @@ export function OutcomeCard({
         </div>
       </section>
 
+      {implementedEpisode(game.episodeId)?.preparation && onPreparationReview && <button className="preparation-live-action" id="review-preparation" type="button" onClick={onPreparationReview}>Review preparation</button>}
       <details className="review-details">
         <summary>Response and evidence</summary>
         <section className="review-section understood-intent" data-review-section="understood-intent">
@@ -642,6 +649,7 @@ export function OutcomeCard({
             <span>{game.outcome?.consequence}</span>
           </div>
         </section>
+        {implementedEpisode(game.episodeId)?.preparation && <PreparationResultDetails game={game} />}
         {result && Object.keys(result.progressiveHelp).length > 0 && (
           <section className="review-section help-history" data-review-section="help-history">
             <div>
@@ -1175,4 +1183,22 @@ export function AdminModal({
       </section>
     </div>
   );
+}
+
+export function PreparationResultDetails({ game }: { game: GameState }) {
+  const summary = episodeResultFor(game.episodeResults, game.episodeId)?.preparation;
+  const content = implementedEpisode(game.episodeId)?.preparation;
+  const segments = content ? [content.entry, ...Object.values(content.turns)] : [];
+  const historical = summary && summary.contentVersion !== content?.version;
+  const counts = Object.values(summary?.audioAttempts ?? {}).reduce((total, value) => ({ normal: total.normal + value.normal, careful: total.careful + value.careful }), { normal: 0, careful: 0 });
+  return <section className="review-section" aria-label="Preparation activity"><div>
+    <p>Preparation activity</p>
+    {!summary ? <span>Preparation activity was not recorded for this attempt.</span> : <>
+      {historical && <span>Historical preparation content version: {summary.contentVersion}.</span>}
+      <span>Preparation pages viewed: {summary.traversedSegmentIds.map((id) => (!historical && segments.find((segment) => segment.id === id)?.heading) || `${id} (title unavailable; version ${summary.contentVersion})`).join("; ") || "0"}.</span>
+      <span>Written examples viewed: {summary.visitedExampleIds.length}.</span>
+      <span>Preparation audio attempts: normal {counts.normal}, careful {counts.careful}.</span>
+      <span>This records preparation activity, not a comprehension result.</span>
+    </>}
+  </div></section>;
 }

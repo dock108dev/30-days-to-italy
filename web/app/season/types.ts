@@ -172,6 +172,12 @@ export function buildObservedEpisodeResult({
   const refresher: EpisodeRefresherEvidence =
     state.episodeRefreshers[definition.id] ?? { opened: 0, applied: 0, method: null };
   return {
+    preparation: state.preparation?.episodeId === definition.id && state.preparation.contentVersion === definition.preparation?.version ? {
+      contentVersion: state.preparation.contentVersion,
+      traversedSegmentIds: [...state.preparation.traversedSegmentIds],
+      visitedExampleIds: [...state.preparation.visitedExampleIds],
+      audioAttempts: Object.fromEntries(Object.entries(state.preparation.audioAttempts).map(([id, counts]) => [id, { ...counts }])),
+    } : undefined,
     episodeId: definition.id,
     attempt,
     outcomeId,
