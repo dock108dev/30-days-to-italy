@@ -55,6 +55,7 @@ See [Development](docs/DEVELOPMENT.md) for the complete command map and change b
 ## Documentation
 
 - [Product behavior](docs/PRODUCT.md)
+- [Day 0–1 teaching specification — T1 design for T2/T3](docs/DAY_00_01_TEACHING_SPEC.md)
 - [Development and validation](docs/DEVELOPMENT.md)
 - [Architecture and source-of-truth boundaries](docs/ARCHITECTURE_AND_SSOT.md)
 - [Episode authoring](docs/EPISODE_AUTHORING_GUIDE.md)
