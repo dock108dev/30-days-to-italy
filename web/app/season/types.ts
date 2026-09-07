@@ -97,7 +97,32 @@ export type EpisodeResultContext = {
   outcomeId: string;
 };
 
+export type PreparationSegment = {
+  id: string;
+  turnId: string;
+  heading: string;
+  purpose: string;
+  chunks: readonly { italian: string; meaning: string }[];
+  cue: string;
+  patternHeading: string;
+  pattern: string;
+  parts: string;
+  example: string;
+  exampleExplanation: string;
+  reflection?: string;
+  optionalPurpose?: readonly { italian: string; meaning: string }[];
+  transition: string;
+};
+
+export type EpisodePreparation = {
+  version: string;
+  situation: { heading: string; copy: string; context: string; action: string };
+  entry: PreparationSegment;
+  turns: Readonly<Record<string, PreparationSegment>>;
+};
+
 export type EpisodeDefinition = SeasonEpisode & {
+  preparation?: EpisodePreparation;
   scene: Scene;
   turns: Readonly<Record<string, Turn>>;
   outcomes: Readonly<Record<string, Outcome>>;

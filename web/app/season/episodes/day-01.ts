@@ -33,6 +33,84 @@ const day01Teaching = {
 } as const;
 
 export const day01Episode: EpisodeDefinition = {
+  preparation: {
+    "version": "1",
+    "situation": {
+      "heading": "Day 1 · Collect the apartment key",
+      "copy": "Raffaele is ready for a short key handoff. Learn how to recognize his identity question and explain why you are there.",
+      "context": "For this rehearsal, you are Michael Fuscoletti, collecting the apartment key.",
+      "action": "Prepare for the key handoff"
+    },
+    "entry": {
+      "id": "d01_01_arrival",
+      "turnId": "d01_01_arrival",
+      "heading": "Hear the person and the purpose",
+      "purpose": "Raffaele asks who you are and whether you are there for the key. Your reply needs both pieces.",
+      "chunks": [
+        {
+          "italian": "Buonasera",
+          "meaning": "Good evening. A short greeting."
+        },
+        {
+          "italian": "Lei è Michael?",
+          "meaning": "Are you Michael? Lei is a polite you; è asks who you are here."
+        },
+        {
+          "italian": "È qui per…?",
+          "meaning": "Are you here for…? Qui means here; per introduces the purpose."
+        },
+        {
+          "italian": "La chiave",
+          "meaning": "The key. Listen for what you are collecting."
+        }
+      ],
+      "cue": "Listen for the name after Lei è, then per la chiave. There are two questions, not just a greeting.",
+      "patternHeading": "Give your name and your purpose",
+      "pattern": "Sono [name]. Sono qui per [purpose].",
+      "parts": "Sono means I am. Add your name to identify yourself. Sono qui means I am here. Per connects that to your purpose. For collecting the key, the purpose chunk is la chiave.",
+      "example": "Sono Anna. Sono qui per la prenotazione.",
+      "exampleExplanation": "A different traveler is here for a reservation. Anna fills the identity slot. La prenotazione fills the purpose slot. For the key handoff, use the rehearsal name and the thing you are collecting.",
+      "transition": "Now meet Raffaele. Listen or read, then identify yourself and ask for the key. Use optional help whenever you want.",
+      "reflection": "Think of the two pieces you want Raffaele to understand: who you are, and why you are here. You can keep both sentences short."
+    },
+    "turns": {
+      "d01_02_door": {
+        "id": "d01_02_door",
+        "turnId": "d01_02_door",
+        "heading": "Find the door, then the floor",
+        "purpose": "Raffaele has handed you the key. Now listen for the entrance and where to go next.",
+        "chunks": [
+          {
+            "italian": "Ecco la chiave",
+            "meaning": "Here is the key."
+          },
+          {
+            "italian": "La porta verde",
+            "meaning": "The green door; porta is door and verde is green."
+          },
+          {
+            "italian": "Poi",
+            "meaning": "Then; it puts the directions in order."
+          },
+          {
+            "italian": "Il primo piano",
+            "meaning": "The first floor."
+          },
+          {
+            "italian": "È chiaro?",
+            "meaning": "Is that clear?"
+          }
+        ],
+        "cue": "Listen for the description after porta. Then poi separates the door from the floor.",
+        "patternHeading": "Find the door, then the floor",
+        "pattern": "Ho capito: [door detail], poi [floor detail].",
+        "parts": "Ho capito says you understood. Repeating the two details checks the route.",
+        "example": "Ho capito: la porta blu, poi il secondo piano.",
+        "exampleExplanation": "Different directions: blu means blue; secondo means second. These are example details, not your entrance.",
+        "transition": "Return to Raffaele. Confirm the directions you heard, say they are clear, or end the exchange. You can keep it brief."
+      }
+    }
+  },
   ...metadata,
   sceneId: "apartment",
   scene: {

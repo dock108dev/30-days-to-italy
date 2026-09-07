@@ -224,3 +224,21 @@ test("v2 active, pending, and resolved saves migrate without duplicate effects",
   assert.equal(restoredResolved.status, "resolved");
   assert.equal(restoredResolved.outcome?.id, "E2-O1");
 });
+
+test("preparation references owned nonterminal turns and real normal/careful media", async () => {
+  const prepared = IMPLEMENTED_EPISODE_DEFINITIONS.filter((definition) => definition.preparation);
+  assert.deepEqual(prepared.map((definition) => definition.id), ["day-00", "day-01"]);
+  for (const definition of prepared) {
+    const content = definition.preparation!;
+    assert.equal(content.entry.turnId, definition.scene.firstTurn);
+    const segments = [content.entry, ...Object.values(content.turns)];
+    assert.equal(new Set(segments.map((segment) => segment.id)).size, segments.length);
+    for (const segment of segments) {
+      const turn = definition.turns[segment.turnId];
+      assert.ok(turn && !turn.terminal);
+      assert.ok(segment.chunks.length && segment.pattern && segment.parts && segment.example && segment.exampleExplanation && segment.transition);
+      assert.equal("normal" in segment, false, "no copied media catalog");
+      for (const speed of ["normal", "careful"] as const) assert.ok((await readFile(`public${turn[speed]}`)).length > 0);
+    }
+  }
+});

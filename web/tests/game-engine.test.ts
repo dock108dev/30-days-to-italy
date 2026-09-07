@@ -234,3 +234,22 @@ test("local persistence retains the existing key and reset behavior", () => {
   clearSavedGame(storage);
   assert.deepEqual(loadGame(storage), initialState());
 });
+
+test("malformed optional preparation cannot wipe a valid legacy key handoff", async () => {
+  const { preparationCursor, preparationFor, updatePreparation } = await import("../app/prototype/preparation");
+  const { submitEpisodeResponse, restartEpisodeState } = await import("../app/game/engine");
+  const { hydrateGameState } = await import("../app/game/persistence");
+  const legacy = submitEpisodeResponse(initialState(), "Fuscoletti").state;
+  const baseline = hydrateGameState(legacy);
+  for (const malformed of [null, [], "oops", { episodeId: "unknown" }, { episodeId: "day-00", contentVersion: "old" }, { episodeId: "day-00", contentVersion: "1", segmentId: "forged", page: "handoff", mode: "encounter" }]) {
+    assert.deepEqual(hydrateGameState({ ...legacy, preparation: malformed }), baseline);
+  }
+  assert.equal(baseline.hotelKey, true);
+  assert.equal(preparationFor(baseline)?.segment.turnId, "e01_03_key");
+  const prepared = updatePreparation(baseline, preparationCursor(baseline)!, { audio: "normal" });
+  assert.deepEqual(hydrateGameState(prepared).preparation, prepared.preparation);
+  const normalized = hydrateGameState({ ...prepared, preparation: { ...prepared.preparation, audioAttempts: { e01_03_key: { normal: -4, careful: 999999999 }, bogus: { normal: 1, careful: 1 } }, traversedSegmentIds: ["bogus", "e01_03_key", "e01_03_key"] } });
+  assert.deepEqual(normalized.preparation?.audioAttempts, { e01_03_key: { normal: 0, careful: 9999 } });
+  assert.deepEqual(normalized.preparation?.traversedSegmentIds, ["e01_03_key"]);
+  assert.equal(restartEpisodeState(prepared).preparation, undefined);
+});

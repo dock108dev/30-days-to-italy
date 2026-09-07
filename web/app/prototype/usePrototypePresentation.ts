@@ -5,6 +5,7 @@ import {
   subscribeToClientFailures,
   type ClientFailure,
 } from "../observability/client-failures";
+import { preparationCursor } from "./preparation";
 import type { InteractionPhase } from "./PrototypeViews";
 
 type InteractionState = {
@@ -21,6 +22,7 @@ export function interactionTurnKey(
 
 export function usePrototypePresentation(game: GameState) {
   const currentTurnKey = interactionTurnKey(game);
+  const preparationGated = Boolean(preparationCursor(game));
   const [input, setInput] = useState("");
   const [interaction, setInteraction] = useState<InteractionState>(() => ({
     turnKey: currentTurnKey,
@@ -80,14 +82,14 @@ export function usePrototypePresentation(game: GameState) {
   }, [currentTurnKey]);
 
   useEffect(() => {
-    if (interactionPhase !== "ready_to_respond") return;
+    if (preparationGated || interactionPhase !== "ready_to_respond") return;
     let active = true;
     queueMicrotask(() => {
       if (!active || !responseRef.current) return;
       responseRef.current.focus({ preventScroll: true });
       const form = responseRef.current.closest("form");
       requestAnimationFrame(() => {
-        if (!form) return;
+        if (!active || !form?.isConnected) return;
         const rect = form.getBoundingClientRect();
         if (rect.bottom > window.innerHeight) {
           window.scrollBy({ top: rect.bottom - window.innerHeight + 12 });
@@ -97,7 +99,7 @@ export function usePrototypePresentation(game: GameState) {
     return () => {
       active = false;
     };
-  }, [interactionPhase]);
+  }, [interactionPhase, preparationGated, currentTurnKey]);
 
   useEffect(() => {
     if (teachingMoment) teachingCloseRef.current?.focus();

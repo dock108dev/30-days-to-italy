@@ -412,6 +412,7 @@ function resetInteraction(state: GameState, episodeId: EpisodeId): GameState {
     feedback: null,
     teachingFeedback: null,
     history: [],
+    preparation: undefined,
     episodeRefreshers: retainedRefreshers,
     progressiveHelp: {},
     observedMoves: [],

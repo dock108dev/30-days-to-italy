@@ -465,6 +465,33 @@ function normalizeSeasonCompletion(value: unknown): SeasonCompletion | null {
   };
 }
 
+function normalizePreparation(value: unknown, episodeId: EpisodeId): GameState["preparation"] {
+  const content = implementedEpisode(episodeId)?.preparation;
+  if (!content || !isRecord(value) || value.episodeId !== episodeId || value.contentVersion !== content.version) return undefined;
+  const segments = [content.entry, ...Object.values(content.turns)];
+  const ids = new Set(segments.map((segment) => segment.id));
+  const pages = ["situation", "listen", "pattern", "handoff", "turn-brief"] as const;
+  const modes = ["preparing", "encounter", "reviewing"] as const;
+  if (typeof value.segmentId !== "string" || !ids.has(value.segmentId) ||
+      !pages.some((page) => page === value.page) || !modes.some((mode) => mode === value.mode)) return undefined;
+  const uniqueIds = (raw: unknown) => Array.isArray(raw)
+    ? [...new Set(raw.filter((id): id is string => typeof id === "string" && ids.has(id)))] : [];
+  const audioAttempts: NonNullable<GameState["preparation"]>["audioAttempts"] = {};
+  if (isRecord(value.audioAttempts)) {
+    for (const id of ids) {
+      const counts = value.audioAttempts[id];
+      if (isRecord(counts)) audioAttempts[id] = { normal: Math.min(9999, safeCount(counts.normal)), careful: Math.min(9999, safeCount(counts.careful)) };
+    }
+  }
+  return {
+    episodeId, contentVersion: content.version, segmentId: value.segmentId,
+    page: value.page as NonNullable<GameState["preparation"]>["page"],
+    mode: value.mode as NonNullable<GameState["preparation"]>["mode"],
+    traversedSegmentIds: uniqueIds(value.traversedSegmentIds),
+    visitedExampleIds: uniqueIds(value.visitedExampleIds), audioAttempts,
+  };
+}
+
 export function hydrateGameState(value: unknown): GameState {
   const defaults = initialState();
   if (!isRecord(value)) return defaults;
@@ -644,6 +671,7 @@ export function hydrateGameState(value: unknown): GameState {
     phrasePractice: normalizePhrasePractice(value.phrasePractice),
     episodeResults: normalizeEpisodeResults(value.episodeResults),
     episodeRefreshers: normalizeEpisodeRefreshers(value.episodeRefreshers),
+    preparation: normalizePreparation(value.preparation, episodeId),
     progressiveHelp: normalizeProgressiveHelp(value.progressiveHelp, episodeId),
     observedMoves: normalizeObservedMoves(value.observedMoves),
     verifiedFacts: normalizeVerifiedFacts(value.verifiedFacts),

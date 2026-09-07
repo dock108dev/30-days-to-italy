@@ -129,3 +129,17 @@ test("conductor validates schema and keeps played and simulated audit truth", ()
   assert.equal(parseDemoConductor(JSON.stringify({ ...updated, schemaVersion: 2 }), "demo-12345678"), null);
   assert.equal(parseDemoConductor(JSON.stringify({ ...updated, activeCheckpointId: "day-99" }), "demo-12345678"), null);
 });
+
+test("preparation remains inside the game domain and owner snapshot is restored exactly", async () => {
+  const { preparationCursor, updatePreparation } = await import("../app/prototype/preparation");
+  const storage = new MemoryStorage();
+  const owner = updatePreparation(initialState(), preparationCursor(initialState())!, { page: "listen" });
+  saveGame(storage, owner);
+  const before = storage.entries();
+  const demo = startDemoSession(storage, new Date("2026-09-07T12:00:00Z"));
+  const demoGame = loadGame(demo.storage);
+  saveGame(demo.storage, updatePreparation(demoGame, preparationCursor(demoGame)!, { page: "listen" }));
+  assert.deepEqual(loadGame(storage).preparation, owner.preparation);
+  exitDemoSession(storage, demo.id);
+  assert.deepEqual(storage.entries(), before);
+});

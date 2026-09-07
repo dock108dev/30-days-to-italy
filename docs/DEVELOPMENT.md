@@ -87,3 +87,17 @@ The following source or test files remain over roughly 500 lines after cleanup:
 - `tests/pocket-deck.test.ts` and `tests/final-season.test.ts` — domain matrices that keep setup and invariants visible beside their assertions.
 
 These are review notes, not a permanent size exemption. Split a file when a change exposes a stable seam and the relevant behavioral gate can prove the extraction.
+
+## Focused preparation verification (T2)
+
+After `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run test:ssot`, and `npm run test:response-contracts`, run the focused engineering browser script against the current production build:
+
+```bash
+ITALY_EVIDENCE_ROOT=/absolute/disposable/evidence/attempt-1 node --import tsx scripts/preparation-acceptance.ts
+```
+
+The script checks port 3114 is available, launches its own production server at `http://127.0.0.1:3114`, and uses a disposable temporary Chromium profile. It does not use the retained localhost:3000 owner journey or owner Chrome profile. Each attempt needs a fresh evidence root; failures retain a record and screenshot. The script closes its browser, deletes only its own profile, and stops its server in `finally`.
+
+Coverage includes real onboarding, current-day overview resume, ordinary Day 1 selection, legacy later-turn keys/feedback, no-authoritative-effects checks, keyboard/focus, 390px controls/overflow, real normal/careful media for every preparation segment, explicit failed/stale media lanes, owner/demo restoration, and a later-day live-flow check. Media telemetry verifies actual decoding/time progression, and Day 0 entry reaches natural end. It does not claim human listening-quality judgment or comprehension.
+
+The T2 boundary disables forward movement into pattern/example/live handoff. Existing integrated interaction/help/feedback campaigns still assume live Day 0/1 entry and are not T2 completion gates. T3 must update them for the complete sequence; T4 runs the integrated browser/offline/security campaign. Unit response/help/feedback/deck matrices remain unchanged and run under `npm test`.

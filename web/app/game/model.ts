@@ -159,7 +159,20 @@ export type EpisodeRefresherEvidence = {
   applied: number;
   method: "inserted" | "rebuilt" | null;
 };
+export type PreparationActivity = {
+  episodeId: EpisodeId;
+  contentVersion: string;
+  segmentId: string;
+  page: "situation" | "listen" | "pattern" | "handoff" | "turn-brief";
+  mode: "preparing" | "encounter" | "reviewing";
+  traversedSegmentIds: string[];
+  visitedExampleIds: string[];
+  audioAttempts: Record<string, { normal: number; careful: number }>;
+  returnTo?: { mode: "preparing" | "encounter"; page: PreparationActivity["page"] };
+};
+
 export type GameState = {
+  preparation?: PreparationActivity;
   schemaVersion: 6;
   episodeId: EpisodeId;
   turnId: string;

@@ -193,12 +193,12 @@ export function SeasonOverview({
               >
                 <span>{episode.completed ? "✓" : `Day ${episode.day}`}</span>
                 <strong>{episode.title}</strong>
-                <small>{episode.completed ? "Completed" : episode.playable ? "Available" : "Scheduled"}</small>
+                <small>{isCurrent ? `Resume Day ${episode.day}` : episode.completed ? `Replay Day ${episode.day}` : episode.playable ? `Start Day ${episode.day}` : "Scheduled"}</small>
               </button>
             );
           })}
         </div>
-        <p className="season-overview-note">Choose an available session, or close this overview to keep the current moment unchanged.</p>
+        <p className="season-overview-note">Starting another day replaces your current unfinished conversation. Recorded results stay saved. Choose the current day to resume.</p>
       </section>
     </div>
   );

@@ -835,3 +835,18 @@ footer p { margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
+
+/* Episode-owned comprehension preparation; follows the existing reading surface. */
+.preparation { max-width: 42rem; margin-inline: auto; padding: 1rem; font-size: 1rem; line-height: 1.6; overflow-wrap: anywhere; }
+.preparation h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; margin-block: .5rem 1rem; }
+.preparation-context { font-weight: 600; }
+.preparation-transcript { font-size: 1.2rem; border-left: 3px solid currentColor; padding-left: 1rem; }
+.preparation-chunks { display: grid; gap: 1rem; }
+.preparation-chunks dt { font-weight: 700; }
+.preparation-chunks dd { margin: .2rem 0 0; }
+.preparation-note { padding: .75rem; background: var(--paper, #f6f4ee); border-radius: .5rem; }
+.preparation-audio, .preparation-navigation { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
+.preparation button { min-height: 44px; padding: .6rem 1rem; border: 1px solid currentColor; border-radius: .5rem; }
+.preparation button:disabled { opacity: .5; cursor: default; }
+.preparation :focus-visible { outline: 3px solid #275f80; outline-offset: 4px; }
+@media (max-width: 480px) { .preparation-navigation { flex-direction: column; } .preparation-navigation button { width: 100%; } }

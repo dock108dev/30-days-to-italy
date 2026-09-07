@@ -1,8 +1,12 @@
 # Day 0–1 teaching content and flow
 
-T1 specification, 2026-09-07. **Design complete; implementation not started.**
+T1 specification, 2026-09-07. **Design complete; T2 comprehension implemented. T3 not started.**
 
-This document specifies T2 and T3. It describes proposed behavior unless explicitly labeled **Current**. It is not runtime, qualification, learning-assessment, or owner-acceptance evidence. Overall status remains **REVISE DEMO — NOT READY FOR ANOTHER DEMO**; D0-01 remains OPEN. The [active tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) owns work status.
+This document specifies T2 and T3. Sections 2–6 retain the complete target behavior; the implementation status below distinguishes what exists now.
+
+**T2 implementation status (2026-09-07):** episode-owned complete content, situation/listening screens, later-turn comprehension, separate audio, additive preparation normalization, guarded routing, same-day resume and responsive focus behavior are implemented. Forward controls stop disabled at listening/brief pages. No segment/example traversal is recorded. Saved future pattern/handoff pages remain gated. T3 owns pattern/example display, explicit live handoff, text-only live readiness, review detours, return-mode persistence, final traversal/duplicate guards, result snapshots and completion summaries. No abbreviated live sequence is treated as the complete repair. Focused evidence is recorded in the [T2 engineering handoff](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t2-preparation-20260907/handoff.md).
+
+The remaining target behavior is proposed unless explicitly labeled **Current**. It is not runtime, qualification, learning-assessment, or owner-acceptance evidence. Overall status remains **REVISE DEMO — NOT READY FOR ANOTHER DEMO**; D0-01 remains OPEN. The [active tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) owns work status.
 
 ## Baseline and requirement
 

@@ -67,3 +67,19 @@ test("Pocket Deck review state never claims persisted evidence before carry", ()
   assert.equal(pocketDeckReviewState(handoff, true), "strengthened");
   assert.equal(pocketDeckReviewState(null, false), "none");
 });
+
+test("T2 gates entry, later material and future handoff cursors without intercepting results", async () => {
+  const { preparationFor, preparationCursor, updatePreparation } = await import("../app/prototype/preparation");
+  const { seedEpisodeState } = await import("../app/game/engine");
+  for (const day of ["day-00", "day-01"] as const) {
+    const start = seedEpisodeState(initialState(), day);
+    assert.equal(preparationFor(start)?.activity.page, "situation");
+    const listen = updatePreparation(start, preparationCursor(start)!, { page: "listen" });
+    assert.equal(preparationFor(listen)?.activity.page, "listen");
+    assert.ok(preparationCursor({ ...listen, preparation: { ...listen.preparation!, page: "handoff", mode: "encounter" } }));
+    assert.equal(preparationFor({ ...listen, status: "resolved" }), null);
+  }
+  assert.equal(preparationFor(seedEpisodeState(initialState(), "day-02")), null);
+  assert.equal(preparationFor({ ...initialState(), turnId: "e01_05_optional" })?.activity.page, "turn-brief");
+  assert.equal(preparationFor({ ...initialState(), turnId: "e01_06_boundary", pendingOutcome: "E1-O4" }), null);
+});

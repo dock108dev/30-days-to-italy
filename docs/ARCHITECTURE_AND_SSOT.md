@@ -111,3 +111,13 @@ The owner session uses these stable keys:
 ## Guardrails
 
 Run `npm run test:ssot` after architecture, season, build-config, Admin, or persistence changes. Its static assertions prevent removed flags, legacy symbols, registry facades, and inactive hosting adapters from returning. The full `npm test` remains the behavioral authority.
+
+## Episode preparation boundary (T2)
+
+Optional `EpisodeDefinition.preparation` owns all teaching text under Day 0/1, references owned nonterminal turn IDs, and obtains transcript/media from the registry. `app/prototype/preparation.ts` derives the outer gate and restricts preparation transitions to the optional current-attempt `GameState.preparation` field. It never calls the response engine, support ladder, result builder, or deck adapter. The T2 gate deliberately stays closed even for saved future pattern/handoff/encounter cursors; T3 must implement those stages before unlocking it.
+
+`app/game/persistence.ts` normalizes this additive schema-6 field without changing `un-mese-prototype-v1`. Missing, wrong-version, or invalid references discard only preparation. Lists accept unique known IDs; audio-attempt counts are finite nonnegative integers capped at 9999. Cursor reconciliation follows the authoritative active turn, including legacy key handoffs. Pending terminals/resolved reviews take precedence. Generic interaction reset clears current preparation.
+
+`PreparationView.tsx` owns a separate transient audio object and cancellation generation. Navigation/session changes unmount the keyed page, pause the clip, and invalidate callbacks. It records attempted starts, including failures, once per choice, never from end events. The Italian text survives failure. The application action closure checks the existing session storage/generation guard as well as the expected turn/page cursor. The existing session hook remains the sole save authority and demo namespacing includes preparation without another domain.
+
+T3 still owns traversal acknowledgment, review detours and return cursors, example counts, live text readiness, result snapshots and factual completion-summary rendering. Those semantics are not implemented by T2.

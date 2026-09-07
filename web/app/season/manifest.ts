@@ -66,7 +66,7 @@ const EARLY_EPISODE_METADATA: Partial<Record<EpisodeId, Omit<SeasonEpisode, "id"
     characterIds: ["elena"],
     recurringLanguageTargets: ["identify self", "ask for repetition", "end politely"],
     listeningChallenge: "Hear the room number and breakfast end time after a tired-arrival greeting.",
-    prerequisites: [], contentVersion: "1.0.0", authoringStatus: "reviewed",
+    prerequisites: [], contentVersion: "1.1.0", authoringStatus: "reviewed",
   },
   "day-01": {
     title: "The key to Casa Limone",
@@ -79,7 +79,7 @@ const EARLY_EPISODE_METADATA: Partial<Record<EpisodeId, Omit<SeasonEpisode, "id"
     characterIds: ["raffaele"],
     recurringLanguageTargets: ["identify self", "request access", "confirm location"],
     listeningChallenge: "Hear the green-door and first-floor instructions from a brisk speaker.",
-    prerequisites: ["day-00"], contentVersion: "1.0.0", authoringStatus: "reviewed",
+    prerequisites: ["day-00"], contentVersion: "1.1.0", authoringStatus: "reviewed",
   },
   "day-02": {
     title: "A first meal",

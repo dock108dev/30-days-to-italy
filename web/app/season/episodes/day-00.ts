@@ -45,6 +45,175 @@ const day00Teaching = {
 } as const;
 
 export const day00Episode: EpisodeDefinition = {
+  preparation: {
+    "version": "1",
+    "situation": {
+      "heading": "Day 0 · A room for the night",
+      "copy": "You have arrived at the hotel. Elena needs the name on your reservation before she can give you the key. Learn what she is asking and how to give the booking name.",
+      "context": "For this rehearsal, the reservation surname is Fuscoletti.",
+      "action": "Prepare for check-in"
+    },
+    "entry": {
+      "id": "e01_01_name",
+      "turnId": "e01_01_name",
+      "heading": "Listen for the reservation and the name",
+      "purpose": "You are listening for two things: whether you have a reservation, and whose name it is under.",
+      "chunks": [
+        {
+          "italian": "Buonasera",
+          "meaning": "Good evening. A greeting; you do not need a long introduction."
+        },
+        {
+          "italian": "Ha una prenotazione?",
+          "meaning": "Do you have a reservation? Here, ha asks whether you have something; prenotazione is the reservation."
+        },
+        {
+          "italian": "A che nome?",
+          "meaning": "Under what name? Elena needs the booking name."
+        }
+      ],
+      "cue": "Listen for prenotazione, then a che nome. The second question tells you which detail to give.",
+      "patternHeading": "Say what you have, then name it",
+      "pattern": "Ho una prenotazione a nome [surname].",
+      "parts": "Ho means I have. Una prenotazione says what you have: a reservation. A nome links it to the surname on the booking. Replace the surname; keep the useful structure.",
+      "example": "Ho una prenotazione a nome Rossi.",
+      "exampleExplanation": "A different booking is under Rossi. Rossi fills the name slot. The sentence tells the clerk both why you are there and which booking to find.",
+      "transition": "Now check in with Elena. Listen or read, then give the booking name in your own response. Optional help is available throughout the exchange.",
+      "reflection": "For your rehearsal, keep the reservation structure and use the surname on your booking. A brief answer is enough."
+    },
+    "turns": {
+      "e01_02_clarify_name": {
+        "id": "e01_02_clarify_name",
+        "turnId": "e01_02_clarify_name",
+        "heading": "When the clerk needs your surname again",
+        "purpose": "Elena has not matched the name yet. You do not need to restart your introduction.",
+        "chunks": [
+          {
+            "italian": "Mi scusi",
+            "meaning": "Excuse me; a polite lead-in."
+          },
+          {
+            "italian": "Può ripetere",
+            "meaning": "Can you repeat; she wants the information again."
+          },
+          {
+            "italian": "Il cognome",
+            "meaning": "The surname; repeat that part."
+          }
+        ],
+        "cue": "Listen for ripetere and cognome. This is a request to repeat your surname.",
+        "patternHeading": "When the clerk needs your surname again",
+        "pattern": "Il cognome è [surname].",
+        "parts": "Il cognome names the detail; è means is; the last part supplies it.",
+        "example": "Il cognome è Rossi.",
+        "exampleExplanation": "Rossi is the surname in this different booking.",
+        "transition": "Return to Elena and repeat the surname on this booking."
+      },
+      "e01_03_key": {
+        "id": "e01_03_key",
+        "turnId": "e01_03_key",
+        "heading": "Catch the room and floor",
+        "purpose": "Elena has matched the booking and issued the key. Now listen for where to go. You can confirm briefly and finish the exchange.",
+        "chunks": [
+          {
+            "italian": "Camera",
+            "meaning": "Room; the number after it identifies your room."
+          },
+          {
+            "italian": "Dodici",
+            "meaning": "Twelve."
+          },
+          {
+            "italian": "Al primo piano",
+            "meaning": "On the first floor; piano means floor here, and primo means first."
+          },
+          {
+            "italian": "Ecco la chiave",
+            "meaning": "Here is the key; chiave is key."
+          }
+        ],
+        "cue": "Listen for camera followed by the number, then piano with the floor. Separate the two location details.",
+        "patternHeading": "Catch the room and floor",
+        "pattern": "Ho capito: [detail].",
+        "parts": "Ho capito means I understood; adding a detail says what you understood.",
+        "example": "Ho capito: camera otto.",
+        "exampleExplanation": "A different room: otto means eight; it belongs to this example, not your room.",
+        "transition": "Listen for your room information. Then confirm what you understood, ask about breakfast, or end the exchange.",
+        "optionalPurpose": [
+          {
+            "italian": "A che ora finisce la colazione?",
+            "meaning": "To ask when breakfast ends: a che ora asks at what time; finisce means ends; la colazione is breakfast."
+          },
+          {
+            "italian": "Grazie, buonanotte",
+            "meaning": "Thank you, good night. No extra conversation is needed."
+          }
+        ]
+      },
+      "e01_04_breakfast": {
+        "id": "e01_04_breakfast",
+        "turnId": "e01_04_breakfast",
+        "heading": "Listen for when breakfast ends",
+        "purpose": "You asked about breakfast. Listen for the ending time.",
+        "chunks": [
+          {
+            "italian": "La colazione",
+            "meaning": "Breakfast."
+          },
+          {
+            "italian": "Finisce",
+            "meaning": "Ends."
+          },
+          {
+            "italian": "Alle dieci",
+            "meaning": "At ten; alle introduces the time."
+          },
+          {
+            "italian": "Ha bisogno di altro?",
+            "meaning": "Do you need anything else? You can end the conversation."
+          }
+        ],
+        "cue": "Listen after finisce for alle and the time. This is the end time, not the start.",
+        "patternHeading": "Listen for when breakfast ends",
+        "pattern": "La colazione finisce alle [time].",
+        "parts": "Alle introduces the ending time.",
+        "example": "La colazione finisce alle nove.",
+        "exampleExplanation": "A different schedule: nove means nine; replace that time with the one you hear.",
+        "transition": "Return to Elena. Confirm the information, or say good night. You already have the key."
+      },
+      "e01_05_optional": {
+        "id": "e01_05_optional",
+        "turnId": "e01_05_optional",
+        "heading": "A brief personal question",
+        "purpose": "You can answer briefly or end with Grazie, buonanotte.",
+        "chunks": [
+          {
+            "italian": "Prima volta",
+            "meaning": "First time."
+          },
+          {
+            "italian": "È la prima volta a Salerno?",
+            "meaning": "Is this your first visit?"
+          },
+          {
+            "italian": "Sì",
+            "meaning": "Yes."
+          },
+          {
+            "italian": "No",
+            "meaning": "No."
+          }
+        ],
+        "cue": "Listen for prima volta.",
+        "patternHeading": "A brief personal question",
+        "pattern": "Sì, è la mia prima volta a [place].",
+        "parts": "The place changes; prima volta still means first time.",
+        "example": "Sì, è la mia prima volta a Roma.",
+        "exampleExplanation": "Roma is the place in this written example.",
+        "transition": "Answer only as much as you want, or end the conversation."
+      }
+    }
+  },
   ...metadata, sceneId: "hotel",
   scene: { id: "hotel", episodeId: "day-00", day: "Day 0", dateLabel: "Arrival", title: metadata.title, location: metadata.location, time: "21:40", npc: "Elena", role: "Night clerk", objective: "Check in and find your room.", firstTurn: "e01_01_name", kicker: "You have just arrived, tired and carrying your bag.", suggestions: ["Fuscoletti. Ho una prenotazione.", "Può ripetere?", "Grazie. Buonanotte."] },
   turns: {

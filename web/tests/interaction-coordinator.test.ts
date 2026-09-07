@@ -67,3 +67,26 @@ test("the shared boundary caps bypassed response input before evaluation and per
   assert.equal(playerEntry?.text.length, PLAYER_RESPONSE_MAX_LENGTH);
   assert.equal(game.lastResponse.startsWith("Fuscoletti. Ho una prenotazione."), true);
 });
+
+test("preparation actions preserve every authoritative field, reject stale pages and turns", async () => {
+  const { preparationCursor, updatePreparation } = await import("../app/prototype/preparation");
+  const start = initialState();
+  const cursor = preparationCursor(start)!;
+  const listen = updatePreparation(start, cursor, { page: "listen" });
+  assert.equal(updatePreparation(listen, cursor, { page: "listen" }), listen);
+  const heard = updatePreparation(listen, preparationCursor(listen)!, { audio: "careful" });
+  const { preparation, ...rest } = heard;
+  assert.deepEqual(rest, start);
+  assert.equal(preparation?.audioAttempts.e01_01_name.careful, 1);
+  assert.deepEqual(preparation?.traversedSegmentIds, []);
+  assert.deepEqual(preparation?.visitedExampleIds, []);
+  const later = submit(listen, "Fuscoletti", ids());
+  assert.equal(later.hotelKey, true);
+  assert.equal(updatePreparation(later, preparationCursor(listen)!, { audio: "normal" }), later);
+  const brief = updatePreparation(later, preparationCursor(later)!, { initialize: true });
+  const { preparation: ignored, ...after } = brief;
+  void ignored;
+  const { preparation: prior, ...before } = later;
+  void prior;
+  assert.deepEqual(after, before);
+});

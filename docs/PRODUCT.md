@@ -30,3 +30,11 @@ Admin is a local inspection tool, not an authorization boundary. The hosted app 
 ## Offline contract
 
 Offline use becomes available only after a connected production visit reaches **Ready offline** on that browser and origin. The build-generated cache contains the app shell, fonts, icons, and reviewed audio inventory. If verification or repair fails, the app reports **Offline files unavailable** and must not claim readiness.
+
+## Day 0–1 preparation (T2 implemented)
+
+Ordinary Day 0 setup and Day 1 selection now open a situation introduction before any live response controls. Listening pages show the owned Italian line, short chunk meanings, a listening cue, and separate optional normal/careful audio. New-material turns show a comprehension brief with the previous response feedback intact. Reading and audio attempts never imply comprehension or change the encounter.
+
+This local T2 implementation stops on the listening page or later-turn brief: **Build a response** and **Continue conversation** are disabled until T3 supplies the explained patterns, written examples, and live handoff. The complete journey is not ready for another demo. Pattern/example content is authored but not displayed. No preparation action records a completed segment, example traversal, result, or Pocket Deck evidence.
+
+Returning through the overview resumes the current day. Starting or replaying another day retains the existing seed behavior and replaces the unfinished conversation; recorded results remain saved. Resolved current days open their existing review. Days without preparation keep their live flow. See [the teaching specification](DAY_00_01_TEACHING_SPEC.md) for the complete T2/T3 target.

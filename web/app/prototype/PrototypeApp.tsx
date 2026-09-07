@@ -1,6 +1,9 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
+
+import { PreparationView } from "./PreparationView";
+import { preparationCursor, updatePreparation } from "./preparation";
 
 import {
   adminFastTrackCheckpoint,
@@ -166,6 +169,11 @@ export default function Home() {
     tripEditorOpen,
   } = usePrototypePresentation(game);
   const offlineReadiness = useOfflineReadiness();
+  const prepCursor = preparationCursor(game);
+  const onPreparationAction = useCallback((action: Parameters<typeof updatePreparation>[2]) => {
+    if (!prepCursor || !activeStorage()) return;
+    setGame((current) => activeStorage() ? updatePreparation(current, prepCursor, action) : current);
+  }, [prepCursor, activeStorage, setGame]);
 
   const scene = sceneForEpisode(game.episodeId)!;
   const turn = TURNS[game.turnId];
@@ -199,7 +207,7 @@ export default function Home() {
 
   async function playAudio(speed: "normal" | "careful" = "normal"): Promise<boolean> {
     const audio = audioRef.current;
-    if (game.status !== "active") return false;
+    if (game.status !== "active" || prepCursor) return false;
     const wasReady = interactionPhase === "ready_to_respond";
     if (!audio) {
       setTranscriptVisible(true);
@@ -251,6 +259,7 @@ export default function Home() {
     event?.preventDefault();
     const raw = input.trim();
     if (
+      prepCursor ||
       !raw ||
       interactionPhase !== "ready_to_respond" ||
       game.status !== "active" ||
@@ -612,6 +621,10 @@ export default function Home() {
   }
 
   function selectSeasonEpisode(episodeId: GameState["episodeId"]) {
+    if (episodeId === game.episodeId) {
+      closeSeasonOverview();
+      return;
+    }
     if (sessionIdentity.mode === "demo") {
       setSeasonOverviewOpen(false);
       selectAdminCheckpoint(episodeId);
@@ -919,9 +932,16 @@ export default function Home() {
 
               <div className={`content-grid ${game.status !== "active" ? "resolved" : ""}`}>
                 <section className="story-panel">
-                  <SceneIntroduction scene={scene} status={game.status} />
+                  {!prepCursor && <SceneIntroduction scene={scene} status={game.status} />}
 
-                {game.status === "active" ? (
+                {prepCursor ? (
+                  !seasonOverviewOpen && <PreparationView
+                    key={`${sessionIdentity.generation}:${prepCursor}`}
+                    game={game}
+                    onAction={onPreparationAction}
+                    onOverview={openSeasonOverview}
+                  />
+                ) : game.status === "active" ? (
                   <>
                     <EncounterStage
                       turn={turn}
@@ -987,7 +1007,7 @@ export default function Home() {
                 )}
                 </section>
 
-                {game.status === "active" && (
+                {game.status === "active" && !prepCursor && (
                   <WorldPanel
                     key={currentTurnKey}
                     game={game}
