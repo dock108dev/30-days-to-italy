@@ -5,7 +5,19 @@ updates:
     directory: /web
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
+    # Resolve the whole web dependency graph in one PR and lockfile. React,
+    # React DOM, the server renderer, and their types must update together;
+    # other framework/build-tool peer dependencies can cross this boundary too.
+    groups:
+      web-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      web-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   - package-ecosystem: github-actions
     directory: /

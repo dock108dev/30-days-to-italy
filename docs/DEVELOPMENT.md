@@ -22,6 +22,27 @@ npm run build
 npm run start -- --hostname 127.0.0.1 --port 3001
 ```
 
+## Dependency updates
+
+Dependabot groups all `/web` npm version updates into one weekly PR with one
+lockfile. Security updates use a separate group and are not delayed until the
+weekly version-update run. Keep production and development dependencies in the
+same group: React's renderer and type packages span both sections, and the build
+tools also share peer dependencies.
+
+When updating React manually, update `react`, `react-dom`, and
+`react-server-dom-webpack` together to the same runtime version. Update
+`@types/react` and `@types/react-dom` together to versions satisfying their peer
+ranges; their patch versions do not have to match. Regenerate `package-lock.json`
+with npm, then run `npm ci`, lint, TypeScript, and the build/test and browser
+checks below. Do not bypass peer checks with `--force` or `--legacy-peer-deps`.
+
+Grouping reduces split updates and conflicting lockfile PRs; it cannot guarantee
+that every upstream release is compatible. Merge only after `Application checks`,
+`Browser acceptance`, and `Secret scan` pass on the current PR revision. If an
+older individual Dependabot PR remains open after grouping changes, replace it
+with the grouped update instead of merging its stale dependency set.
+
 ## Configuration and generated files
 
 The deployed application reads no runtime environment variables. The following variables affect only local tooling and acceptance:
