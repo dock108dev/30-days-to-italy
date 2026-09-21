@@ -1,5 +1,7 @@
 # Episode authoring guide
 
+Planning update, September 21: the [beta path](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) requires full-season teaching coverage, targeted review and varied practice. The contracts below describe current implementation, including preparation only in Days 0–1. B1 must define versioned episode/review/variation changes before implementation; do not claim they already exist or bypass the registry/state authorities. Preserve past-date access, allowed future-date locks and the Day 30 Trip Mode gate.
+
 Application paths in this document are relative to `web/`.
 
 The Season 01 runtime has one rule: episode-specific behavior belongs in an episode module, never in the generic game coordinator.

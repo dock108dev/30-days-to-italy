@@ -4,6 +4,12 @@
 
 The player listens and types; the app never requests microphone access. Progress and trip details stay in the current browser. There is no account, analytics service, application API, or cross-device sync.
 
+## Current beta target — September 21, 2026
+
+The [Desktop beta path](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) requires adequate teaching throughout Day 0–30, automatic targeted-review suggestions and varied practice. Past dates stay unlocked; future dates may stay locked for a free-version test. Retain the valid Day 30 Trip Mode/Pocket Deck gate. Computer-to-phone progress continuity is requested after beta, not implemented or required now. No payment/account/premium-tier system is implied.
+
+These are requirements, not current feature claims. Existing teaching preparation covers Days 0–1; new full-season teaching/review/variation work needs implementation assessment and qualification. The current product behavior below describes the existing application. The prior owner rejection and D0-01 remain unresolved by owner acceptance.
+
 ## Quick start
 
 Requires Node.js 22.13 or newer.
@@ -65,3 +71,7 @@ See [Development](docs/DEVELOPMENT.md) for the complete command map and change b
 ## Release boundary
 
 The supported release is owner-only. Admin controls are local review tools, not authentication. Public or shared access requires a separate security and privacy decision; deployment access and response headers must be verified outside this repository. See [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md#build-and-deployment-boundary) for the release boundary.
+
+## Shared UI design
+
+See [UI design and templates](docs/ui-design.md) before changing this interface. The shared Desktop `UI Templates` folder defines the glass design baseline for future contributors; this repository keeps its own runtime styles and a portable copy of the requirements.
