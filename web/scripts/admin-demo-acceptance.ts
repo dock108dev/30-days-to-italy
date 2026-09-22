@@ -157,13 +157,29 @@ async function snapshotLocalStorage(page: Page): Promise<StorageSnapshot> {
 
 async function seedOwner(page: Page): Promise<StorageSnapshot> {
   const records = syntheticOwnerRecords();
-  await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+  // Establish the origin without starting the app or its manifest download,
+  // which an immediate navigation away can interrupt on CI.
+  await page.goto(`${baseUrl}/favicon.svg`, { waitUntil: "load" });
+  await page.evaluate(async () => {
+    const response = await fetch("/manifest.webmanifest");
+    if (!response.ok) throw new Error(`Manifest request failed: ${response.status}`);
+    const manifest = await response.json() as {
+      icons: Array<{ src: string; sizes: string }>;
+    };
+    for (const icon of manifest.icons) {
+      const image = new Image();
+      image.src = icon.src;
+      await image.decode();
+      if (`${image.naturalWidth}x${image.naturalHeight}` !== icon.sizes) {
+        throw new Error(`Manifest icon dimensions do not match: ${icon.src}`);
+      }
+    }
+  });
   await page.evaluate((values) => {
     localStorage.clear();
     sessionStorage.clear();
     for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value);
   }, records);
-  await page.goto("about:blank");
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.getByText("Day 2", { exact: true }).first().waitFor();
   return snapshotLocalStorage(page);
