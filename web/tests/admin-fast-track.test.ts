@@ -193,7 +193,7 @@ test("active progress stays compact and the traveler overview owns all sessions"
     onEditTrip: () => undefined,
     onSelect: () => undefined,
   }));
-  assert.match(overview, /All 31 practical sessions/);
+  assert.match(overview, /Your 31 sessions/);
   assert.match(overview, /Day 30/);
   assert.equal((overview.match(/aria-current="step"/g) ?? []).length, 1);
   assert.doesNotMatch(overview, /Prototype admin/);

@@ -374,7 +374,7 @@ async function playLine(page: Page): Promise<void> {
 async function exerciseHelp(page: Page, episodeId: EpisodeId, capture: boolean): Promise<void> {
   const before = await storedValue<GameState>(page, STORAGE_KEY);
   const progressive = episodeId === "day-00" || episodeId === "day-01";
-  const trigger = page.getByRole("button", { name: progressive ? /Open progressive help/ : /Teach me a phrase/ });
+  const trigger = page.getByRole("button", { name: progressive ? /Get help/ : /Teach me a phrase/ });
   await trigger.click();
   const refresher = progressive
     ? page.locator(".progressive-help-steps")
@@ -442,11 +442,11 @@ async function assertReviewContract(page: Page, episodeId: EpisodeId): Promise<v
   );
   assert.deepEqual(sections, [
     "objective-result",
+    "next-action",
     "useful-phrasing",
     "pocket-deck-effect",
     "understood-intent",
     "world-consequence",
-    "next-action",
   ], `${episodeId} must retain all six truthful review sections in the compact presentation order.`);
   assert.equal(
     await page.locator(".review-details:not([open])").count(),
@@ -769,7 +769,7 @@ try {
   } else {
 
     await page.locator('[data-primary-action="true"]:visible').click();
-    await page.getByRole("heading", { name: "The words you need, within reach." }).waitFor();
+    await page.getByRole("heading", { name: "Pocket Deck" }).waitFor();
     await page.getByRole("region", { name: "Demo Pocket Deck evidence boundary" }).waitFor();
     assert.match(
       await page.getByRole("region", { name: "Demo Pocket Deck evidence boundary" }).innerText(),

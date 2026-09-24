@@ -86,7 +86,7 @@ import {
 } from "../pocket-deck/model";
 import { createDefaultTripProfile, type TripProfile } from "../trip/model";
 import { createSeasonEpisodeHandoff } from "../season/pocket-deck-handoff";
-import { EPISODE_BY_ID, EPISODE_IDS, SEASON_01, type EpisodeId } from "../season/manifest";
+import { EPISODE_BY_ID, EPISODE_IDS, type EpisodeId } from "../season/manifest";
 import { implementedEpisode, TURNS, sceneForEpisode } from "../season/registry";
 import { scheduleSeason } from "../season/schedule";
 import { saveTripProfile } from "../trip/persistence";
@@ -857,8 +857,8 @@ export default function Home() {
   if (!hydrated) {
     return (
       <main className="loading-screen">
-        <div className="loading-mark">UM</div>
-        <p>Preparing the coast…</p>
+        <div className="loading-mark">30</div>
+        <p>Loading your trip…</p>
       </main>
     );
   }
@@ -913,14 +913,16 @@ export default function Home() {
         }}
       />
 
-      <PrototypeHeader
-        mode={lifecycle.mode}
-        onOpenAdmin={() => setAdminOpen(true)}
-      />
+      <div className="app-navigation">
+        <PrototypeHeader
+          mode={lifecycle.mode}
+          onOpenAdmin={() => setAdminOpen(true)}
+        />
+        <ModeNavigation mode={lifecycle.mode} onChange={changeMode} />
+      </div>
       {clientFailure && (
         <OperationalFailureBanner failure={clientFailure} onDismiss={() => setClientFailure(null)} />
       )}
-      <ModeNavigation mode={lifecycle.mode} onChange={changeMode} />
 
       {conductor && activeDemoCheckpoint && (
         <DemoModeBanner
@@ -967,9 +969,9 @@ export default function Home() {
                 />
               )}
 
-              <div className={`content-grid ${game.status !== "active" ? "resolved" : ""}`}>
+              <div className={`content-grid ${game.status !== "active" ? "resolved" : prepCursor ? "preparing" : ""}`}>
                 <section className="story-panel">
-                  {!prepCursor && <SceneIntroduction scene={scene} status={game.status} />}
+                  {!prepCursor && game.status === "active" && <SceneIntroduction scene={scene} status={game.status} />}
 
                 {prepCursor ? (
                   !seasonOverviewOpen && <PreparationView
@@ -981,8 +983,6 @@ export default function Home() {
                   />
                 ) : game.status === "active" ? (
                   <>
-                    <h2 id="live-encounter-heading" tabIndex={-1}>Conversation with {turn.npc}</h2>
-                    {implementedEpisode(game.episodeId)?.preparation && <button className="preparation-live-action" id="review-preparation" type="button" onClick={reviewPreparation}>Review preparation</button>}
                     <EncounterStage
                       turn={turn}
                       scene={scene}
@@ -1013,6 +1013,8 @@ export default function Home() {
                         progressiveHelp={Boolean(progressiveHelp)}
                       />
                     )}
+
+                    {implementedEpisode(game.episodeId)?.preparation && <button className="preparation-live-action" id="review-preparation" type="button" onClick={reviewPreparation}>Review preparation</button>}
 
                     {teachingMoment && activeLesson && activeExample && (
                       <TeachingCard
@@ -1074,8 +1076,7 @@ export default function Home() {
           )}
 
           <footer>
-            <span>Prepare Mode · complete 31-session season · {SEASON_01.length} playable</span>
-            <p>Listening first. Refreshers whenever you need them. Practical outcomes.</p>
+            <span>Progress stays in this browser.</span>
           </footer>
         </>
       ) : (
@@ -1091,8 +1092,7 @@ export default function Home() {
             onOpenCardHandled={() => setTripDeckCardId(null)}
           />
           <footer className="trip-footer">
-            <span>Trip Mode · stored locally</span>
-            <p>Quick help without lessons, scores, or simulated consequences.</p>
+            <span>Saved in this browser. Search and downloaded audio work offline.</span>
           </footer>
         </>
       )}

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 import { departureCountdown, formatDepartureDate, isValidLocalDate } from "./date";
 import {
@@ -28,6 +28,7 @@ type TripSetupProps = {
 };
 
 export function TripSetup({ initialProfile, editing = false, onSave, onCancel }: TripSetupProps) {
+  const preferences = useRef<HTMLDetailsElement>(null);
   const [draft, setDraft] = useState(initialProfile);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,6 +56,7 @@ export function TripSetup({ initialProfile, editing = false, onSave, onCancel }:
       return;
     }
     if (draft.transport.length === 0) {
+      if (preferences.current) preferences.current.open = true;
       setError("Choose at least one likely way you will get around.");
       return;
     }
@@ -70,8 +72,7 @@ export function TripSetup({ initialProfile, editing = false, onSave, onCancel }:
     <form className="trip-setup-card" onSubmit={submit} aria-label="Trip setup">
       <div className="trip-setup-heading">
         <div>
-          <p>{editing ? "Trip details" : "30 Days to Italy"}</p>
-          <h1>{editing ? "Adjust your trip" : "Let’s prepare for your trip."}</h1>
+          <h1>{editing ? "Adjust your trip" : "Prepare for your trip"}</h1>
         </div>
         {editing && onCancel && (
           <button className="trip-close" type="button" onClick={onCancel} aria-label="Close trip details">×</button>
@@ -79,11 +80,10 @@ export function TripSetup({ initialProfile, editing = false, onSave, onCancel }:
       </div>
 
       <p className="trip-setup-intro">
-        A few details help us put the right situations first. Recommended choices are already selected.
+        Set your departure date to schedule the sessions. You can change these details later.
       </p>
 
       <section className="trip-form-section">
-        <div className="trip-form-section-heading"><span>1</span><h2>Trip basics</h2></div>
         <div className="trip-form-grid">
         <label className="trip-field">
           <span>Departure date</span>
@@ -124,80 +124,86 @@ export function TripSetup({ initialProfile, editing = false, onSave, onCancel }:
         </div>
       </section>
 
-      <section className="trip-form-section">
-        <div className="trip-form-section-heading"><span>2</span><h2>How you’re traveling</h2></div>
-        <div className="trip-choice-grid">
-        <ChoiceGroup<TravelParty>
-          legend="Who is traveling?"
-          name="party"
-          value={draft.party}
-          options={[
-            ["solo", "Solo"],
-            ["accompanied", "With someone"],
-          ]}
-          onChange={(value) => setField("party", value)}
-        />
-        <ChoiceGroup<LodgingType>
-          legend="Likely lodging"
-          name="lodging"
-          value={draft.lodging}
-          options={[
-            ["hotel", "Hotel"],
-            ["rental", "Rental"],
-            ["mixed", "A mix"],
-          ]}
-          onChange={(value) => setField("lodging", value)}
-        />
-        </div>
+      <p className="trip-preferences-summary">
+          {draft.party === "solo" ? "Solo" : "With someone"} · {draft.lodging === "mixed" ? "Hotel or rental" : draft.lodging === "hotel" ? "Hotel" : "Rental"} · {draft.transport.map((mode) => TRANSPORT_LABELS[mode]).join(", ") || "Choose transport"}.
+          {" "}{draft.beachPlans === "yes" ? "Beach planned." : draft.beachPlans === "maybe" ? "Beach possible." : "Beach unlikely."} {draft.socialPreference === "minimal" ? "Brief conversations." : "Open to more conversation."}
+      </p>
+      <details className="trip-preferences" ref={preferences} open={editing || undefined}>
+        <summary>Travel preferences</summary>
+        <section className="trip-form-section">
+          <div className="trip-form-section-heading"><h2>How you’re traveling</h2></div>
+          <div className="trip-choice-grid">
+          <ChoiceGroup<TravelParty>
+            legend="Who is traveling?"
+            name="party"
+            value={draft.party}
+            options={[
+              ["solo", "Solo"],
+              ["accompanied", "With someone"],
+            ]}
+            onChange={(value) => setField("party", value)}
+          />
+          <ChoiceGroup<LodgingType>
+            legend="Likely lodging"
+            name="lodging"
+            value={draft.lodging}
+            options={[
+              ["hotel", "Hotel"],
+              ["rental", "Rental"],
+              ["mixed", "A mix"],
+            ]}
+            onChange={(value) => setField("lodging", value)}
+          />
+          </div>
 
-        <fieldset className="trip-fieldset transport-options">
-        <legend>How will you likely get around?</legend>
-        <div>
-          {TRANSPORT_MODES.map((mode) => (
-            <label key={mode} className={draft.transport.includes(mode) ? "selected" : ""}>
-              <input
-                type="checkbox"
-                checked={draft.transport.includes(mode)}
-                onChange={() => toggleTransport(mode)}
-              />
-              <span>{TRANSPORT_LABELS[mode]}</span>
-            </label>
-          ))}
-        </div>
-        </fieldset>
-      </section>
-
-      <section className="trip-form-section">
-        <div className="trip-form-section-heading"><span>3</span><h2>What matters to you</h2></div>
-        <div className="trip-choice-grid final-choices">
-        <ChoiceGroup<BeachPlans>
-          legend="Beach plans"
-          name="beachPlans"
-          value={draft.beachPlans}
-          options={[
-            ["yes", "Definitely"],
-            ["maybe", "Maybe"],
-            ["no", "Not likely"],
-          ]}
-          onChange={(value) => setField("beachPlans", value)}
-        />
-        <ChoiceGroup<SocialPreference>
-          legend="Conversation preference"
-          name="socialPreference"
-          value={draft.socialPreference}
-          options={[
-            ["minimal", "Keep it brief"],
-            ["more", "Open to more"],
-          ]}
-          onChange={(value) => setField("socialPreference", value)}
-        />
-        </div>
-      </section>
+          <fieldset className="trip-fieldset transport-options">
+          <legend>How will you likely get around?</legend>
+          <div>
+            {TRANSPORT_MODES.map((mode) => (
+              <label key={mode} className={draft.transport.includes(mode) ? "selected" : ""}>
+                <input
+                  type="checkbox"
+                  checked={draft.transport.includes(mode)}
+                  onChange={() => toggleTransport(mode)}
+                />
+                <span>{TRANSPORT_LABELS[mode]}</span>
+              </label>
+            ))}
+          </div>
+          </fieldset>
+        </section>
+          <section className="trip-form-section">
+          <div className="trip-form-section-heading"><h2>What matters to you</h2></div>
+          <div className="trip-choice-grid final-choices">
+          <ChoiceGroup<BeachPlans>
+            legend="Beach plans"
+            name="beachPlans"
+            value={draft.beachPlans}
+            options={[
+              ["yes", "Definitely"],
+              ["maybe", "Maybe"],
+              ["no", "Not likely"],
+            ]}
+            onChange={(value) => setField("beachPlans", value)}
+          />
+          <ChoiceGroup<SocialPreference>
+            legend="Conversation preference"
+            name="socialPreference"
+            value={draft.socialPreference}
+            options={[
+              ["minimal", "Keep it brief"],
+              ["more", "Open to more"],
+            ]}
+            onChange={(value) => setField("socialPreference", value)}
+          />
+          </div>
+        </section>
+      </details>
 
       {error && <p className="trip-form-error" role="alert">{error}</p>}
 
       <div className="trip-setup-footer">
-        <p><span aria-hidden="true">●</span> Saved only in this browser. No sensitive travel documents needed.</p>
+        <p>Saved in this browser only. No account or device sync.</p>
         <div>
           {editing && onCancel && <button type="button" className="trip-cancel" onClick={onCancel}>Cancel</button>}
           <button type="submit" className="trip-save">
@@ -222,10 +228,9 @@ export function TripSetup({ initialProfile, editing = false, onSave, onCancel }:
     <main className="trip-setup-shell">
       <div className="trip-setup-brand">
         <div className="brand-mark" aria-hidden="true"><span>30</span><i /></div>
-        <div><p>30 Days to Italy</p><span>Your trip starts before departure.</span></div>
+        <div><p>30 Days to Italy</p></div>
       </div>
       {form}
-      <p className="setup-footnote">Device-local progress · no account or sync · practical preparation, not a language course</p>
     </main>
   );
 }

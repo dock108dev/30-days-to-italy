@@ -88,7 +88,6 @@ export function GuidedSessionReview({
       </div>
 
       <section className="review-section objective-result guided-outcome" data-review-section="objective-result">
-        <span className="review-number">1</span>
         <div>
           <p>Objective and practical result</p>
           <strong>{scene.objective}</strong>
@@ -96,8 +95,31 @@ export function GuidedSessionReview({
         </div>
       </section>
 
+      <section className="review-section next-action" data-review-section="next-action">
+        <div>
+          <p>Next action</p>
+          {nextScene ? (
+            <>
+              <strong>{nextScene.title} is next.</strong>
+              <button type="button" className="primary-action" data-primary-action="true" onClick={onNext}>
+                Continue to {nextScene.day} <span aria-hidden="true">→</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <strong>The next rehearsal is scheduled closer to departure.</strong>
+              <button type="button" className="primary-action" data-primary-action="true" onClick={onReview}>
+                Return to season overview <span aria-hidden="true">→</span>
+              </button>
+            </>
+          )}
+          <button type="button" className="guided-practice-again" onClick={onPracticeAgain}>
+            Practice this situation again <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>
+
       <section className="review-section useful-phrasing guided-language" data-review-section="useful-phrasing">
-        <span className="review-number">2</span>
         <div>
         <div className="guided-section-heading">
           <div><p>One useful phrasing</p><h3 lang="it">{usefulPhrase.italian}</h3></div>
@@ -129,15 +151,14 @@ export function GuidedSessionReview({
       </section>
 
       <section className="review-section pocket-deck-effect guided-deck-ready" data-review-section="pocket-deck-effect" data-pocket-deck-state={deckState}>
-        <span className="review-number">3</span>
         {handoff && handoffApplied ? (
           <>
             <div>
-              <span>Carried forward</span>
-              <h3>Carried to your Pocket Deck.</h3>
+              <span>Pocket Deck</span>
+              <h3>Practice saved to your Pocket Deck.</h3>
             </div>
             <div className="guided-deck-action-copy">
-              <p>This attempt now strengthens the existing beach card on this device.</p>
+              <p>This practice is saved on your beach card in this browser.</p>
               {tripModeAvailable ? (
                 <button type="button" onClick={onOpenInTripMode}>
                   Open in Trip Mode <span aria-hidden="true">→</span>
@@ -150,21 +171,21 @@ export function GuidedSessionReview({
         ) : handoff ? (
           <>
             <div>
-              <span>Ready to carry forward</span>
+              <span>Pocket Deck</span>
               <h3>Keep this beach request within reach.</h3>
             </div>
             <div className="guided-deck-action-copy">
-              <p>This will strengthen the existing beach card with facts from this attempt.</p>
+              <p>Save this practice to your beach card.</p>
               <button type="button" onClick={onCarryToDeck}>
-                Carry this into my Pocket Deck <span aria-hidden="true">→</span>
+                Save practice to Pocket Deck <span aria-hidden="true">→</span>
               </button>
             </div>
           </>
         ) : (
           <>
-            <div><span>Nothing invented</span><h3>This situation is ready for another pass.</h3></div>
+            <div><h3>No practice to save from this attempt.</h3></div>
             <div className="guided-deck-action-copy">
-              <p>Practice the beach request before anything is carried into your deck.</p>
+              <p>Practice the beach request before saving it to your deck.</p>
             </div>
           </>
         )}
@@ -189,30 +210,7 @@ export function GuidedSessionReview({
         </section>
       </details>
 
-      <section className="review-section next-action" data-review-section="next-action">
-        <span className="review-number">4</span>
-        <div>
-          <p>Next action</p>
-          {nextScene ? (
-            <>
-              <strong>{nextScene.title} is next.</strong>
-              <button type="button" className="primary-action" data-primary-action="true" onClick={onNext}>
-                Continue to {nextScene.day} <span aria-hidden="true">→</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <strong>The next rehearsal is scheduled closer to departure.</strong>
-              <button type="button" className="primary-action" data-primary-action="true" onClick={onReview}>
-                Return to season overview <span aria-hidden="true">→</span>
-              </button>
-            </>
-          )}
-          <button type="button" className="guided-practice-again" onClick={onPracticeAgain}>
-            Practice this situation again <span aria-hidden="true">→</span>
-          </button>
-        </div>
-      </section>
+
 
       <details className="guided-evidence">
         <summary>How you handled it</summary>

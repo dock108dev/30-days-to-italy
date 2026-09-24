@@ -390,14 +390,14 @@ try {
   await page.getByRole("button", { name: "Open Can I pay by card?", exact: true }).waitFor();
   await page.getByRole("button", { name: "Clear Pocket Deck filters", exact: true }).click();
   await page.getByRole("button", { name: "Beach 2 cards", exact: true }).click();
-  await page.getByText("2 cards ready", { exact: true }).waitFor();
+  await page.getByText("2 matching cards", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Clear Pocket Deck filters", exact: true }).click();
 
   await page.getByRole("button", { name: "Prepare", exact: true }).click();
   await page.getByRole("button", { name: "Prepare for check-in", exact: true }).waitFor();
   assert.equal(await page.locator("textarea").count(), 0, "offline Prepare returns to ordinary teaching before response");
   await page.getByRole("button", { name: "Trip", exact: true }).click();
-  await page.getByRole("heading", { name: "The words you need, within reach.", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "Pocket Deck", exact: true }).waitFor();
   await page.reload({ waitUntil: "domcontentloaded" });
   await waitForOfflineLabel(page, "Offline");
   await page.getByText("1 saved", { exact: true }).waitFor();

@@ -1,5 +1,7 @@
 # Shared UI design requirements
 
+Local adoption: Glass Starter 02, September 23, 2026. See the [working examples](../../ui-templates/index.html) and [matched comparison](../../ui-templates/review/starter-02/index.html).
+
 ## Direction
 
 Use a light iOS Liquid Glass-inspired appearance: cool white surfaces, restrained translucency, subtle blue/lavender ambient background, soft depth, rounded controls, and native system typography. This is the user's requested baseline for our Desktop products. Adapt layouts to each product. Do not recreate the former beige, forest-green, yellow-tinted dashboard theme.
@@ -12,6 +14,10 @@ Use a light iOS Liquid Glass-inspired appearance: cool white surfaces, restraine
 - Panels generally use 22–26px radii; controls 12–14px; status pills fully rounded. Avoid applying pills to every piece of information.
 - Glass is a surface treatment, not decoration to stack endlessly. Use subtle borders, a white top highlight, restrained shadows, and approximately 24px backdrop blur. Keep text and dense data on sufficiently opaque surfaces.
 - Blue communicates action/selection. Green is reserved for meaningful success/positive values; amber for caution; red for error/destructive states. Pair color with text or icons. Preserve negative, zero, unknown, stale, and unavailable states accurately.
+
+## Task-first presentation
+
+Put the current task or result and its next action early. Use familiar words, remove duplicate titles and repeated status claims, and group related controls near their result. Keep required teaching, uncertainty, blockers and consequences visible. Put optional setup, diagnostics and full history in named disclosures; preserve common task steps, recovery controls and stored meaning. Reduce space before reducing type size. Compare matched states and check enlarged text as well as page overflow.
 
 ## Layout and common patterns
 

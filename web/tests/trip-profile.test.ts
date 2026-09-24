@@ -174,10 +174,10 @@ test("setup and saved-trip views render the full traveler contract", () => {
     createElement(TripSummary, { profile, onEdit: () => undefined }),
   );
 
-  assert.match(setup, /Let’s prepare for your trip\./);
+  assert.match(setup, /Prepare for your trip/);
   assert.match(setup, /Use these trip details/);
   assert.match(setup, /Campania \/ Amalfi Coast/);
-  assert.match(setup, /Saved only in this browser/);
+  assert.match(setup, /Saved in this browser only/);
   assert.doesNotMatch(setup, /passport number|payment card|booking confirmation/i);
   assert.match(summary, /Saved trip/);
   assert.match(summary, /Campania \/ Amalfi Coast/);

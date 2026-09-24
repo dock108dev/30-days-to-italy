@@ -339,7 +339,7 @@ try {
   await traversePreparation(page);
   await page.locator('.audio-stage[data-interaction-phase="awaiting_line"]').waitFor();
   await playLineAndRespond(page, "Camera dodici, primo piano. Grazie.", true);
-  await page.getByRole("button", { name: "Carry this into my Pocket Deck" }).click();
+  await page.getByRole("button", { name: "Save practice to Pocket Deck" }).click();
   await page.locator(".demo-mode-banner").filter({ hasText: "Played normally" }).waitFor();
   await assertOwnerRecordsUnchanged(page, ownerBefore);
 
@@ -404,7 +404,7 @@ try {
 
   await openAdmin(page);
   await page.getByRole("button", { name: "Open Trip Mode", exact: true }).click();
-  await page.getByRole("heading", { name: "The words you need, within reach." }).waitFor();
+  await page.getByRole("heading", { name: "Pocket Deck" }).waitFor();
   assert.equal(await page.locator('.demo-mode-banner[data-demo-checkpoint="trip"]').count(), 1);
   const tripBoundary = await page.getByRole("region", { name: "Demo Pocket Deck evidence boundary" }).innerText();
   assert.match(tripBoundary, /Core catalog cards are always available/);

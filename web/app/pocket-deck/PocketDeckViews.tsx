@@ -423,9 +423,8 @@ export function PocketDeck({
       <div className="pocket-deck-content">
         <div className="trip-mode-heading">
           <div>
-            <p>Trip Mode · Pocket Deck</p>
             <h2 id="trip-mode-title">
-              {activeCard ? activeCard.englishIntent : "The words you need, within reach."}
+              {activeCard ? activeCard.englishIntent : "Pocket Deck"}
             </h2>
             <span>{profile.regionLabel} · {profile.tripLengthDays}-day trip</span>
           </div>
@@ -439,6 +438,8 @@ export function PocketDeck({
             <i aria-hidden="true" /> {offlineReadiness.label}
           </div>
         </div>
+
+        {!["ready", "offline"].includes(offlineReadiness.state) && <p className="offline-detail" role="status">{offlineReadiness.detail}</p>}
 
         {demoMode && (
           <section className="demo-deck-boundary" aria-label="Demo Pocket Deck evidence boundary">
@@ -490,7 +491,7 @@ export function PocketDeck({
               <p aria-live="polite">
                 {playing?.cardId === activeCard.id
                   ? `Playing ${playing.speed} Italian audio.`
-                  : "Local audio · no connection used for this card."}
+                  : "Bundled audio. Available offline once downloaded."}
               </p>
             </div>
             {audioError && <p className="deck-audio-error" role="status">{audioError}</p>}
@@ -570,7 +571,6 @@ export function PocketDeck({
                   </button>
                 )}
               </div>
-              <p>Search works entirely on this device.</p>
             </div>
 
             {query || category ? (
@@ -578,7 +578,7 @@ export function PocketDeck({
                 <div className="deck-section-heading">
                   <div>
                     <span>{category ? POCKET_DECK_CATEGORY_LABELS[category] : "English search"}</span>
-                    <h3>{results.length} {results.length === 1 ? "card" : "cards"} ready</h3>
+                    <h3>{results.length} {results.length === 1 ? "matching card" : "matching cards"}</h3>
                   </div>
                 </div>
                 {results.length > 0 ? (
@@ -592,8 +592,8 @@ export function PocketDeck({
                   />
                 ) : (
                   <div className="deck-no-results">
-                    <strong>No exact match.</strong>
-                    <p>Try one of the two recovery cards below.</p>
+                    <strong>No matching cards.</strong>
+                    <p>Try a shorter search, clear the filters, or use a recovery phrase below.</p>
                     <CardGrid
                       cards={recoveryCards}
                       pinnedIds={state.pinnedCardIds}
@@ -610,8 +610,7 @@ export function PocketDeck({
                 <section className="deck-section deck-quick-section">
                   <div className="deck-section-heading">
                     <div>
-                      <span>Quick access</span>
-                      <h3>Ready when you need it</h3>
+                      <h3>Your quick access</h3>
                     </div>
                     <small>{quickAccessCards.length} saved</small>
                   </div>
@@ -627,7 +626,7 @@ export function PocketDeck({
                     />
                   ) : (
                     <p className="deck-empty-note">
-                      Practiced, pinned, and recent cards will collect here.
+                      Pin a card to keep it here. Practiced and recently opened cards also appear here.
                     </p>
                   )}
                 </section>
@@ -635,8 +634,7 @@ export function PocketDeck({
                 <section className="deck-section">
                   <div className="deck-section-heading">
                     <div>
-                      <span>Situation categories</span>
-                      <h3>Start with where you are</h3>
+                      <h3>Choose a situation</h3>
                     </div>
                   </div>
                   <div className="deck-category-grid">

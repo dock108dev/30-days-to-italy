@@ -1,10 +1,10 @@
 # 30 Days to Italy UI design
 
-Updated September 21, 2026. Shared Glass UI Starter 01; presentation-only adoption.
+Updated September 23, 2026. Shared Glass UI Starter 02; presentation-only adoption.
 
 ## For future contributors
 
-Start with [local design requirements](ui-design-requirements.md), then review the shared [UI Templates gallery](../../UI%20Templates/index.html) and [template guide](../../UI%20Templates/README.md). The source folder on the owner's Mac is `/Users/michaelfuscoletti/Desktop/UI Templates`. It contains dashboard, list/table, form/setup, settings, detail, state/dialog, and native Godot starters.
+Start with [local design requirements](ui-design-requirements.md), then review the shared [UI Templates gallery](../../ui-templates/index.html) and [template guide](../../ui-templates/README.md). The source folder on the owner's Mac is `/Users/michaelfuscoletti/Desktop/ui-templates`. It contains dashboard, list/table, form/setup, settings, detail, state/dialog, and native Godot starters.
 
 Use light cool glass, slate text, blue actions, restrained depth, rounded controls, and system typography as the default. Do not reintroduce the generic beige/green/yellow template. Preserve explicit semantic success, caution, error, unavailable, and unknown states. Readability and the task's layout outrank decoration.
 
@@ -14,7 +14,9 @@ The shared folder is a design reference, not a runtime dependency. Project asset
 
 Prepare/Trip chrome, forms, progress, cards, and dialogs share the glass foundation. Existing illustrations retain their art. Teaching, audio, calendar gates, Pocket Deck eligibility, and stored progress are unchanged.
 
-Implementation: web/app/glass.css; globals.css; layout.tsx.
+Starter 02 adapts the shared setup, detail and feedback examples: compact navigation and session progress; one full-width preparation reading area; the result and next action together; one useful phrase instead of repeated feedback; and plain Pocket Deck/help wording. Setup keeps dates, duration and region visible, summarizes selected preferences, and reveals their controls together. Editing opens those controls; invalid transport selection reveals them again. Warnings keep the problem/recovery visible and put codes in “Technical details.” Required lesson pages, Italian teaching content, outcomes, save formats and eligibility logic are unchanged.
+
+Implementation: `web/app/glass.css` and the existing trip, rehearsal, guided-review, Pocket Deck and warning views. No runtime dependency on the shared template folder.
 
 ## Review and status
 

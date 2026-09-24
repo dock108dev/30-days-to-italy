@@ -234,8 +234,8 @@ test("review offers a truthful Pocket Deck handoff after the request was practic
   assert.match(html, /−€22.00/);
   assert.match(html, /Mi servono un lettino e un ombrellone/);
   assert.match(html, /using the suggested reply/);
-  assert.match(html, /Carry this into my Pocket Deck/);
-  assert.match(html, /strengthen the existing beach card/);
+  assert.match(html, /Save practice to Pocket Deck/);
+  assert.match(html, /Save this practice to your beach card/);
   assert.match(html, /Practice this situation again/);
   assert.doesNotMatch(html, /score|points|card added/i);
 });
@@ -265,9 +265,9 @@ test("an applied handoff changes the review action without adding a second claim
       onPracticeAgain: () => undefined,
     }),
   );
-  assert.match(html, /Carried to your Pocket Deck/);
+  assert.match(html, /Practice saved to your Pocket Deck/);
   assert.match(html, /Open in Trip Mode/);
-  assert.doesNotMatch(html, /Carry this into my Pocket Deck/);
+  assert.doesNotMatch(html, /Save practice to Pocket Deck/);
 });
 
 test("an early-exit review does not invent request or deck evidence", () => {
@@ -291,7 +291,7 @@ test("an early-exit review does not invent request or deck evidence", () => {
 
   assert.match(html, /You declined the available options and kept your money/);
   assert.match(html, /did not practice the Mi servono request/);
-  assert.match(html, /Practice the beach request before anything is carried/);
+  assert.match(html, /Practice the beach request before saving it/);
   assert.doesNotMatch(html, /You formed the request|This language is ready for your Pocket Deck/);
 });
 

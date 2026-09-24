@@ -111,13 +111,12 @@ export function CompactSessionProgress({
     <section className="compact-session-progress" aria-label="Current rehearsal progress">
       <div className="compact-progress-current">
         <span>{current.day}</span>
-        <strong>{current.title}</strong>
       </div>
       <div className="compact-progress-count">
         <strong>{game.completed.length} of {schedule.length}</strong>
-        <span>sessions complete</span>
+        <span>complete</span>
       </div>
-      <button type="button" onClick={onBrowse}>Browse all {schedule.length} sessions</button>
+      <button type="button" aria-label={`Browse all ${schedule.length} sessions`} onClick={onBrowse}>All sessions</button>
     </section>
   );
 }
@@ -169,8 +168,7 @@ export function SeasonOverview({
       >
         <div className="season-overview-header">
           <div>
-            <p>Your rehearsal season</p>
-            <h2 id="season-overview-title">All 31 practical sessions</h2>
+            <h2 id="season-overview-title">Your 31 sessions</h2>
             <span>{game.completed.length} complete · progress is stored on this device</span>
           </div>
           <div className="season-overview-header-actions">
@@ -193,7 +191,7 @@ export function SeasonOverview({
               >
                 <span>{episode.completed ? "✓" : `Day ${episode.day}`}</span>
                 <strong>{episode.title}</strong>
-                <small>{isCurrent ? `Resume Day ${episode.day}` : episode.completed ? `Replay Day ${episode.day}` : episode.playable ? `Start Day ${episode.day}` : "Scheduled"}</small>
+                <small>{isCurrent ? `Resume Day ${episode.day}` : episode.completed ? `Replay Day ${episode.day}` : episode.playable ? `Start Day ${episode.day}` : `Opens ${episode.unlockDaysBeforeDeparture} days before departure`}</small>
               </button>
             );
           })}
@@ -209,7 +207,7 @@ export function SceneIntroduction({ scene, status }: { scene: Scene; status: Gam
     <>
       <div className="scene-heading">
         <div>
-          <h2>{scene.title}</h2>
+          <h2 id="live-encounter-heading" tabIndex={-1}>{scene.title}</h2>
           <div className="location-line">
             <span>{scene.location}</span><i /> <span>{scene.time}</span>
           </div>
@@ -273,7 +271,6 @@ export function EncounterStage({
         <div className="speaker-row">
           <div className="avatar">{turn.npc.slice(0, 1)}</div>
           <div><strong>{turn.npc}</strong><span>{scene.role}</span></div>
-          <div className="live-line"><i /> Italian audio</div>
         </div>
 
         <button
@@ -447,7 +444,7 @@ export function ResponseComposer({
           disabled={submitting}
           aria-expanded={teachingOpen}
         >
-          <span aria-hidden="true">＋</span> {progressiveHelp ? "Open progressive help" : "Teach me a phrase"}
+          <span aria-hidden="true">＋</span> {progressiveHelp ? "Get help" : "Teach me a phrase"}
         </button>
       </div>
       <div className="response-input-row">
@@ -512,9 +509,9 @@ export function recordedIntentSummary(game: GameState): string {
   if (game.feedback?.understood) return game.feedback.understood;
   const moves = [...new Set(result?.observedMoves ?? [])].map((move) => OBSERVED_MOVE_LABELS[move]);
   if (moves.length === 0) {
-    return "No additional communicative move was recorded beyond the authoritative result below.";
+    return "No additional response skills were recorded for this attempt.";
   }
-  return `The accepted response was recorded as ${naturalList(moves)}.`;
+  return `Your response included ${naturalList(moves)}.`;
 }
 
 export type PocketDeckReviewState = "available" | "strengthened" | "none";
@@ -579,15 +576,13 @@ export function OutcomeCard({
     <div className={`outcome-card ${game.outcome?.tone ?? "success"}`} aria-labelledby="completion-review-title">
       <div className="outcome-review-heading">
         <div>
-          <p>Day complete</p>
+          <p>{scene.day} · {game.status === "complete" || game.outcome?.tone === "success" ? "Complete" : "Attempt ended"}</p>
           <h3 id="completion-review-title" tabIndex={-1}>{game.outcome?.title}</h3>
-          <span>The practical result is recorded.</span>
         </div>
         <div className="outcome-icon" aria-hidden="true">{game.outcome?.tone === "success" ? "✓" : game.outcome?.tone === "partial" ? "~" : "↗"}</div>
       </div>
 
       <section className="review-section objective-result" data-review-section="objective-result">
-        <span className="review-number">1</span>
         <div>
           <p>Practical result</p>
           <strong>{game.outcome?.consequence}</strong>
@@ -595,96 +590,7 @@ export function OutcomeCard({
         </div>
       </section>
 
-      <section className="review-section useful-phrasing" data-review-section="useful-phrasing">
-        <span className="review-number">2</span>
-        <div>
-          <p>One useful phrasing</p>
-          <strong lang="it">{usefulPhrase}</strong>
-        </div>
-      </section>
-
-      {result?.teachingFeedback && (
-        <TeachingFeedbackResult feedback={result.teachingFeedback} />
-      )}
-
-      <section className="review-section pocket-deck-effect" data-review-section="pocket-deck-effect" data-pocket-deck-state={deckState}>
-        <span className="review-number">3</span>
-        <div>
-          <p>Pocket Deck effect</p>
-          {deckState === "available" && (
-            <>
-              <strong>Evidence is available, but it has not been carried.</strong>
-              <span>The existing “{deckCardName}” card can be strengthened{handoff?.preferenceSelected ? ` with your ${handoff.preferenceSelected} choice` : ""}.</span>
-            </>
-          )}
-          {deckState === "strengthened" && (
-            <>
-              <strong>An existing Pocket Deck card was strengthened.</strong>
-              <span>This attempt{handoff?.preferenceSelected ? ` and its ${handoff.preferenceSelected} choice` : ""} is persisted on “{deckCardName}.”</span>
-            </>
-          )}
-          {deckState === "none" && (
-            <>
-              <strong>This attempt earned no Pocket Deck evidence.</strong>
-              <span>No card was added or strengthened.</span>
-            </>
-          )}
-        </div>
-      </section>
-
-      {implementedEpisode(game.episodeId)?.preparation && onPreparationReview && <button className="preparation-live-action" id="review-preparation" type="button" onClick={onPreparationReview}>Review preparation</button>}
-      <details className="review-details">
-        <summary>Response and evidence</summary>
-        <section className="review-section understood-intent" data-review-section="understood-intent">
-          <div>
-            <p>Understood intent</p>
-            {result?.response && <span className="recorded-response">You wrote “{result.response}”</span>}
-            <strong>{recordedIntentSummary(game)}</strong>
-          </div>
-        </section>
-        <section className="review-section world-consequence" data-review-section="world-consequence">
-          <div>
-            <p>Authoritative evidence</p>
-            <strong>{scene.objective}</strong>
-            <span>{game.outcome?.consequence}</span>
-          </div>
-        </section>
-        {implementedEpisode(game.episodeId)?.preparation && <PreparationResultDetails game={game} />}
-        {result && Object.keys(result.progressiveHelp).length > 0 && (
-          <section className="review-section help-history" data-review-section="help-history">
-            <div>
-              <p>Progressive help used</p>
-              {Object.entries(result.progressiveHelp).map(([turnId, help]) => (
-                <span key={turnId}>{turnId}: level {help.highestLevel} · normal {help.normalReplayCount} · careful {help.carefulReplayCount}</span>
-              ))}
-            </div>
-          </section>
-        )}
-        {variation && (
-          <details
-            className="review-variation"
-            open={showNatural}
-            onToggle={(event) => {
-              if (event.currentTarget.open !== showNatural) onToggleNatural();
-            }}
-          >
-            <summary>{showNatural ? "Hide phrase variation" : "Show phrase variation"}</summary>
-            <span lang="it">{variation}</span>
-          </details>
-        )}
-      </details>
-
-      {game.seasonCompletion && game.status !== "complete" && (
-        <div className="historical-completion-note" role="status">
-          <strong>Earlier season completion remains recorded.</strong>
-          <span>
-            This replay ended as “{game.outcome?.title}.” It did not erase completion attempt {game.seasonCompletion.attempt}.
-          </span>
-        </div>
-      )}
-
       <section className="review-section next-action" data-review-section="next-action">
-        <span className="review-number">4</span>
         <div>
           <p>Next action</p>
           {game.status === "complete" ? (
@@ -716,24 +622,114 @@ export function OutcomeCard({
           <div className="review-secondary-actions">
             <button type="button" className="secondary-action" onClick={onRestart}>Replay this day</button>
             <button type="button" className="secondary-action" onClick={onReview}>Review the season</button>
+          </div>
+        </div>
+      </section>
+
+      {!result?.teachingFeedback && <section className="review-section useful-phrasing" data-review-section="useful-phrasing">
+        <div>
+          <p>One useful phrasing</p>
+          <strong lang="it">{usefulPhrase}</strong>
+        </div>
+      </section>}
+
+      {result?.teachingFeedback && (
+        <section className="useful-phrasing" data-review-section="useful-phrasing">
+          <TeachingFeedbackResult feedback={result.teachingFeedback} />
+        </section>
+      )}
+
+      <section className="review-section pocket-deck-effect" data-review-section="pocket-deck-effect" data-pocket-deck-state={deckState}>
+        <div>
+          <p>Pocket Deck</p>
+          {deckState === "available" && (
+            <>
+              <strong>Ready to save to your Pocket Deck.</strong>
+              <span>Save this practice to “{deckCardName}”{handoff?.preferenceSelected ? ` with your ${handoff.preferenceSelected} choice` : ""}.</span>
+            </>
+          )}
+          {deckState === "strengthened" && (
+            <>
+              <strong>Practice saved to your Pocket Deck.</strong>
+              <span>This attempt{handoff?.preferenceSelected ? ` and its ${handoff.preferenceSelected} choice` : ""} is saved on “{deckCardName}.”</span>
+            </>
+          )}
+          {deckState === "none" && (
+            <>
+              <strong>No practice to save from this attempt.</strong>
+              <span>Your Pocket Deck is unchanged.</span>
+            </>
+          )}
+          <div className="review-secondary-actions">
             {handoff && onCarryToDeck && (
               handoffApplied ? (
                 onOpenInTripMode ? (
                   <button type="button" className="secondary-action" onClick={onOpenInTripMode}>
-                    Open strengthened card in Trip Mode
+                    Open saved card in Trip Mode
                   </button>
                 ) : (
                   <span className="demo-trip-locked">Carried in Demo mode · Trip Mode unlocks after Day 30</span>
                 )
               ) : (
                 <button type="button" className="secondary-action" onClick={onCarryToDeck}>
-                  Carry this into my Pocket Deck
+                  Save practice to Pocket Deck
                 </button>
               )
             )}
           </div>
         </div>
       </section>
+
+      {implementedEpisode(game.episodeId)?.preparation && onPreparationReview && <button className="preparation-live-action" id="review-preparation" type="button" onClick={onPreparationReview}>Review preparation</button>}
+      <details className="review-details">
+        <summary>Your response and practice details</summary>
+        <section className="review-section understood-intent" data-review-section="understood-intent">
+          <div>
+            <p>What we understood</p>
+            {result?.response && <span className="recorded-response">You wrote “{result.response}”</span>}
+            <strong>{recordedIntentSummary(game)}</strong>
+          </div>
+        </section>
+        <section className="review-section world-consequence" data-review-section="world-consequence">
+          <div>
+            <p>Rehearsal outcome</p>
+            <strong>{scene.objective}</strong>
+            <span>{game.outcome?.consequence}</span>
+          </div>
+        </section>
+        {implementedEpisode(game.episodeId)?.preparation && <PreparationResultDetails game={game} />}
+        {result && Object.keys(result.progressiveHelp).length > 0 && (
+          <section className="review-section help-history" data-review-section="help-history">
+            <div>
+              <p>Help used</p>
+              {Object.entries(result.progressiveHelp).map(([turnId, help]) => (
+                <span key={turnId}>{turnId}: level {help.highestLevel} · normal {help.normalReplayCount} · careful {help.carefulReplayCount}</span>
+              ))}
+            </div>
+          </section>
+        )}
+        {variation && (
+          <details
+            className="review-variation"
+            open={showNatural}
+            onToggle={(event) => {
+              if (event.currentTarget.open !== showNatural) onToggleNatural();
+            }}
+          >
+            <summary>{showNatural ? "Hide phrase variation" : "Show phrase variation"}</summary>
+            <span lang="it">{variation}</span>
+          </details>
+        )}
+      </details>
+
+      {game.seasonCompletion && game.status !== "complete" && (
+        <div className="historical-completion-note" role="status">
+          <strong>Earlier season completion remains recorded.</strong>
+          <span>
+            This replay ended as “{game.outcome?.title}.” It did not erase completion attempt {game.seasonCompletion.attempt}.
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -793,7 +789,7 @@ export function WorldPanel({
   return (
     <aside className="world-panel" aria-label="Optional rehearsal help">
       <div className="world-header">
-        <div><p>Optional help</p><h3>For this turn</h3></div>
+        <div><h3>Help with this reply</h3></div>
         <span>{sceneTime(game.episodeId)} · {money(game.money)}</span>
       </div>
 
@@ -859,9 +855,9 @@ const HELP_ACTIONS: Record<ProgressiveHelpLevel, string> = {
   1: "Replay normal audio",
   2: "Replay careful audio",
   3: "Show Italian listen-for cues",
-  4: "Show what the NPC line means",
-  5: "Show a partial Italian response frame",
-  6: "Reveal one complete natural model",
+  4: "Show what they said",
+  5: "Show the start of a response",
+  6: "Show an example response",
 };
 
 function ProgressiveHelpPanel({
@@ -883,11 +879,11 @@ function ProgressiveHelpPanel({
   const next = highest < 6 ? (highest + 1) as ProgressiveHelpLevel : null;
   function revealedLevel(level: ProgressiveHelpLevel) {
     if (level === 1) return <div data-help-level="1"><span>Level 1 · Audio only</span><p>Normal replay attempted. No text answer revealed.</p></div>;
-    if (level === 2) return <div data-help-level="2"><span>Level 2 · Careful audio only</span><p>Careful replay attempted. No meaning or model revealed.</p></div>;
+    if (level === 2) return <div data-help-level="2"><span>Level 2 · Careful audio only</span><p>Careful replay attempted. No translation or example revealed.</p></div>;
     if (level === 3) return <div data-help-level="3"><span>Level 3 · Italian cues</span><p lang="it">{content.listenFor.join(" · ")}</p></div>;
-    if (level === 4) return <div data-help-level="4"><span>Level 4 · NPC meaning</span><p>{content.meaning}</p></div>;
+    if (level === 4) return <div data-help-level="4"><span>Level 4 · What they said</span><p>{content.meaning}</p></div>;
     if (level === 5) return <div data-help-level="5"><span>Level 5 · Partial response</span><p lang="it">{content.frame}</p></div>;
-    return <div data-help-level="6"><span>Level 6 · Complete natural model</span><p lang="it">{content.model}</p></div>;
+    return <div data-help-level="6"><span>Level 6 · Example response</span><p lang="it">{content.model}</p></div>;
   }
   return (
     <section className="world-section progressive-help" aria-labelledby="progressive-help-title">
@@ -898,12 +894,12 @@ function ProgressiveHelpPanel({
         aria-controls="progressive-help-steps"
         onClick={onToggle}
       >
-        <span id="progressive-help-title">Progressive help</span>
+        <span id="progressive-help-title">Help, one step at a time</span>
         <small>{next ? `Next: ${HELP_ACTIONS[next]}` : "All six levels used"}</small>
       </button>
       {open && (
         <div id="progressive-help-steps" className="progressive-help-steps" role="region" aria-live="polite">
-          <p className="help-contract">Choose each level yourself. Your response and the scene stay unchanged.</p>
+          <p className="help-contract">Reveal only the help you need. Nothing is sent for you.</p>
           {highest > 1 && (
             <details className="progressive-help-earlier">
               <summary>Review earlier help ({highest - 1} levels)</summary>
@@ -916,7 +912,7 @@ function ProgressiveHelpPanel({
               Level {next}: {HELP_ACTIONS[next]}
             </button>
           )}
-          {!next && <p className="help-complete" role="status">You chose all six help levels. The turn is still waiting for your response.</p>}
+          {!next && <p className="help-complete" role="status">You have seen all six help levels. You can now write your response.</p>}
           <button type="button" className="progressive-help-close" onClick={onToggle}>Close help</button>
         </div>
       )}

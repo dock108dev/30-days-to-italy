@@ -1,4 +1,4 @@
-/* Shared Glass UI Starter 01, adapted September 21, 2026. See docs/ui-design.md. */
+/* Shared Glass UI Starter 02, adapted September 23, 2026. See docs/ui-design.md. */
 :root{color-scheme:light;--canvas:#edf3fc;--sand:#eaf0fb;--sand-deep:#dce5f4;--surface:#ffffffed;--ink:#182338;--ink-soft:#54647b;--ocean:#0969df;--ocean-deep:#084f9f;--water:#3c8cec;--sea-glass:#e2edff;--sky:#e6efff;--sun:#e4ad54;--terracotta:#0969df;--coral-wash:#e6efff;--success:#08725e;--danger:#b32c46;--line:rgba(83,108,150,.2);--shadow-low:0 10px 30px #334d7910;--shadow-medium:0 16px 40px #334d7914;--shadow-high:0 28px 90px #24345130;--glass-font:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 body{background:radial-gradient(ellipse at 0 0,#d4e6ff,transparent 55%),radial-gradient(ellipse at 100% 35%,#e3dcfa,transparent 50%),#edf3fc;background-attachment:fixed;font-family:var(--glass-font)}
 .topbar{margin-top:18px;padding:14px 20px;min-height:76px;border:1px solid #ffffffed;border-radius:24px;background:#ffffffa8;box-shadow:var(--shadow-low);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%)}
@@ -16,3 +16,157 @@ button,input,select,textarea{border-radius:14px}:is(button,input,select,textarea
 .scene-heading h2{font-size:clamp(30px,4vw,44px);font-weight:650;line-height:1.12}
 .deck-show-view{background:linear-gradient(150deg,#153254,#155bae 62%,#3c7dd0)}
 @media(prefers-reduced-transparency:reduce){.story-panel,.trip-setup-card,.admin-modal,.deck-card-detail{background:#f8faff;backdrop-filter:none;-webkit-backdrop-filter:none}}
+
+/* Starter 02: put the current task before repeated chrome. */
+.app-navigation { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+.app-navigation .topbar { flex: 1; min-width: 0; margin: 0; padding: 10px 16px; min-height: 64px; }
+.app-navigation .mode-navigation { margin: 0; }
+.brand-mark { width: 40px; height: 40px; }
+.mode-navigation button, .quiet-button { min-height: 44px; }
+.compact-session-progress { grid-template-columns: auto 1fr auto; gap: 12px; margin: 12px 0; padding: 8px 12px; border-radius: 16px; box-shadow: none; }
+.compact-progress-current span { font-size: .875rem; text-transform: none; letter-spacing: normal; }
+.compact-progress-count { display: flex; align-items: baseline; gap: 5px; justify-content: flex-end; }
+.compact-progress-count :is(strong,span) { font-size: .875rem; }
+.compact-session-progress > button { min-height: 44px; font-size: .875rem; }
+.content-grid.preparing { grid-template-columns: minmax(0, 1fr); }
+.content-grid.preparing .story-panel { width: min(900px, 100%); margin-inline: auto; }
+.story-panel { padding: 20px; }
+.scene-heading h2 { font-size: clamp(1.5rem, 3vw, 2rem); letter-spacing: -.02em; }
+.scene-objective { padding: 10px 12px; margin-top: 12px; }
+
+.preparation { max-width: 44rem; padding: 0; line-height: 1.5; }
+.preparation h2 { margin: 4px 0 12px; }
+.preparation-context { color: var(--ink-soft); font-size: .875rem; font-weight: 500; }
+.preparation-note { background: var(--sky); margin-block: 12px; }
+.preparation-chunks { gap: 0; margin-block: 12px; }
+.preparation-chunks > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.preparation-chunks dd { margin: 0; }
+.preparation-transcript { margin-block: 12px; }
+.preparation-navigation { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.preparation-navigation button { background: white; color: var(--ocean-deep); border-color: #899fbb; }
+.preparation-navigation button:first-child { color: white; background: var(--ocean); border-color: var(--ocean); font-weight: 650; }
+.preparation-audio button { background: white; border-color: #899fbb; }
+.preparation-audio + [role="status"] { margin-top: 8px; color: var(--ink-soft); }
+.preparation-live-action { margin: 8px 0; }
+.audio-stage { padding: 14px; margin-top: 12px; }
+.play-button { min-height: 60px; margin-top: 12px; }
+.response-composer { margin-top: 16px; }
+.outcome-card { margin-top: 0; padding: 20px; background: #eef6ff; }
+.outcome-review-heading { margin-bottom: 12px; }
+.outcome-review-heading h3 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.15; letter-spacing: -.02em; }
+.outcome-review-heading p, .review-section p { font-size: .875rem; text-transform: none; letter-spacing: normal; }
+.outcome-icon { width: 40px; height: 40px; flex: 0 0 40px; font-size: 22px; }
+.review-section { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 12px 0; }
+.review-section > div > span, .teaching-feedback-result dd { font-size: 1rem; }
+.next-action { margin: 0 0 16px; padding: 12px; }
+.next-action > div > .primary-action, .season-completion-summary .primary-action { min-height: 48px; font-size: 1rem; margin-top: 4px; }
+.review-secondary-actions { flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.review-secondary-actions button { min-height: 44px; font-size: .875rem; }
+.pocket-deck-effect { padding: 12px; }
+.review-details { margin-top: 12px; }
+.review-details > summary { min-height: 44px; font-size: 1rem; }
+.review-details > summary::after { content: " +"; }
+.review-details[open] > summary::after { content: " −"; }
+.trip-setup-shell { padding: 20px 24px; }
+.trip-setup-brand { margin-bottom: 12px; }
+.trip-setup-card { padding: 24px; border-radius: 24px; }
+.trip-setup-heading h1, .trip-mode-heading h2 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -.02em; }
+.trip-setup-intro { margin-top: 8px; font-size: 1rem; }
+.trip-form-section { margin-top: 16px; padding-top: 16px; }
+.trip-form-section-heading { margin-bottom: 12px; }
+.trip-form-section-heading h2 { font-size: 1.125rem; }
+.trip-field > span, .trip-fieldset legend { font-size: .875rem; }
+.trip-fieldset label > span { min-height: 44px; font-size: .875rem; }
+.trip-fieldset input:focus-visible + span { outline: 3px solid var(--ocean); outline-offset: 3px; }
+.trip-fieldset label.selected > span::before { content: "✓"; margin-right: 6px; }
+.trip-preferences-summary { margin: 16px 0 4px; color: var(--ink-soft); font-size: .875rem; }
+.trip-preferences > summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; color: var(--ocean-deep); font-weight: 650; }
+.trip-preferences > summary::after { content: "+"; }
+.trip-preferences[open] > summary::after { content: "−"; }
+.trip-setup-footer { margin-top: 12px; padding-top: 16px; gap: 12px; }
+.trip-setup-footer > p { font-size: .875rem; }
+.trip-save { min-height: 48px; font-size: 1rem; }
+.trip-mode-home { padding: 24px; margin-top: 12px; }
+.trip-mode-heading { gap: 12px; }
+.offline-detail { margin: 8px 0; color: var(--ink-soft); }
+.deck-search-panel { margin-top: 16px; padding: 12px; }
+.deck-search-panel > div { grid-template-columns: minmax(0, 1fr) auto; }
+.deck-section { margin-top: 20px; }
+.deck-section-heading h3 { font-size: 1.25rem; }
+.deck-quick-section, .deck-recovery-section { padding: 12px; }
+.deck-card-open { min-height: 0; padding: 12px; }
+.deck-card-open > span { font-size: .875rem; }
+.deck-card-open > strong { margin-top: 6px; font-size: 1.125rem; line-height: 1.4; }
+.deck-card-open > small { padding-top: 8px; font-size: .875rem; }
+.deck-pin-button, .deck-search-panel button { min-height: 44px; font-size: .875rem; }
+.deck-card-detail { margin-top: 16px; padding: 16px; }
+.deck-primary-phrase { margin-top: 16px; }
+.deck-primary-phrase > strong { font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1.2; }
+.deck-audio-controls { margin-top: 16px; }
+.deck-detail-actions { margin-top: 12px; }
+.operational-failure-banner p { font-size: 1rem; }
+.operational-failure-banner summary { min-height: 44px; display: flex; align-items: center; font-size: .875rem; }
+.operational-failure-banner summary::after { content: " +"; }
+.operational-failure-banner details[open] summary::after { content: " −"; }
+.operational-failure-banner button { min-height: 44px; font-size: .875rem; }
+.season-overview-grid button { min-height: 60px; }
+.season-overview-grid button:disabled { opacity: 1; color: var(--ink-soft); background: #eef1f6; }
+.season-overview-grid button small { white-space: normal; }
+footer { margin-top: 16px; padding-top: 12px; }
+@media (max-width: 650px) {
+  .app-shell { padding-inline: 12px; }
+  .app-navigation { flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .app-navigation .topbar { flex-basis: 100%; padding: 8px 12px; }
+  .app-navigation .mode-navigation { width: 100%; }
+  .mode-navigation > div { width: 100%; }
+  .compact-session-progress { grid-template-columns: auto 1fr; gap: 0 8px; padding: 6px 10px; margin-block: 8px; }
+  .compact-progress-count { justify-content: flex-end; }
+  .compact-session-progress > button { grid-column: 1 / -1; margin-top: 4px; }
+  .story-panel { padding: 16px; }
+  .outcome-card { padding: 14px; }
+  .review-secondary-actions { flex-direction: row; }
+  .review-secondary-actions button { width: auto; flex: 1 1 130px; }
+  .trip-setup-shell { padding: 16px 12px; }
+  .trip-setup-card { padding: 16px; }
+  .trip-setup-footer { align-items: stretch; }
+  .trip-mode-home { padding: 16px; }
+  .deck-card-detail { padding: 12px; }
+  .deck-search-panel > div { grid-template-columns: minmax(0, 1fr) auto; }
+  .deck-section-heading { flex-direction: row; align-items: baseline; }
+  .season-overview-grid button { grid-template-columns: 48px minmax(0, 1fr); }
+  .season-overview-grid button small { grid-column: 2; }
+}
+.guided-review { margin-top: 12px; padding: 24px; }
+.guided-review-heading h2 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; }
+.guided-review-heading { margin-bottom: 16px; }
+.guided-review .guided-outcome { padding: 12px; margin-bottom: 12px; }
+.guided-review .guided-language { margin-top: 16px; }
+.guided-section-heading h3 { font-size: 1.5rem; }
+@media (max-width: 650px) { .guided-review { padding: 16px; } }
+
+/* Listening and reply controls share the same working area. */
+.audio-stage[data-interaction-phase="ready_to_respond"],
+.audio-stage[data-interaction-phase="submitting"] { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.audio-stage .speaker-row { grid-template-columns: 40px minmax(0, 1fr); grid-column: 1 / -1; }
+.speaker-row span { font-size: .875rem; }
+.audio-stage .support-row, .audio-stage .transcript, .audio-stage .audio-fallback { grid-column: 1 / -1; }
+.audio-stage .play-button.replay-button { grid-column: 1 / -1; margin-top: 4px; }
+.audio-stage:has(> .preparation-live-action) .play-button.replay-button { grid-column: auto; }
+.audio-stage .preparation-live-action { margin: 4px 0 0; min-height: 48px; padding: 8px; }
+.audio-stage .support-row { margin-top: 4px; }
+.audio-stage .transcript { margin-top: 4px; padding: 12px; }
+.audio-stage .transcript p { margin-top: 4px; }
+.audio-stage .replay-button .wave { display: none; }
+.audio-stage .play-button.replay-button { grid-template-columns: 36px minmax(0, 1fr); padding: 6px 8px; gap: 6px; }
+@media (max-width: 650px) {
+  .compact-session-progress { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
+  .compact-session-progress > button { grid-column: auto; width: auto; margin: 0; }
+  .compact-progress-count { flex-wrap: wrap; justify-content: center; gap: 0 4px; }
+}
+/* Let enlarged labels wrap as a group, without overlapping the day. */
+@media (max-width: 650px) {
+  .compact-session-progress { display: flex; flex-wrap: wrap; }
+  .compact-progress-current { flex: 0 0 auto; }
+  .compact-progress-count { flex: 1 0 auto; justify-content: flex-end; }
+  .compact-session-progress > button { flex: 0 0 auto; margin-left: auto; }
+}

@@ -253,7 +253,7 @@ try {
       assert.equal(read.support[day === "day-00" ? "hotel" : "apartment"].transcript, 1);
       assert.equal(read.support[day === "day-00" ? "hotel" : "apartment"].replay, 0);
       await composer.fill("Draft in memory");
-      await page.getByRole("button", { name: "Open progressive help" }).click();
+      await page.getByRole("button", { name: "Get help" }).click();
       await page.locator(".progressive-help-next").click();
       await page.waitForFunction((key) => { const game = JSON.parse(localStorage.getItem(key)!); return game.progressiveHelp[game.turnId]?.highestLevel === 1; }, STORAGE_KEY);
       await page.keyboard.press("Escape");
@@ -300,7 +300,7 @@ try {
       await composer.fill("Ho capito");
       await composer.press("Enter");
       await page.locator("#completion-review-title").waitFor();
-      await page.getByText("Response and evidence", { exact: true }).click();
+      await page.getByText("Your response and practice details", { exact: true }).click();
       await page.getByRole("region", { name: "Preparation activity" }).waitFor();
       const resolved = await readGame(page);
       assert.equal(resolved.episodeResults[day]!.length, 1);

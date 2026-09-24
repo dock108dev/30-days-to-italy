@@ -12,10 +12,10 @@ export function OperationalFailureBanner({
       <div>
         <strong>Something needs attention</strong>
         <p>{failure.userMessage}</p>
-        <span>
+        <details><summary>Technical details</summary><span>
           Reference {failure.code} · {failure.domain}/{failure.operation}
           {failure.occurrence > 1 ? ` · repeated ${failure.occurrence} times` : ""}
-        </span>
+        </span></details>
       </div>
       <button type="button" onClick={onDismiss} aria-label="Dismiss operational warning">Dismiss</button>
     </aside>

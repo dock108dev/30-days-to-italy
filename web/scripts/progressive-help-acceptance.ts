@@ -126,7 +126,7 @@ async function exerciseTurn(page: Page, episodeId: "day-00" | "day-01", turnId: 
   await seedTurn(page, episodeId, turnId);
   await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
-  const composerHelp = page.getByRole("button", { name: "Open progressive help" });
+  const composerHelp = page.getByRole("button", { name: "Get help" });
   await composerHelp.waitFor();
   assert.equal(await page.locator(".phrase-toolkit").count(), 0, `${turnId} must remove phrase-card scavenging`);
   assert.equal(await page.locator("[data-help-level]").count(), 0, `${turnId} must begin unrevealed`);
@@ -156,7 +156,7 @@ async function exerciseTurn(page: Page, episodeId: "day-00" | "day-01", turnId: 
   await page.reload({ waitUntil: "domcontentloaded" });
   await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
-  await page.getByRole("button", { name: "Open progressive help" }).click();
+  await page.getByRole("button", { name: "Get help" }).click();
   await page.locator('[data-help-level="3"]').waitFor();
   assert.equal((await storedGame(page)).progressiveHelp[turnId]?.highestLevel, 3, `${turnId} reload boundary`);
 
@@ -221,7 +221,7 @@ try {
   await seedTurn(page, "day-00", "e01_01_name");
   await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
-  const keyboardHelp = page.getByRole("button", { name: "Open progressive help" });
+  const keyboardHelp = page.getByRole("button", { name: "Get help" });
   await keyboardHelp.focus();
   await page.keyboard.press("Enter");
   assert.equal(await page.locator(".progressive-help-next").evaluate((button) => document.activeElement === button), true);
@@ -231,7 +231,7 @@ try {
   await seedTurn(page, "day-00", "e01_01_name");
   await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
-  await page.getByRole("button", { name: "Open progressive help" }).click();
+  await page.getByRole("button", { name: "Get help" }).click();
   await page.evaluate(() => sessionStorage.setItem("progressive-help-fail-audio-once", "true"));
   await page.locator(".progressive-help-next").click();
   await waitForLevel(page, "e01_01_name", 1);
@@ -241,7 +241,7 @@ try {
   await seedTurn(page, "day-00", "e01_01_name");
   await traversePreparation(page);
   await page.getByRole("button", { name: /^Play / }).click();
-  await page.getByRole("button", { name: "Open progressive help" }).click();
+  await page.getByRole("button", { name: "Get help" }).click();
   await page.locator(".progressive-help-next").click();
   await waitForLevel(page, "e01_01_name", 1);
   await page.getByRole("button", { name: "Close help" }).click();

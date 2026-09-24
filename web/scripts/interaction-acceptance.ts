@@ -207,6 +207,7 @@ async function playCurrentLine(page: Page, fail = false): Promise<void> {
     const audioFallback = page.locator(".audio-fallback");
     await audioFallback.waitFor();
     assert.match(await audioFallback.innerText(), /Audio could not play/);
+    await page.locator(".operational-failure-banner summary").click();
     assert.match(await page.locator(".operational-failure-banner").innerText(), /AUDIO_PLAYBACK_FAILED/);
     assert.equal(await page.locator(".transcript").isVisible(), true);
   }
@@ -258,11 +259,11 @@ async function assertReviewContract(page: Page, expectedNext: string, expectedTe
   );
   assert.deepEqual(sections, [
     "objective-result",
+    "next-action",
     "useful-phrasing",
     "pocket-deck-effect",
     "understood-intent",
     "world-consequence",
-    "next-action",
   ]);
   const reviewText = await page.locator(".outcome-card").innerText();
   for (const term of expectedTerms) assert.match(reviewText, term);
@@ -344,7 +345,7 @@ async function ordinaryDayZeroAndOne(page: Page, label: string): Promise<void> {
   const composer = page.getByRole("textbox", { name: "Your response" });
   await composer.fill("Fuscoletti. Ho una prenotazione.");
   const beforeHelp = await storedValue<GameState>(page, STORAGE_KEY);
-  const phraseTrigger = page.getByRole("button", { name: "Open progressive help" });
+  const phraseTrigger = page.getByRole("button", { name: "Get help" });
   await phraseTrigger.click();
   await page.locator(".progressive-help-steps").waitFor();
   assert.equal(await page.locator("[data-help-level]").count(), 0, "opening help must reveal no answer content");
@@ -383,21 +384,21 @@ async function ordinaryDayZeroAndOne(page: Page, label: string): Promise<void> {
     /Room 12/i,
     /Ho capito: camera dodici, al primo piano/i,
     /You confirmed room 12 and the first floor/i,
-    /Evidence is available/i,
+    /Ready to save to your Pocket Deck/i,
   ]);
   await captureEvidence(page, viewport, "day-00-completion-review");
 
   const reviewSeason = page.getByRole("button", { name: "Review the season" });
   await reviewSeason.click();
-  await page.getByRole("dialog", { name: "All 31 practical sessions" }).waitFor();
+  await page.getByRole("dialog", { name: "Your 31 sessions" }).waitFor();
   assert.equal(await page.locator(".admin-modal").count(), 0, "traveler season review must never open Admin");
-  assert.equal(await page.getByText("Your rehearsal season", { exact: true }).count(), 1);
+  assert.equal(await page.getByText("Your 31 sessions", { exact: true }).count(), 1);
   await captureEvidence(page, viewport, "traveler-season-overview");
   await page.keyboard.press("Shift+Tab");
   await assertFocusedControlVisible(page, `${viewport} season overview reverse tab`);
   assert.equal(await page.locator(".season-overview").evaluate((dialog) => dialog.contains(document.activeElement)), true, "season overview must contain keyboard focus");
   await page.keyboard.press("Escape");
-  await page.getByRole("dialog", { name: "All 31 practical sessions" }).waitFor({ state: "detached" });
+  await page.getByRole("dialog", { name: "Your 31 sessions" }).waitFor({ state: "detached" });
   assert.equal(await reviewSeason.evaluate((button) => document.activeElement === button), true, "season overview close must restore focus");
 
   await page.getByRole("button", { name: "Continue to Day 1" }).click();
@@ -415,13 +416,13 @@ async function ordinaryDayZeroAndOne(page: Page, label: string): Promise<void> {
     /Apartment key · green door · first floor/i,
     /Ho capito: la porta verde, poi il primo piano/i,
     /You confirmed the green door and the first floor/i,
-    /Evidence is available/i,
+    /Ready to save to your Pocket Deck/i,
   ]);
   await captureEvidence(page, viewport, "day-01-completion-review");
 
-  await page.getByRole("button", { name: "Carry this into my Pocket Deck" }).click();
+  await page.getByRole("button", { name: "Save practice to Pocket Deck" }).click();
   await page.locator('[data-pocket-deck-state="strengthened"]').waitFor();
-  assert.match(await page.locator(".pocket-deck-effect").innerText(), /existing Pocket Deck card was strengthened/i);
+  assert.match(await page.locator(".pocket-deck-effect").innerText(), /Practice saved to your Pocket Deck/i);
   await assertNoHorizontalOverflow(page, label);
 }
 
@@ -490,7 +491,7 @@ async function keyboardOnlyDayZero(page: Page): Promise<void> {
   assert.equal(await composer.evaluate((field) => document.activeElement === field), true, "playback must move focus to response");
 
   await page.keyboard.press("Shift+Tab");
-  const help = page.getByRole("button", { name: /Open progressive help/ });
+  const help = page.getByRole("button", { name: /Get help/ });
   assert.equal(await help.evaluate((button) => document.activeElement === button), true, "keyboard path must reach phrase help");
   await page.keyboard.press("Enter");
   await page.locator(".progressive-help-next").waitFor();
@@ -659,7 +660,7 @@ try {
   game = await storedValue<GameState>(page, STORAGE_KEY);
   assert.deepEqual(authoritativeSnapshot(game), beforeAudioEvents);
 
-  const carry = page.getByRole("button", { name: "Carry this into my Pocket Deck" });
+  const carry = page.getByRole("button", { name: "Save practice to Pocket Deck" });
   await carry.evaluate((button) => {
     (button as HTMLButtonElement).click();
     (button as HTMLButtonElement).click();

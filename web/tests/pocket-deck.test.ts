@@ -353,10 +353,10 @@ test("Trip Mode renders a real, no-teaching Pocket Deck home", () => {
     onEditTrip: () => undefined,
   }));
 
-  assert.match(html, /Trip Mode · Pocket Deck/);
+  assert.match(html, /Pocket Deck/);
   assert.match(html, /Search in English/);
-  assert.match(html, /Quick access/);
-  assert.match(html, /Situation categories/);
+  assert.match(html, /Your quick access/);
+  assert.match(html, /Choose a situation/);
   assert.match(html, /Browse all 30 cards/);
   assert.match(html, /When the words disappear/);
   assert.match(html, /No lessons here/);
@@ -381,7 +381,7 @@ test("Trip home deduplicates rehearsal, pin, and recent evidence before card det
     onStateChange: () => undefined,
     onEditTrip: () => undefined,
   }));
-  assert.match(home, /Quick access/);
+  assert.match(home, /Your quick access/);
   assert.match(home, /Practiced/);
   assert.match(home, /Pinned/);
   assert.match(home, /Recent/);
@@ -484,7 +484,7 @@ test("card detail renders audio, likely reply, listening cues, and Show this", (
   assert.match(html, /Per una o due persone/);
   assert.match(html, /Listen for/);
   assert.match(html, /Show this/);
-  assert.match(html, /Local audio · no connection used for this card/);
+  assert.match(html, /Bundled audio. Available offline once downloaded/);
   assert.doesNotMatch(html, /Teach me a phrase|Your objective|€100/);
 });
 
