@@ -1,14 +1,12 @@
 # 30 Days to Italy
 
-30 Days to Italy is an owner-only, mobile-friendly rehearsal app for an Italian coastal trip. It provides 31 playable preparation sessions, a guided beach rehearsal, a device-local trip profile, persistent Prepare and Trip modes, and an offline Pocket Deck with 30 reviewed cards.
+30 Days to Italy is a mobile-friendly rehearsal app for an Italian coastal trip. It provides 31 playable preparation sessions, a guided beach rehearsal, a device-local trip profile, persistent Prepare and Trip modes, and an offline Pocket Deck with 30 reviewed cards.
 
 The player listens and types; the app never requests microphone access. Progress and trip details stay in the current browser. There is no account, analytics service, application API, or cross-device sync.
 
-## Current beta target — September 21, 2026
+## Current limits
 
-The beta target includes adequate teaching throughout Day 0–30, automatic targeted-review suggestions and varied practice. Past dates stay unlocked; future dates may remain locked. Trip Mode/Pocket Deck requires valid Day 30 completion. Cross-device progress is not implemented and is outside the current beta target; no payment or account system is implied. See [product behavior and limitations](docs/PRODUCT.md).
-
-These are requirements, not current feature claims. Existing teaching preparation covers Days 0–1; new full-season teaching/review/variation work needs implementation assessment and qualification. The current product behavior below describes the existing application. The teaching repair still awaits owner acceptance.
+Teaching preparation is implemented for Days 0–1. Full-season teaching, targeted-review suggestions and varied practice are not yet implemented. Trip Mode and the Pocket Deck require valid Day 30 completion. See [product behavior](docs/PRODUCT.md).
 
 ## Quick start
 
@@ -70,8 +68,8 @@ See [Development](docs/DEVELOPMENT.md) for the complete command map and change b
 
 ## Release boundary
 
-The supported release is owner-only. Admin controls are local review tools, not authentication. Public or shared access requires a separate security and privacy decision; deployment access and response headers must be verified outside this repository. See [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md#build-and-deployment-boundary) for the release boundary.
+The app has no built-in authentication. Admin controls are local review tools. Restrict hosted access at the hosting layer and verify its access controls and response headers before exposing the app. See [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md#build-and-deployment-boundary) for the release boundary.
 
-## Shared UI design
+## UI design
 
-See [UI design and templates](docs/ui-design.md) before changing this interface. The repository keeps its own runtime styles and portable design requirements; the original shared Desktop gallery is not required.
+See [UI design](docs/ui-design.md) for the project’s styles and accessibility requirements.

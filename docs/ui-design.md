@@ -1,23 +1,15 @@
 # 30 Days to Italy UI design
 
-Updated September 23, 2026. Shared Glass UI Starter 02; presentation-only adoption.
+Use the [design requirements](ui-design-requirements.md) and `web/app/glass.css` when changing the interface.
 
-## For future contributors
+## Layout and behavior
 
-Start with the [local design requirements](ui-design-requirements.md) and the repository’s own styles. These preserve the adopted Glass UI Starter 02 baseline. The original shared Desktop gallery is not present in this workspace and is not required to build or run the app.
+Prepare and Trip navigation, forms, progress, cards and dialogs share the glass styling while retaining the lesson illustrations.
 
-Use light cool glass, slate text, blue actions, restrained depth, rounded controls, and system typography as the default. Do not reintroduce the generic beige/green/yellow template. Preserve explicit semantic success, caution, error, unavailable, and unknown states. Readability and the task's layout outrank decoration.
+Preparation uses one full-width reading area. Results keep feedback and the next action together. Trip setup shows dates, duration and region, summarizes selected preferences and reveals editable controls together. Invalid selections reopen the relevant controls.
 
-Project assets are checked in locally. Use the local requirements and implementation as the available design reference; adopt future template revisions deliberately.
+Warnings keep the problem and recovery visible, with codes in Technical details. Preserve lesson content, audio controls, calendar gates, Pocket Deck eligibility and stored progress.
 
-## This project's adaptation
+## Visual checks
 
-Prepare/Trip chrome, forms, progress, cards, and dialogs share the glass foundation. Existing illustrations retain their art. Teaching, audio, calendar gates, Pocket Deck eligibility, and stored progress are unchanged.
-
-Starter 02 adapts the shared setup, detail and feedback examples: compact navigation and session progress; one full-width preparation reading area; the result and next action together; one useful phrase instead of repeated feedback; and plain Pocket Deck/help wording. Setup keeps dates, duration and region visible, summarizes selected preferences, and reveals their controls together. Editing opens those controls; invalid transport selection reveals them again. Warnings keep the problem/recovery visible and put codes in “Technical details.” Required lesson pages, Italian teaching content, outcomes, save formats and eligibility logic are unchanged.
-
-Implementation: `web/app/glass.css` and the existing trip, rehearsal, guided-review, Pocket Deck and warning views. No runtime dependency on the shared template folder.
-
-## Review and status
-
-See [UI adoption verification](ui-verification.md). Source changes and technical/visual checks do not establish owner acceptance, a new release, live-data qualification, or acceptance of an older frozen candidate. Existing project-specific gates remain separate.
+Check the affected screens at supported sizes, including keyboard focus, long content, disabled actions and error recovery. Existing review records are in [UI verification](ui-verification.md).

@@ -1,12 +1,8 @@
 # Product behavior
 
-## Current beta target — September 21, 2026
+30 Days to Italy helps a traveler rehearse practical situations before an Italian coastal trip and retrieve prepared language during the trip. It uses typed responses and device-local progress.
 
-The [Desktop beta path](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) requires adequate teaching throughout Day 0–30, automatic targeted-review suggestions and varied practice. Past dates stay unlocked; future dates may stay locked for a free-version test. Retain the valid Day 30 Trip Mode/Pocket Deck gate. Computer-to-phone progress continuity is requested after beta, not implemented or required now. No payment/account/premium-tier system is implied.
-
-These are requirements, not current feature claims. Existing teaching preparation covers Days 0–1; new full-season teaching/review/variation work needs implementation assessment and qualification. The current product behavior below describes the existing application. The prior owner rejection and D0-01 remain unresolved by owner acceptance.
-
-30 Days to Italy helps one traveler rehearse practical situations before a 7–10 day Italian coastal trip and retrieve prepared language during the trip. It is a private, typed, device-local product—not a language course, itinerary manager, booking tool, live travel-information service, or unrestricted translator.
+Teaching preparation currently covers Days 0–1. Full-season teaching, targeted-review suggestions and varied practice remain planned work. Cross-device progress, accounts and payments are not implemented.
 
 ## Core flow
 
@@ -25,13 +21,13 @@ Leaving, short answers, mixed language, replay, slower audio, and transcript use
 
 Trip details and progress live in separate `localStorage` records in the current browser. Clearing site data or opening another browser or device starts fresh. There is no remote database, account, sync, analytics, microphone input, or provider integration.
 
-Malformed saved state recovers fail-closed. Supported historical game schemas are migrated because an owner browser may still hold them. Existing storage keys are intentionally stable.
+Malformed saved state recovers fail-closed. Supported historical game schemas are migrated because a browser may still hold them. Existing storage keys are intentionally stable.
 
 ## Admin review
 
-Admin starts an isolated synthetic walkthrough generated from the same 31-session registry. It snapshots and namespaces owner state, labels canonical simulation separately from normal play, and restores the owner snapshot on exit. Calendar dates in review are previews only.
+Admin starts an isolated synthetic walkthrough generated from the same 31-session registry. It snapshots and namespaces existing progress, labels canonical simulation separately from normal play, and restores the original snapshot on exit. Calendar dates in review are previews only.
 
-Admin is a local inspection tool, not an authorization boundary. The hosted app must remain owner-only unless shared access receives a separate architecture, security, and privacy decision.
+Admin is a local inspection tool, not an authorization boundary. Hosted access must be restricted by the hosting layer; the app has no built-in authentication.
 
 ## Offline contract
 
@@ -45,4 +41,4 @@ Both days open with situation → listening and chunk meanings → explained res
 
 Result details show **Preparation activity** separately from **Progressive help used**: traversed pages/examples and normal/careful playback attempts. Activity does not establish comprehension. Missing historical information says it was not recorded; historical versions are identified without inferring current titles. Completed-result preparation review and audio cannot change that frozen summary.
 
-Day 0–1 teaching preparation is implemented, but the repair still awaits owner review. The prior owner verdict remains REVISE DEMO; technical checks do not establish comprehension or acceptance. Full-season teaching, targeted review and varied practice remain beta requirements. See the [engineering history](history/day-00-01-teaching-record.md) and [planning tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) for candidate-specific records.
+Preparation activity records interactions, not demonstrated comprehension.

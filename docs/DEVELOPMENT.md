@@ -131,4 +131,4 @@ The ordinary preparation lane runs with service-worker interception enabled and 
 
 The interaction keyboard lane traverses both initial preparation and later briefs with Tab/Enter and checks visible focus. Updated interaction/offline scripts retain failure screenshots and cleanup records. Use a separate `ITALY_EVIDENCE_ROOT` for each browser command and attempt: help and feedback share viewport screenshot filenames. All-checkpoint qualification must omit `CHECKPOINT_HARDENING_ONLY`.
 
-Candidate preparation and owner review are separate gates. See the [engineering history](history/day-00-01-teaching-record.md) for prior evidence and the [active tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) for current qualification status.
+Prior candidate-specific checks are retained in [engineering history](history/day-00-01-teaching-record.md).

@@ -1,6 +1,6 @@
 # Episode authoring guide
 
-Preparation content currently exists only in Days 0–1. Full-season teaching, targeted review and varied practice require versioned episode and state contracts before implementation. Preserve the registry and state authorities, past-date access, allowed future-date locks and the Day 30 Trip Mode gate. See [product behavior](PRODUCT.md) for current limitations and the [planning tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) for future work.
+Preparation content currently exists only in Days 0–1. Full-season teaching, targeted review and varied practice require versioned episode and state contracts before implementation. Preserve the registry and state authorities, past-date access, allowed future-date locks and the Day 30 Trip Mode gate. See [product behavior](PRODUCT.md) for current limitations.
 
 Application paths in this document are relative to `web/`.
 
