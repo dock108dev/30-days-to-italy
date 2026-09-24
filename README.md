@@ -6,9 +6,9 @@ The player listens and types; the app never requests microphone access. Progress
 
 ## Current beta target — September 21, 2026
 
-The [Desktop beta path](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) requires adequate teaching throughout Day 0–30, automatic targeted-review suggestions and varied practice. Past dates stay unlocked; future dates may stay locked for a free-version test. Retain the valid Day 30 Trip Mode/Pocket Deck gate. Computer-to-phone progress continuity is requested after beta, not implemented or required now. No payment/account/premium-tier system is implied.
+The beta target includes adequate teaching throughout Day 0–30, automatic targeted-review suggestions and varied practice. Past dates stay unlocked; future dates may remain locked. Trip Mode/Pocket Deck requires valid Day 30 completion. Cross-device progress is not implemented and is outside the current beta target; no payment or account system is implied. See [product behavior and limitations](docs/PRODUCT.md).
 
-These are requirements, not current feature claims. Existing teaching preparation covers Days 0–1; new full-season teaching/review/variation work needs implementation assessment and qualification. The current product behavior below describes the existing application. The prior owner rejection and D0-01 remain unresolved by owner acceptance.
+These are requirements, not current feature claims. Existing teaching preparation covers Days 0–1; new full-season teaching/review/variation work needs implementation assessment and qualification. The current product behavior below describes the existing application. The teaching repair still awaits owner acceptance.
 
 ## Quick start
 
@@ -61,7 +61,7 @@ See [Development](docs/DEVELOPMENT.md) for the complete command map and change b
 ## Documentation
 
 - [Product behavior](docs/PRODUCT.md)
-- [Day 0–1 teaching specification — T1 design for T2/T3](docs/DAY_00_01_TEACHING_SPEC.md)
+- [Day 0–1 teaching contract](docs/DAY_00_01_TEACHING_SPEC.md)
 - [Development and validation](docs/DEVELOPMENT.md)
 - [Architecture and source-of-truth boundaries](docs/ARCHITECTURE_AND_SSOT.md)
 - [Episode authoring](docs/EPISODE_AUTHORING_GUIDE.md)
@@ -74,4 +74,4 @@ The supported release is owner-only. Admin controls are local review tools, not 
 
 ## Shared UI design
 
-See [UI design and templates](docs/ui-design.md) before changing this interface. The shared Desktop `UI Templates` folder defines the glass design baseline for future contributors; this repository keeps its own runtime styles and a portable copy of the requirements.
+See [UI design and templates](docs/ui-design.md) before changing this interface. The repository keeps its own runtime styles and portable design requirements; the original shared Desktop gallery is not required.

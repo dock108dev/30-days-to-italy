@@ -67,8 +67,8 @@ Public or shared deployment is intentionally unsupported. The repository has no 
 
 ## Local preparation/offline qualification
 
-T4's ordinary preparation script uses service-worker interception and retains Network/Log, registration, control and cache diagnostics. A historical bypass result cannot qualify offline behavior. Unexpected console warnings/errors still invalidate acceptance; no preload-warning allowlist exists.
+The ordinary preparation script uses service-worker interception and retains Network/Log, registration, control and cache diagnostics. A historical bypass result cannot qualify offline behavior. Unexpected console warnings/errors still invalidate acceptance; no preload-warning allowlist exists.
 
 Offline acceptance establishes Ready offline while connected, preserves the cache through disconnection and reload, and verifies actual uncached network failure at each new teaching reload boundary. Chromium can report `navigator.onLine=true` after a reload even while emulated network requests fail; the connectivity hint is not a readiness guarantee. The existing worker's verified inventory and network probe continue to determine the displayed status. The teaching lane must end with the Offline badge, all cached resources preserved, normal/careful playback and persistent results. No first-ever disconnected visit is promised.
 
-Setup dependency warnings and build information are classified separately from browser failures under the existing production/high audit policy. [T4 warning evidence](/Users/michaelfuscoletti/Desktop/italian-pilot-evidence/t4-integrated-20260907/warnings.md) retains exact versions and the historical preload-warning investigation. It adds no release or owner-acceptance exception.
+Setup dependency warnings and build information are classified separately from browser failures under the existing production/high audit policy. Earlier warning investigations belong in [engineering history](history/day-00-01-teaching-record.md); they add no release or owner-acceptance exception. Some original external evidence files are unavailable and cannot qualify the current source.

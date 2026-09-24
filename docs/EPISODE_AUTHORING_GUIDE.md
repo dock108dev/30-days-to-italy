@@ -1,6 +1,6 @@
 # Episode authoring guide
 
-Planning update, September 21: the [beta path](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) requires full-season teaching coverage, targeted review and varied practice. The contracts below describe current implementation, including preparation only in Days 0–1. B1 must define versioned episode/review/variation changes before implementation; do not claim they already exist or bypass the registry/state authorities. Preserve past-date access, allowed future-date locks and the Day 30 Trip Mode gate.
+Preparation content currently exists only in Days 0–1. Full-season teaching, targeted review and varied practice require versioned episode and state contracts before implementation. Preserve the registry and state authorities, past-date access, allowed future-date locks and the Day 30 Trip Mode gate. See [product behavior](PRODUCT.md) for current limitations and the [planning tracker](/Users/michaelfuscoletti/Desktop/italy_next_steps.md) for future work.
 
 Application paths in this document are relative to `web/`.
 

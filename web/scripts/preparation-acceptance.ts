@@ -222,7 +222,7 @@ try {
     await page.setViewportSize({ width: 390, height: 844 });
   }
 
-  // Complete T3 flow at every requested viewport, with real UI traversal and text-only responses.
+  // Complete preparation flow at every requested viewport, with real UI traversal and text-only responses.
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
     await page.setViewportSize(viewport);
     for (const day of ["day-00", "day-01"] as const) {
