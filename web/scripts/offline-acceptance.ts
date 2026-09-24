@@ -383,7 +383,7 @@ try {
     exact: true,
   }).click();
   await page.getByRole("button", { name: "Back to deck", exact: true }).click();
-  await page.getByRole("heading", { name: "Ready when you need it", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "Pocket Deck", exact: true }).waitFor();
 
   const search = page.getByRole("searchbox", { name: "Search in English", exact: true });
   await search.fill("pay by card");
