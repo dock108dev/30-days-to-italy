@@ -1,3 +1,36 @@
 .DS_Store
 web/public/offline-manifest.json
 web/public/sw.js
+
+# Local environment, editor debris, and generated test output
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*~
+*.swp
+*.swo
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+node_modules/
+*.tsbuildinfo
+playwright-report/
+test-results/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local browser review output (web/build contains authored build tools).
+/evidence/
+/web/evidence/
+.venv/
+venv/
