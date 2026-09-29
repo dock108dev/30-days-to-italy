@@ -22,6 +22,13 @@ npm run build
 npm run start -- --hostname 127.0.0.1 --port 3001
 ```
 
+`npm start` and the browser acceptance scripts use `scripts/start-worker.mjs`
+to serve the built Worker and assets through Wrangler's local `workerd` runtime.
+The launcher reads `dist/server/wrangler.json`, disables persistence and file
+watching, and stops the runtime on termination. Do not launch this Cloudflare
+bundle with `vinext start` or import it into Node: it can contain `cloudflare:`
+imports that Node cannot load.
+
 ## Dependency updates
 
 Dependabot groups all `/web` npm version updates into one weekly PR with one

@@ -155,7 +155,7 @@ let context: BrowserContext | null = null;
 try {
   server = spawn(
     process.execPath,
-    [resolve(root, "node_modules/vinext/dist/cli.js"), "start", "--hostname", "127.0.0.1", "--port", String(port)],
+    [resolve(root, "scripts/start-worker.mjs"), "--hostname", "127.0.0.1", "--port", String(port)],
     {
       cwd: root,
       env: {

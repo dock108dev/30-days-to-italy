@@ -1,31 +1,28 @@
 import assert from "node:assert/strict";
 import { access, readFile, readdir } from "node:fs/promises";
-import test from "node:test";
+import test, { after, before } from "node:test";
+import { createTestHarness } from "wrangler";
+
+// The production bundle can import cloudflare: modules, so execute it in
+// workerd using the generated deployment config rather than Node's ESM loader.
+const runtime = createTestHarness({
+  workers: [{ configPath: new URL("../dist/server/wrangler.json", import.meta.url) }],
+});
+before(async () => { await runtime.listen(); });
+after(async () => { await runtime.close(); });
 
 async function render(pathname = "/", origin = "http://localhost", forwardedHost, method = "GET") {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request(`${origin}${pathname}`, {
-      method,
-      headers: {
-        accept: "text/html",
-        host: forwardedHost ?? new URL(origin).host,
-        "x-forwarded-proto": new URL(origin).protocol.slice(0, -1),
-      },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
+  return runtime.getWorker().fetch(`${origin}${pathname}`, {
+    method,
+    headers: {
+      accept: "text/html",
+      host: forwardedHost ?? new URL(origin).host,
+      // The local runtime uses a loopback Host; retain the simulated external
+      // origin through the same proxy headers used by the application.
+      "x-forwarded-host": forwardedHost ?? new URL(origin).host,
+      "x-forwarded-proto": new URL(origin).protocol.slice(0, -1),
     },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+  });
 }
 
 test("server-renders the application shell and social metadata", async () => {
@@ -82,18 +79,13 @@ test("derives absolute social metadata from the deployed request origin", async 
 });
 
 test("rejects unsafe forwarded hosts when deriving social metadata", async () => {
-  const originalWarn = console.warn;
-  const warnings = [];
-  console.warn = (...items) => warnings.push(items);
-  try {
-    const response = await render("/", "http://localhost", "trusted.example@attacker.example");
-    const html = await response.text();
-    assert.match(html, /property="og:image" content="http:\/\/localhost:3000\/og\.png"/i);
-    assert.doesNotMatch(html, /attacker\.example/i);
-    assert.equal(warnings.some((items) => items.some((item) => item?.code === "INVALID_REQUEST_ORIGIN")), true);
-  } finally {
-    console.warn = originalWarn;
-  }
+  runtime.clearLogs();
+  const response = await render("/", "http://localhost", "trusted.example@attacker.example");
+  const html = await response.text();
+  assert.match(html, /property="og:image" content="http:\/\/localhost:3000\/og\.png"/i);
+  assert.doesNotMatch(html, /attacker\.example/i);
+  assert.equal(runtime.getLogs().some((log) =>
+    log.level === "warn" && log.message.includes("INVALID_REQUEST_ORIGIN")), true);
 });
 
 test("ships the player-facing save, support, teaching, and admin controls", async () => {

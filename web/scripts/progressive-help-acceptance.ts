@@ -183,7 +183,7 @@ let context: BrowserContext | null = null;
 let serverOutput = "";
 
 try {
-  server = spawn("npm", ["start", "--", "--port", String(port)], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+  server = spawn(process.execPath, [resolve(root, "scripts/start-worker.mjs"), "--port", String(port)], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
   server.stdout?.on("data", (chunk) => { serverOutput += String(chunk); });
   server.stderr?.on("data", (chunk) => { serverOutput += String(chunk); });
   await waitForServer(server, () => serverOutput);
