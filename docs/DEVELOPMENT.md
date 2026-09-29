@@ -31,6 +31,11 @@ imports that Node cannot load.
 
 ## Dependency updates
 
+The `undici` override pins 7.29.1 to address GHSA-w293-vg96-wgc3 while
+Cloudflare's Miniflare dependency pins the vulnerable 7.29.0. Remove the override
+once the upstream dependency chain resolves to a patched version without it;
+verify the lockfile and Worker/browser checks when doing so.
+
 Dependabot groups all `/web` npm version updates into one weekly PR with one
 lockfile. Security updates use a separate group and are not delayed until the
 weekly version-update run. Keep production and development dependencies in the
