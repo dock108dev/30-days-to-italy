@@ -37,6 +37,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -45,9 +48,6 @@ jobs:
 
       - name: Build and test
         run: npm test
-
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
 
       - name: Upload build diagnostics
         if: failure()

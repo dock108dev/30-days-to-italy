@@ -31,10 +31,23 @@ imports that Node cannot load.
 
 ## Dependency updates
 
-The `undici` override pins 7.29.1 to address GHSA-w293-vg96-wgc3 while
+The `sharp` override allows patched 0.35.x releases from 0.35.5 to address GHSA-wq5f-xc86-pv6w in its
+bundled librsvg dependency. Keep the override until all dependency paths resolve
+to a patched version without it. The lockfile also requires `source-map-js`
+1.2.2 or newer to address GHSA-68fv-2mgg-jv7q.
+
+The `undici` override allows patched 7.29.x releases from 7.29.1 to address GHSA-w293-vg96-wgc3 while
 Cloudflare's Miniflare dependency pins the vulnerable 7.29.0. Remove the override
 once the upstream dependency chain resolves to a patched version without it;
 verify the lockfile and Worker/browser checks when doing so.
+
+If a dependency PR installs successfully but fails the production audit, run
+`npm run deps:repair` from `web/` on that branch. This refreshes the lockfile with
+available production security fixes, performs a clean install, and repeats the
+production audit. It does not use `--force`; unresolved fixes require review.
+Commit the resulting lockfile only after the normal application and browser
+checks pass. Patch ranges in overrides permit compatible fixes while the
+committed lockfile preserves reproducible installs.
 
 Dependabot groups all `/web` npm version updates into one weekly PR with one
 lockfile. Security updates use a separate group and are not delayed until the
