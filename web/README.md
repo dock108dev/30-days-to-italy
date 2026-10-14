@@ -1,6 +1,6 @@
 # Web application
 
-This directory contains the production application for 30 Days to Italy. The stable season registry exposes `day-00` through `day-30`; all sessions are playable. Prepare Mode owns rehearsal progress, while Trip Mode exposes the offline Pocket Deck without teaching, scoring, or simulated consequences.
+This directory contains the local application for 30 Days to Italy. The stable season registry exposes `day-00` through `day-30`; all sessions are playable. Prepare Mode owns rehearsal progress, while Trip Mode exposes the offline Pocket Deck without teaching, scoring, or simulated consequences.
 
 ## Requirements
 
@@ -26,16 +26,7 @@ npm run start -- --hostname 127.0.0.1 --port 3001
 
 ## Common checks
 
-```bash
-npm run lint
-npx tsc --noEmit
-npm run test:ssot
-npm run test:response-contracts
-npm run test:security
-npm test
-```
-
-Browser acceptance commands are documented in [Development](../docs/DEVELOPMENT.md). Each browser campaign builds first, starts its own isolated loopback server, and shuts it down when complete.
+Run the focused domain/browser check for the changed lesson or state behavior. Lint and TypeScript checks are available; broader suites are optional when justified. Try useful lesson slices before the whole course is complete. [Development](../docs/DEVELOPMENT.md) owns commands and the personal-use approach.
 
 ## Local artifacts
 

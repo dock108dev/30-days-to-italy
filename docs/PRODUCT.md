@@ -27,7 +27,7 @@ Malformed saved state recovers fail-closed. Supported historical game schemas ar
 
 Admin starts an isolated synthetic walkthrough generated from the same 31-session registry. It snapshots and namespaces existing progress, labels canonical simulation separately from normal play, and restores the original snapshot on exit. Calendar dates in review are previews only.
 
-Admin is a local inspection tool, not an authorization boundary. Hosted access must be restricted by the hosting layer; the app has no built-in authentication.
+Admin is a local inspection tool. Current use stays on the local/private app; each browser retains separate progress.
 
 ## Offline contract
 
@@ -42,3 +42,7 @@ Both days open with situation → listening and chunk meanings → explained res
 Result details show **Preparation activity** separately from **Progressive help used**: traversed pages/examples and normal/careful playback attempts. Activity does not establish comprehension. Missing historical information says it was not recorded; historical versions are identified without inferring current titles. Completed-result preparation review and audio cannot change that frozen summary.
 
 Preparation activity records interactions, not demonstrated comprehension.
+
+## Current work
+
+Improve the first lessons and extend teaching/review/practice incrementally. Owner learning feedback starts on available lessons; complete 31-day implementation and formal release acceptance are not prerequisites. See [personal use](personal-use.md).

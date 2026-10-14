@@ -1,6 +1,6 @@
 # Error handling and operations
 
-This document is the source of truth for production-path failure behavior in the owner-only web app. The app has no remote analytics, telemetry provider, account, or server-side traveler-state store. Operational visibility is therefore local to the affected browser and the hosting platform's ordinary request logs.
+This document describes failure behavior in the personal web app. The app has no remote analytics, telemetry provider, account, or server-side traveler-state store. Operational visibility is therefore local to the affected browser and local runtime logs.
 
 ## Player-visible behavior
 
@@ -35,7 +35,7 @@ The main codes are:
 1. Preserve the affected tab and browser profile when progress may not be saved.
 2. Record the exact source commit, origin, browser/device, code, domain/operation, occurrence count, and whether reload was attempted.
 3. Never copy localStorage values, typed traveler responses, trip details, or complete exception messages into evidence.
-4. A storage, reset, demo-restoration, or offline-readiness alert invalidates the affected acceptance run. Fix the cause, freeze a new candidate if source changes, and rerun the relevant engineering gate.
+4. A storage, reset, demo-restoration or offline-readiness alert means the affected behavior needs repair. Preserve progress, fix the cause and check that flow again.
 5. Do not label an in-memory continuation as persisted, a partial reset as complete, a degraded cache as ready, or automated traversal as owner acceptance.
 
 ## Intentional resilience retained
@@ -47,28 +47,14 @@ The main codes are:
 - Security headers are copied into a new `Response` when the platform exposes immutable response headers. The body, status, and existing headers are preserved.
 - Isolated demo cleanup continues across independent keys so one removal failure does not prevent attempts to remove the others; any incomplete result is still reported and cannot count as successful restoration.
 
-## Release validation
+## Focused repair checks
 
-After any error-handling change, run the gates in [Development](DEVELOPMENT.md), including lint, the full unit/build gate, interaction, Admin demo, checkpoint hardening, and offline acceptance. Browser gates require zero unexpected console warnings/errors. Tests that deliberately inject a failure must assert the expected code and must not place private values in evidence.
+After an error-handling change, check the changed failure/recovery behavior and a normal use of that flow. Keep private values out of diagnostics and preserve browser progress. See [Development](DEVELOPMENT.md).
 
 ## Build and deployment boundary
 
-`npm run build` creates the production Worker/client output, generates and verifies the offline manifest and service worker, and copies the checked-in Sites metadata to `dist/.openai/hosting.json`. There is no repository deploy script, release workflow, database migration, or credential-bearing publishing step. Saving and deploying a Sites version is an external hosting operation and must remain separate from pull-request CI.
-
-For an owner release:
-
-1. Freeze an exact source revision and require the validation gates in [Development](DEVELOPMENT.md) to pass against that revision.
-2. Build from the frozen revision. Do not substitute an older `dist/` directory; build output is intentionally ignored.
-3. Save and privately deploy a new Sites version through the authorized hosting surface. Do not change `.openai/hosting.json`, access policy, or hosted resources as part of an unrelated code change.
-4. Perform the external access and response checks in [Security](SECURITY.md#manual-verification-outside-the-repository). A local build cannot prove hosted access control or edge-header behavior.
-5. Record the exact source revision, Sites version, access result, and header result. Automated browser traversal is engineering evidence, not owner acceptance.
-
-Public or shared deployment is intentionally unsupported. The repository has no server-side authentication or authorization, and Admin is not a security boundary.
+The built local Worker supplies offline/service-worker behavior. Run the existing local build/start path only when those assets change. Sites publishing, hosted access/header campaigns and frozen release procedures are outside the current worklist.
 
 ## Local preparation/offline qualification
 
-The ordinary preparation script uses service-worker interception and retains Network/Log, registration, control and cache diagnostics. A historical bypass result cannot qualify offline behavior. Unexpected console warnings/errors still invalidate acceptance; no preload-warning allowlist exists.
-
-Offline acceptance establishes Ready offline while connected, preserves the cache through disconnection and reload, and verifies actual uncached network failure at each new teaching reload boundary. Chromium can report `navigator.onLine=true` after a reload even while emulated network requests fail; the connectivity hint is not a readiness guarantee. The existing worker's verified inventory and network probe continue to determine the displayed status. The teaching lane must end with the Offline badge, all cached resources preserved, normal/careful playback and persistent results. No first-ever disconnected visit is promised.
-
-Setup dependency warnings and build information are classified separately from browser failures under the existing production/high audit policy. Earlier warning investigations belong in [engineering history](history/day-00-01-teaching-record.md); they add no release or owner-acceptance exception. Some original external evidence files are unavailable and cannot qualify the current source.
+Prepare while connected and wait for Ready offline before depending on disconnected use. For an offline fix, check affected retrieval/audio/reload after actual disconnection; a first-ever disconnected visit is unsupported. Existing broad scripts are optional tools for the changed boundary, not owner-feedback prerequisites.

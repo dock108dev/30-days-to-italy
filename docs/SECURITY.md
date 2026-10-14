@@ -106,8 +106,8 @@ The production framework currently requires inline bootstrap scripts and styles,
 - **Severity / confidence:** medium if access is widened; informational under the current owner-only policy / high
 - **Scenario:** a future shared user can open Admin and replace only their own browser journey with canonical demo state.
 - **Current rationale:** there is no shared server data or cross-user authority, and owner review requires the tool.
-- **Status:** accepted for owner-only use; **needs decision** before any shared/public access.
-- **Required broader fix:** remove Admin from the public build or add server-enforced authenticated roles and a separate non-production review deployment. A client flag is not sufficient authorization.
+- **Status:** accepted for owner-only use; Shared-hosting changes are outside current scope; separate local profiles remain the current approach.
+- **Current approach:** Admin remains a local review tool; keep each person’s browser state separate. Remote multi-user roles have no current assignment.
 
 ### SEC-102 — Personal state is readable to same-origin code and local device users
 
@@ -135,34 +135,14 @@ The production framework currently requires inline bootstrap scripts and styles,
 
 ## Manual verification outside the repository
 
-Before any owner run or deployment, verify against the exact frozen candidate:
+Current use follows [personal use](personal-use.md). Use separate browser profiles/device-local state for each person. Existing hosted access settings remain unchanged; this documentation task does not publish or widen access.
 
-1. Sites access is still custom owner-only with the intended owner and zero groups/external visitors.
-2. Signed-out access stops at the hosting authentication gate; do not use or request owner credentials for engineering verification.
-3. The deployed response preserves CSP, HSTS, COOP, CORP, no-store, noindex, frame, referrer, content-type, and permissions headers.
-4. The deployed `/_vinext/image` returns `404`, unsupported methods return `405`, and ordinary app/static/offline requests still work.
-5. No public/share setting, account, analytics, database, object storage, microphone, or provider integration was introduced outside this repository.
+If a concrete hosted-access change is requested later, verify the affected access/header behavior then. Hosted launch checklists, fresh release freezes and full browser campaigns are not prerequisites to ordinary local lesson feedback.
 
 ## Prioritized roadmap
 
-1. **Required before owner use:** review and commit the cumulative diff, freeze a new candidate, rerun all engineering gates, and verify live owner-only hosting and headers.
-2. **Required before shared access:** remove Admin from that build or implement server-side authentication and authorization; define privacy, deletion, abuse, and rate-limit policy.
-3. **Defense in depth:** replace inline-script CSP allowance with framework-supported nonces/hashes.
-
-Supply-chain checks are now configured in `.github/workflows/ci.yml`: locked installation, lint, TypeScript, full build/tests, browser acceptance, a high-severity production audit, and a full-history secret scan. Repository settings and GitHub-managed CodeQL remain external controls and must be inspected separately.
+Fix observed local privacy/storage errors with focused checks. Preserve saved state, text escaping and existing security headers. Broader role systems, remote telemetry and CSP framework redesign are future architecture work only when a concrete use case needs them.
 
 ## Validation commands
 
-```bash
-npm run lint
-npx tsc --noEmit
-npm run test:security
-npm run test:response-contracts
-npm test
-npm run test:interaction
-npm run test:admin-demo
-npm run test:checkpoint-hardening
-npm run test:offline
-npm audit --omit=dev --audit-level=high
-git diff --check
-```
+Choose the security/response/browser check covering the changed boundary. Use disposable progress and keep private traveler values out of diagnostics. Existing broad tools and hosted CI remain available; no mandatory full campaign before owner use.

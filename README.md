@@ -45,7 +45,8 @@ npx tsc --noEmit
 npm test
 ```
 
-The full browser campaigns are slower and should be run for the areas they cover:
+Optional browser checks are available when an actual change needs them; do not
+run the full campaign before ordinary lesson feedback:
 
 ```bash
 npm run test:interaction
@@ -66,9 +67,12 @@ See [Development](docs/DEVELOPMENT.md) for the complete command map and change b
 - [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md)
 - [Security model](docs/SECURITY.md)
 
-## Release boundary
+## Personal use
 
-The app has no built-in authentication. Admin controls are local review tools. Restrict hosted access at the hosting layer and verify its access controls and response headers before exposing the app. See [Error handling and operations](docs/ERROR_HANDLING_AND_OPERATIONS.md#build-and-deployment-boundary) for the release boundary.
+Use the local app and improve lessons from actual learning feedback. Each browser
+keeps its own progress. See [the working approach](docs/personal-use.md).
+A local build is needed for offline/service-worker use; public deployment is not
+part of the current plan.
 
 ## UI design
 
