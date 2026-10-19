@@ -2,7 +2,7 @@
 
 Updated October 7, 2026. Scope: personal use and a handful of users. [Working approach](personal-use.md).
 
-Run commands from `web/`. Use Node.js 22.13 or newer and the committed npm lockfile.
+Run commands from `web/`. Use Node.js 24, selected by the repository `.nvmrc` and CI, and the committed npm lockfile.
 
 ## Setup and local use
 

@@ -10,7 +10,7 @@ Teaching preparation is implemented for Days 0–1. Full-season teaching, target
 
 ## Quick start
 
-Requires Node.js 22.13 or newer.
+Use Node.js 24, selected by the repository `.nvmrc` and CI.
 
 ```bash
 cd web

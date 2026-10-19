@@ -4,7 +4,7 @@ This directory contains the local application for 30 Days to Italy. The stable s
 
 ## Requirements
 
-- Node.js 22.13 or newer
+- Node.js 24 (selected by the repository `.nvmrc` and CI)
 - npm using the committed lockfile
 - A Chromium-compatible browser for browser acceptance campaigns
 
